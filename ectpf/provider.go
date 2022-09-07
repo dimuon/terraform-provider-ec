@@ -51,8 +51,6 @@ var (
 	apikeyDesc   = fmt.Sprint("API Key to use for API authentication. ", saasRequiredText, ".")
 	usernameDesc = fmt.Sprint("Username to use for API authentication. ", eceOnlyText, ".")
 	passwordDesc = fmt.Sprint("Password to use for API authentication. ", eceOnlyText, ".")
-
-	validURLSchemes = []string{"http", "https"}
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
