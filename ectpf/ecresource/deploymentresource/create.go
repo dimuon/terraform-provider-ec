@@ -19,7 +19,6 @@ package deploymentresource
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/elastic/cloud-sdk-go/pkg/api"
 )
@@ -73,8 +72,9 @@ func Create(ctx context.Context, client *api.API, cfg, plan *DeploymentData) (re
 	return nil, nil
 }
 
-func newCreationError(reqID string) error {
+/* func newCreationError(reqID string) error {
 	return fmt.Errorf(
 		`set "request_id" to "%s" to recreate the deployment resources`, reqID,
 	)
 }
+*/
