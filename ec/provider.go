@@ -38,6 +38,7 @@ import (
 	"github.com/elastic/terraform-provider-ec/ec/ecdatasource/deploymentdatasource"
 	"github.com/elastic/terraform-provider-ec/ec/ecdatasource/deploymentsdatasource"
 	"github.com/elastic/terraform-provider-ec/ec/ecdatasource/stackdatasource"
+	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource"
 	"github.com/elastic/terraform-provider-ec/ec/ecresource/elasticsearchkeystoreresource"
 	"github.com/elastic/terraform-provider-ec/ec/ecresource/extensionresource"
 	"github.com/elastic/terraform-provider-ec/ec/ecresource/trafficfilterassocresource"
@@ -380,4 +381,19 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	p.client = client
 	res.DataSourceData = client
 	res.ResourceData = client
+}
+
+func (p *Provider) GetResources(_ context.Context) (map[string]provider.ResourceType, diag.Diagnostics) {
+	return map[string]provider.ResourceType{
+		"ec_deployment_traffic_filter_association": trafficfilterassocresource.ResourceType{},
+		"ec_deployment": deploymentresource.DeploymentResourceType{},
+	}, nil
+}
+
+func (p *Provider) GetDataSources(context.Context) (map[string]provider.DataSourceType, diag.Diagnostics) {
+	return map[string]provider.DataSourceType{
+		"ec_stack":       stackdatasource.DataSourceType{},
+		"ec_deployment":  deploymentdatasource.DataSourceType{},
+		"ec_deployments": deploymentsdatasource.DataSourceType{},
+	}, nil
 }
