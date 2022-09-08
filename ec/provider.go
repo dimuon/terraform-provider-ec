@@ -37,6 +37,7 @@ import (
 	"github.com/elastic/terraform-provider-ec/ec/ecdatasource/deploymentdatasource"
 	"github.com/elastic/terraform-provider-ec/ec/ecdatasource/deploymentsdatasource"
 	"github.com/elastic/terraform-provider-ec/ec/ecdatasource/stackdatasource"
+	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource"
 	"github.com/elastic/terraform-provider-ec/ec/ecresource/elasticsearchkeystoreresource"
 	"github.com/elastic/terraform-provider-ec/ec/ecresource/extensionresource"
 	"github.com/elastic/terraform-provider-ec/ec/ecresource/trafficfilterassocresource"
@@ -172,6 +173,7 @@ func (p *Provider) DataSources(ctx context.Context) []func() datasource.DataSour
 
 func (p *Provider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
+		func() resource.Resource { return &deploymentresource.Resource{} },
 		func() resource.Resource { return &trafficfilterassocresource.Resource{} },
 	}
 }

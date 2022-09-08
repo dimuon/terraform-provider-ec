@@ -15,30 +15,38 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package ectpf
+package deploymentresource
 
 import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	tpfprovider "github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
-	"github.com/elastic/terraform-provider-ec/ectpf/ecresource/deploymentresource"
+	"github.com/elastic/cloud-sdk-go/pkg/api"
+
+	"github.com/elastic/terraform-provider-ec/ec/internal"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
-var _ tpfprovider.ResourceType = deploymentResourceType{}
-var _ resource.Resource = deploymentResource{}
+var _ resource.Resource = &Resource{}
+var _ resource.ResourceWithConfigure = &Resource{}
+var _ resource.ResourceWithGetSchema = &Resource{}
+var _ resource.ResourceWithMetadata = &Resource{}
 
-// var _ resource.ResourceWithImportState = deploymentResource{}
+// var _ resource.ResourceWithImportState = &Resource{}
 
-type deploymentResourceType struct{}
+// Ensure provider defined types fully satisfy framework interfaces
+var _ resource.Resource = Resource{}
 
-func (t deploymentResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (r *Resource) Metadata(ctx context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
+	response.TypeName = request.ProviderTypeName + "_deployment"
+}
+
+func (r *Resource) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		// This description is used by the documentation generator and the language server.
 		MarkdownDescription: "Elastic Cloud Deployment resource",
@@ -158,42 +166,42 @@ func (t deploymentResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, di
 	}, nil
 }
 
-func (t deploymentResourceType) NewResource(ctx context.Context, in tpfprovider.Provider) (resource.Resource, diag.Diagnostics) {
-	provider, diags := convertProviderType(in)
-
-	return deploymentResource{
-		provider: provider,
-	}, diags
+func (r *Resource) Configure(ctx context.Context, request resource.ConfigureRequest, response *resource.ConfigureResponse) {
+	client, diags := internal.ConvertProviderData(request.ProviderData)
+	response.Diagnostics.Append(diags...)
+	r.client = client
 }
 
-type deploymentResource struct {
-	provider scaffoldingProvider
+type Resource struct {
+	client *api.API
 }
 
-func (r deploymentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	if !r.provider.configured {
+func (r Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	// Prevent panic if the provider has not been configured.
+	if r.client == nil {
 		resp.Diagnostics.AddError(
-			"Provider not configured",
-			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
+			"Unconfigured API Client",
+			"Expected configured API client. Please report this issue to the provider developers.",
 		)
+
 		return
 	}
 
-	var cfg deploymentresource.DeploymentData
+	var cfg DeploymentData
 	diags := req.Config.Get(ctx, &cfg)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	var plan deploymentresource.DeploymentData
+	var plan DeploymentData
 	diags = req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	deploymentResource, errors := deploymentresource.Create(ctx, r.provider.client, &cfg, &plan)
+	deploymentResource, errors := Create(ctx, r.client, &cfg, &plan)
 
 	if len(errors) > 0 {
 		for _, err := range errors {
@@ -226,8 +234,8 @@ func (r deploymentResource) Create(ctx context.Context, req resource.CreateReque
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r deploymentResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state deploymentresource.DeploymentData
+func (r Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state DeploymentData
 
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -249,8 +257,8 @@ func (r deploymentResource) Read(ctx context.Context, req resource.ReadRequest, 
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r deploymentResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data deploymentresource.DeploymentData
+func (r Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var data DeploymentData
 
 	diags := req.Plan.Get(ctx, &data)
 	resp.Diagnostics.Append(diags...)
@@ -271,8 +279,8 @@ func (r deploymentResource) Update(ctx context.Context, req resource.UpdateReque
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r deploymentResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var data deploymentresource.DeploymentData
+func (r Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var data DeploymentData
 
 	diags := req.State.Get(ctx, &data)
 	resp.Diagnostics.Append(diags...)
@@ -290,6 +298,6 @@ func (r deploymentResource) Delete(ctx context.Context, req resource.DeleteReque
 	// }
 }
 
-// func (r deploymentResource) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
+// func (r Resource) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
 // 	tfsdk.ResourceImportStatePassthroughID(ctx, tftypes.NewAttributePath().WithAttributeName("id"), req, resp)
 // }
