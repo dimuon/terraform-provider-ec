@@ -19,6 +19,7 @@ package deploymentresource
 
 import (
 	"context"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -30,6 +31,7 @@ import (
 
 	"github.com/elastic/terraform-provider-ec/ec/internal"
 	"github.com/elastic/terraform-provider-ec/ec/internal/planmodifier"
+	"github.com/elastic/terraform-provider-ec/ec/internal/validators"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
@@ -42,6 +44,22 @@ var _ resource.ResourceWithMetadata = &Resource{}
 
 // Ensure provider defined types fully satisfy framework interfaces
 var _ resource.Resource = Resource{}
+// These constants are only used to determine whether or not a dedicated
+// tier of masters or ingest (coordinating) nodes are set.
+const (
+	dataTierRolePrefix   = "data_"
+	ingestDataTierRole   = "ingest"
+	masterDataTierRole   = "master"
+	autodetect           = "autodetect"
+	growAndShrink        = "grow_and_shrink"
+	rollingGrowAndShrink = "rolling_grow_and_shrink"
+	rollingAll           = "rolling_all"
+)
+
+// List of update strategies availables.
+var strategiesList = []string{
+	autodetect, growAndShrink, rollingGrowAndShrink, rollingAll,
+}
 
 func (r *Resource) Metadata(ctx context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
 	response.TypeName = request.ProviderTypeName + "_deployment"
@@ -102,6 +120,7 @@ func (r *Resource) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostic
 
 		Blocks: map[string]tfsdk.Block{
 			"elasticsearch": {
+				Description: "Required Elasticsearch resource definition",
 				NestingMode: tfsdk.BlockNestingModeList,
 				MaxItems:    1,
 				Attributes: map[string]tfsdk.Attribute{
@@ -292,9 +311,212 @@ func (r *Resource) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostic
 							},
 						},
 					},
-				},
 
-				Description: "Required Elasticsearch resource definition",
+					"config": {
+						NestingMode: tfsdk.BlockNestingModeList,
+						MinItems:    0,
+						MaxItems:    1,
+						Description: `Optional Elasticsearch settings which will be applied to all topologies unless overridden on the topology element`,
+						Attributes: map[string]tfsdk.Attribute{
+							"docker_image": {
+								Type:        types.StringType,
+								Description: "Optionally override the docker image the Elasticsearch nodes will use. Note that this field will only work for internal users only.",
+								Optional:    true,
+							},
+							"plugins": {
+								Type: types.SetType{
+									ElemType: types.StringType,
+								},
+								Description: "List of Elasticsearch supported plugins, which vary from version to version. Check the Stack Pack version to see which plugins are supported for each version. This is currently only available from the UI and [ecctl](https://www.elastic.co/guide/en/ecctl/master/ecctl_stack_list.html)",
+								Optional:    true,
+							},
+							"user_settings_json": {
+								Type:        types.StringType,
+								Description: `JSON-formatted user level "elasticsearch.yml" setting overrides`,
+								Optional:    true,
+							},
+							"user_settings_override_json": {
+								Type:        types.StringType,
+								Description: `JSON-formatted admin (ECE) level "elasticsearch.yml" setting overrides`,
+								Optional:    true,
+							},
+							"user_settings_yaml": {
+								Type:        types.StringType,
+								Description: `YAML-formatted user level "elasticsearch.yml" setting overrides`,
+								Optional:    true,
+							},
+							"user_settings_override_yaml": {
+								Type:        types.StringType,
+								Description: `YAML-formatted admin (ECE) level "elasticsearch.yml" setting overrides`,
+								Optional:    true,
+							},
+						},
+					},
+
+					"remote_cluster": {
+						NestingMode: tfsdk.BlockNestingModeSet,
+						MinItems:    0,
+						Description: "Optional Elasticsearch remote clusters to configure for the Elasticsearch resource, can be set multiple times",
+						Attributes: map[string]tfsdk.Attribute{
+							"deployment_id": {
+								Description: "Remote deployment ID",
+								Type:        types.StringType,
+								Validators:  []tfsdk.AttributeValidator{validators.Length(32, 32)},
+								Required:    true,
+							},
+							"alias": {
+								Description: "Alias for this Cross Cluster Search binding",
+								Type:        types.StringType,
+								Validators:  []tfsdk.AttributeValidator{validators.NotEmpty()},
+								Required:    true,
+							},
+							"ref_id": {
+								Description: `Remote elasticsearch "ref_id", it is best left to the default value`,
+								Type:        types.StringType,
+								Computed:    true,
+								PlanModifiers: []tfsdk.AttributePlanModifier{
+									planmodifier.DefaultValue(types.String{Value: "main-elasticsearch"}),
+								},
+								Optional: true,
+							},
+							"skip_unavailable": {
+								Description: "If true, skip the cluster during search when disconnected",
+								Type:        types.BoolType,
+								PlanModifiers: []tfsdk.AttributePlanModifier{
+									planmodifier.DefaultValue(types.Bool{Value: false}),
+								},
+								Optional: true,
+							},
+						},
+					},
+
+					"snapshot_source": {
+						NestingMode: tfsdk.BlockNestingModeList,
+						Description: "Optional snapshot source settings. Restore data from a snapshot of another deployment.",
+						MinItems:    0,
+						MaxItems:    1,
+						Attributes: map[string]tfsdk.Attribute{
+							"source_elasticsearch_cluster_id": {
+								Description: "ID of the Elasticsearch cluster that will be used as the source of the snapshot",
+								Type:        types.StringType,
+								Required:    true,
+							},
+							"snapshot_name": {
+								Description: "Name of the snapshot to restore. Use '__latest_success__' to get the most recent successful snapshot.",
+								Type:        types.StringType,
+								PlanModifiers: []tfsdk.AttributePlanModifier{
+									planmodifier.DefaultValue(types.String{Value: "__latest_success__"}),
+								},
+								Optional: true,
+							},
+						},
+					},
+
+					"extension": {
+						NestingMode: tfsdk.BlockNestingModeSet,
+						Description: "Optional Elasticsearch extensions such as custom bundles or plugins.",
+						MinItems:    0,
+						Attributes: map[string]tfsdk.Attribute{
+							"name": {
+								Description: "Extension name.",
+								Type:        types.StringType,
+								Required:    true,
+							},
+							"type": {
+								Description: "Extension type, only `bundle` or `plugin` are supported.",
+								Type:        types.StringType,
+								Required:    true,
+								Validators:  []tfsdk.AttributeValidator{validators.OneOf([]string{"bundle", "plugin"})},
+							},
+							"version": {
+								Description: "Elasticsearch compatibility version. Bundles should specify major or minor versions with wildcards, such as `7.*` or `*` but **plugins must use full version notation down to the patch level**, such as `7.10.1` and wildcards are not allowed.",
+								Type:        types.StringType,
+								Required:    true,
+							},
+							"url": {
+								Description: "Bundle or plugin URL, the extension URL can be obtained from the `ec_deployment_extension.<name>.url` attribute or the API and cannot be a random HTTP address that is hosted elsewhere.",
+								Type:        types.StringType,
+								Required:    true,
+							},
+						},
+					},
+
+					"trust_account": {
+						NestingMode: tfsdk.BlockNestingModeSet,
+						Description: "Optional Elasticsearch account trust settings.",
+						MinItems:    0,
+						Attributes: map[string]tfsdk.Attribute{
+							"account_id": {
+								Description: "The ID of the Account.",
+								Type:        types.StringType,
+								Required:    true,
+							},
+							"trust_all": {
+								Description: "If true, all clusters in this account will by default be trusted and the `trust_allowlist` is ignored.",
+								Type:        types.BoolType,
+								Required:    true,
+							},
+							"trust_allowlist": {
+								Description: "The list of clusters to trust. Only used when `trust_all` is false.",
+								Type: types.SetType{
+									ElemType: types.StringType,
+								},
+								Optional: true,
+							},
+						},
+					},
+
+					"trust_external": {
+						NestingMode: tfsdk.BlockNestingModeSet,
+						Description: "Optional Elasticsearch external trust settings.",
+						MinItems:    0,
+						Attributes: map[string]tfsdk.Attribute{
+							"relationship_id": {
+								Description: "The ID of the external trust relationship.",
+								Type:        types.StringType,
+								Required:    true,
+							},
+							"trust_all": {
+								Description: "If true, all clusters in this account will by default be trusted and the `trust_allowlist` is ignored.",
+								Type:        types.BoolType,
+								Required:    true,
+							},
+							"trust_allowlist": {
+								Description: "The list of clusters to trust. Only used when `trust_all` is false.",
+								Type: types.SetType{
+									ElemType: types.StringType,
+								},
+								Optional: true,
+							},
+						},
+					},
+
+					"strategy": {
+						NestingMode: tfsdk.BlockNestingModeList,
+						Description: "Configuration strategy settings.",
+						MinItems:    0,
+						MaxItems:    1,
+						Attributes: map[string]tfsdk.Attribute{
+							"type": {
+								Description: "Configuration strategy type " + strings.Join(strategiesList, ", "),
+								Type:        types.StringType,
+								Required:    true,
+								// ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
+								// 	t := val.(string)
+								// 	fmt.Printf("Validating %s in %v", t, validValues)
+								// 	if !slice.HasString(strategiesList, t) {
+								// 		errs = append(errs, fmt.Errorf(`invalid %s '%s': valid strategies are %v`, key, t, validValues))
+								// 	}
+								// 	return
+								// },
+								// changes on this setting do not change the plan.
+								// DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+								// 	return true
+								// },
+							},
+						},
+					},
+				},
 			},
 		},
 	}, nil
