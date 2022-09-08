@@ -54,9 +54,7 @@ func main() {
 	ctx := context.Background()
 	providers := []func() tfprotov6.ProviderServer{
 		func() tfprotov6.ProviderServer { return upgradedSdkProvider },
-		func() tfprotov6.ProviderServer {
-			return providerserver.NewProtocol6(ec.New())()
-		},
+		providerserver.NewProtocol6(ec.New(ec.Version)),
 	}
 
 	muxServer, err := tf6muxserver.NewMuxServer(ctx, providers...)

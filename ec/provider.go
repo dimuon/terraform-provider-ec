@@ -20,6 +20,8 @@ package ec
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/elastic/terraform-provider-ec/ec/ecdatasource/deploymentdatasource"
 	"github.com/elastic/terraform-provider-ec/ec/ecdatasource/deploymentsdatasource"
 	"github.com/elastic/terraform-provider-ec/ec/ecdatasource/stackdatasource"
@@ -33,7 +35,6 @@ import (
 	"github.com/elastic/terraform-provider-ec/ec/internal/validators"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"time"
 
 	"github.com/elastic/cloud-sdk-go/pkg/api"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -137,18 +138,19 @@ func newSchema() map[string]*schema.Schema {
 	}
 }
 
-func New() provider.Provider {
-	return &Provider{}
+func New(version string) provider.Provider {
+	return &Provider{version: version}
 }
 
 var _ internal.Provider = (*Provider)(nil)
 
 func (p *Provider) GetClient() *api.API {
-	return p.Client
+	return p.client
 }
 
 type Provider struct {
-	Client *api.API
+	version string
+	client  *api.API
 }
 
 func (p *Provider) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
@@ -335,7 +337,7 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		return
 	}
 
-	p.Client, err = api.NewAPI(cfg)
+	p.client, err = api.NewAPI(cfg)
 	if err != nil {
 		res.Diagnostics.AddWarning(
 			"Unable to create api Client config",
