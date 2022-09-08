@@ -20,11 +20,12 @@ package validators
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"strings"
+
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"golang.org/x/exp/slices"
-	"net/url"
-	"strings"
 )
 
 type isURLWithSchemeValidator struct {
@@ -96,5 +97,5 @@ func (v isURLWithSchemeValidator) Validate(ctx context.Context, req tfsdk.Valida
 }
 
 func IsURLWithSchemeValidator(validSchemes []string) tfsdk.AttributeValidator {
-	return isURLWithSchemeValidator{}
+	return isURLWithSchemeValidator{ValidSchemes: []string{"http", "https"}}
 }

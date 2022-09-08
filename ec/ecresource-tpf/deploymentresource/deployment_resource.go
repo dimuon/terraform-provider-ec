@@ -15,30 +15,29 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package ectpf
+package deploymentresource
 
 import (
 	"context"
 
+	"github.com/elastic/terraform-provider-ec/ec/internal"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	tpfprovider "github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-
-	"github.com/elastic/terraform-provider-ec/ectpf/ecresource/deploymentresource"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
-var _ tpfprovider.ResourceType = deploymentResourceType{}
+var _ tpfprovider.ResourceType = DeploymentResourceType{}
 var _ resource.Resource = deploymentResource{}
 
 // var _ resource.ResourceWithImportState = deploymentResource{}
 
-type deploymentResourceType struct{}
+type DeploymentResourceType struct{}
 
-func (t deploymentResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (t DeploymentResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		// This description is used by the documentation generator and the language server.
 		MarkdownDescription: "Elastic Cloud Deployment resource",
@@ -158,20 +157,20 @@ func (t deploymentResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, di
 	}, nil
 }
 
-func (t deploymentResourceType) NewResource(ctx context.Context, in tpfprovider.Provider) (resource.Resource, diag.Diagnostics) {
-	provider, diags := convertProviderType(in)
+func (t DeploymentResourceType) NewResource(ctx context.Context, in tpfprovider.Provider) (resource.Resource, diag.Diagnostics) {
+	p, diags := internal.ConvertProviderType(in)
 
-	return deploymentResource{
-		provider: provider,
+	return &deploymentResource{
+		provider: p,
 	}, diags
 }
 
 type deploymentResource struct {
-	provider scaffoldingProvider
+	provider internal.Provider
 }
 
 func (r deploymentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	if !r.provider.configured {
+	if r.provider.GetClient() == nil {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
 			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
@@ -179,21 +178,21 @@ func (r deploymentResource) Create(ctx context.Context, req resource.CreateReque
 		return
 	}
 
-	var cfg deploymentresource.DeploymentData
+	var cfg DeploymentData
 	diags := req.Config.Get(ctx, &cfg)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	var plan deploymentresource.DeploymentData
+	var plan DeploymentData
 	diags = req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	deploymentResource, errors := deploymentresource.Create(ctx, r.provider.client, &cfg, &plan)
+	deploymentResource, errors := Create(ctx, r.provider.GetClient(), &cfg, &plan)
 
 	if len(errors) > 0 {
 		for _, err := range errors {
@@ -227,7 +226,7 @@ func (r deploymentResource) Create(ctx context.Context, req resource.CreateReque
 }
 
 func (r deploymentResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state deploymentresource.DeploymentData
+	var state DeploymentData
 
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -250,7 +249,7 @@ func (r deploymentResource) Read(ctx context.Context, req resource.ReadRequest, 
 }
 
 func (r deploymentResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data deploymentresource.DeploymentData
+	var data DeploymentData
 
 	diags := req.Plan.Get(ctx, &data)
 	resp.Diagnostics.Append(diags...)
@@ -272,7 +271,7 @@ func (r deploymentResource) Update(ctx context.Context, req resource.UpdateReque
 }
 
 func (r deploymentResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var data deploymentresource.DeploymentData
+	var data DeploymentData
 
 	diags := req.State.Get(ctx, &data)
 	resp.Diagnostics.Append(diags...)
