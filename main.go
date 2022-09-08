@@ -22,8 +22,6 @@ import (
 	"flag"
 	"log"
 
-	"github.com/hashicorp/terraform-plugin-framework/providerserver"
-
 	"github.com/elastic/terraform-provider-ec/ec"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
