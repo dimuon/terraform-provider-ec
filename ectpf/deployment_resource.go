@@ -44,6 +44,10 @@ func (t deploymentResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, di
 		MarkdownDescription: "Elastic Cloud Deployment resource",
 
 		Attributes: map[string]tfsdk.Attribute{
+			"alias": {
+				Type:     types.StringType,
+				Computed: true,
+			},
 			"version": {
 				Type:        types.StringType,
 				Description: "Required Elastic Stack version to use for all of the deployment resources",
@@ -64,6 +68,37 @@ func (t deploymentResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, di
 				Description: "Optional name for the deployment",
 				Optional:    true,
 			},
+			"request_id": {
+				Type:        types.StringType,
+				Description: "Optional request_id to set on the create operation, only use when previous create attempts return with an error and a request_id is returned as part of the error",
+				Optional:    true,
+			},
+			"elasticsearch_username": {
+				Type:        types.StringType,
+				Description: "Computed username obtained upon creating the Elasticsearch resource",
+				Computed:    true,
+			},
+			"elasticsearch_password": {
+				Type:        types.StringType,
+				Description: "Computed password obtained upon creating the Elasticsearch resource",
+				Computed:    true,
+				Sensitive:   true,
+			},
+			"apm_secret_token": {
+				Type:      types.StringType,
+				Computed:  true,
+				Sensitive: true,
+			},
+			// "elasticsearch": {
+			// 	Type:        types.ListType{
+			// 		ElemType: ,
+			// 	},
+			// 	Description: "Required Elasticsearch resource definition",
+			// 	MaxItems:    1,
+			// 	Required:    true,
+			// 	Elem:        newElasticsearchResource(),
+			// },
+
 		},
 
 		Blocks: map[string]tfsdk.Block{
