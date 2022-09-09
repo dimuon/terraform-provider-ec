@@ -121,6 +121,20 @@ func (r *Resource) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostic
 				Computed:  true,
 				Sensitive: true,
 			},
+			"traffic_filter": {
+				Type: types.SetType{
+					ElemType: types.StringType,
+				},
+				Optional:    true,
+				Description: "Optional list of traffic filters to apply to this deployment.",
+			},
+			"tags": {
+				Description: "Optional map of deployment tags",
+				Type: types.MapType{
+					ElemType: types.StringType,
+				},
+				Optional: true,
+			},
 		},
 
 		Blocks: map[string]tfsdk.Block{
@@ -369,14 +383,14 @@ func (r *Resource) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostic
 							"deployment_id": {
 								Description: "Remote deployment ID",
 								Type:        types.StringType,
-								Validators:  []tfsdk.AttributeValidator{validators.Length(32, 32)},
-								Required:    true,
+								// Validators:  []tfsdk.AttributeValidator{validators.Length(32, 32)},
+								Required: true,
 							},
 							"alias": {
 								Description: "Alias for this Cross Cluster Search binding",
 								Type:        types.StringType,
-								Validators:  []tfsdk.AttributeValidator{validators.NotEmpty()},
-								Required:    true,
+								// Validators:  []tfsdk.AttributeValidator{validators.NotEmpty()},
+								Required: true,
 							},
 							"ref_id": {
 								Description: `Remote elasticsearch "ref_id", it is best left to the default value`,
@@ -986,11 +1000,50 @@ func (r *Resource) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostic
 				},
 			},
 
-			"traffic_filter": {},
+			"observability": {
+				NestingMode: tfsdk.BlockNestingModeList,
+				Description: "Optional observability settings. Ship logs and metrics to a dedicated deployment.",
+				MinItems:    0,
+				MaxItems:    1,
+				Attributes: map[string]tfsdk.Attribute{
+					"deployment_id": {
+						Type:     types.StringType,
+						Required: true,
+						// TODO
+						// DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+						// 	// The terraform config can contain 'self' as a deployment target
+						// 	// However the API will return the actual deployment-id.
+						// 	// This overrides 'self' with the deployment-id so the diff will work correctly.
+						// 	var deploymentID = d.Id()
+						// 	var mappedOldValue = mapSelfToDeploymentID(oldValue, deploymentID)
+						// 	var mappedNewValue = mapSelfToDeploymentID(newValue, deploymentID)
 
-			"observability": {},
-
-			"tags": {},
+						// 	return mappedOldValue == mappedNewValue
+						// },
+					},
+					"ref_id": {
+						Type:     types.StringType,
+						Computed: true,
+						Optional: true,
+					},
+					"logs": {
+						Type:     types.BoolType,
+						Optional: true,
+						Computed: true,
+						PlanModifiers: []tfsdk.AttributePlanModifier{
+							planmodifier.DefaultValue(types.Bool{Value: true}),
+						},
+					},
+					"metrics": {
+						Type:     types.BoolType,
+						Optional: true,
+						Computed: true,
+						PlanModifiers: []tfsdk.AttributePlanModifier{
+							planmodifier.DefaultValue(types.Bool{Value: true}),
+						},
+					},
+				},
+			},
 		},
 	}, nil
 }
