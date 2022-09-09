@@ -63,6 +63,11 @@ func (t DeploymentResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, di
 		MarkdownDescription: "Elastic Cloud Deployment resource",
 
 		Attributes: map[string]tfsdk.Attribute{
+			"id": {
+				Type:     types.StringType,
+				Computed: true,
+				Optional: true,
+			},
 			"alias": {
 				Type:     types.StringType,
 				Computed: true,
