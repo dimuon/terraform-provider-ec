@@ -47,12 +47,13 @@ func (v notEmptyValidator) Validate(ctx context.Context, req tfsdk.ValidateAttri
 	}
 }
 
-// Known returns an AttributeValidator which ensures that any configured
+// NotEmpty returns an AttributeValidator which ensures that any configured
 // attribute value:
 //
 //   - Is known.
+//   - Is set.
+//   - Is no empty string.
 //
-// Null (unconfigured) values are skipped.
 func NotEmpty() tfsdk.AttributeValidator {
 	return notEmptyValidator{}
 }
