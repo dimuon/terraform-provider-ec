@@ -383,12 +383,14 @@ func (r *Resource) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostic
 							"deployment_id": {
 								Description: "Remote deployment ID",
 								Type:        types.StringType,
+								// TODO fix examples/deployment_css/deployment.tf#61
 								// Validators:  []tfsdk.AttributeValidator{validators.Length(32, 32)},
 								Required: true,
 							},
 							"alias": {
 								Description: "Alias for this Cross Cluster Search binding",
 								Type:        types.StringType,
+								// TODO fix examples/deployment_css/deployment.tf#62
 								// Validators:  []tfsdk.AttributeValidator{validators.NotEmpty()},
 								Required: true,
 							},
