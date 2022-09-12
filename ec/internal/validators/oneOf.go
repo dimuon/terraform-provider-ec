@@ -60,10 +60,10 @@ func (v oneOf) Validate(ctx context.Context, req tfsdk.ValidateAttributeRequest,
 	}
 }
 
-// Known returns an AttributeValidator which ensures that any configured
+// OneOf returns an AttributeValidator which ensures that any configured
 // attribute value:
 //
-//   - Is known.
+//   - Is one of the accepted values.
 //
 // Null (unconfigured) values are skipped.
 func OneOf(values []string) tfsdk.AttributeValidator {
