@@ -60,12 +60,11 @@ func (v lengthValidator) Validate(ctx context.Context, req tfsdk.ValidateAttribu
 	}
 }
 
-// Known returns an AttributeValidator which ensures that any configured
+// Length returns an AttributeValidator which ensures that any configured
 // attribute value:
 //
-//   - Is known.
+//   - Has a length between min and max.
 //
-// Null (unconfigured) values are skipped.
 func Length(min, max int) tfsdk.AttributeValidator {
 	return lengthValidator{min: min, max: max}
 }
