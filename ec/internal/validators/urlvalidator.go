@@ -97,5 +97,5 @@ func (v isURLWithSchemeValidator) Validate(ctx context.Context, req tfsdk.Valida
 }
 
 func IsURLWithSchemeValidator(validSchemes []string) tfsdk.AttributeValidator {
-	return isURLWithSchemeValidator{ValidSchemes: []string{"http", "https"}}
+	return isURLWithSchemeValidator{ValidSchemes: validSchemes}
 }
