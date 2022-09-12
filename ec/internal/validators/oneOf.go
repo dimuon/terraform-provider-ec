@@ -65,7 +65,6 @@ func (v oneOf) Validate(ctx context.Context, req tfsdk.ValidateAttributeRequest,
 //
 //   - Is one of the accepted values.
 //
-// Null (unconfigured) values are skipped.
 func OneOf(values []string) tfsdk.AttributeValidator {
 	return oneOf{values: values}
 }
