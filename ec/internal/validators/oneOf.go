@@ -50,7 +50,7 @@ func (v oneOf) Validate(ctx context.Context, req tfsdk.ValidateAttributeRequest,
 		return
 	}
 
-	if value := req.AttributeConfig.String(); !slice.HasString(v.values, value) {
+	if value := req.AttributeConfig.Value; !slice.HasString(v.values, value) {
 		resp.Diagnostics.AddAttributeError(
 			req.AttributePath,
 			v.Description(ctx),
