@@ -37,7 +37,7 @@ func (v notEmptyValidator) MarkdownDescription(ctx context.Context) string {
 
 // Validate runs the main validation logic of the validator, reading configuration data out of `req` and updating `resp` with diagnostics.
 func (v notEmptyValidator) Validate(ctx context.Context, req tfsdk.ValidateAttributeRequest, resp *tfsdk.ValidateAttributeResponse) {
-	if req.AttributeConfig.IsUnknown() || req.AttributeConfig.IsNull() || req.AttributeConfig.String() == "" {
+	if req.AttributeConfig.IsUnknown() || req.AttributeConfig.IsNull() || req.AttributeConfig.Value == "" {
 		resp.Diagnostics.AddAttributeError(
 			req.AttributePath,
 			v.Description(ctx),
