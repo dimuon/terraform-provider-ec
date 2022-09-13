@@ -50,7 +50,7 @@ func (v lengthValidator) Validate(ctx context.Context, req tfsdk.ValidateAttribu
 		return
 	}
 
-	if length := len(req.AttributeConfig.Value)); length < v.min || length > v.max {
+	if length := len(req.AttributeConfig.String()); length < v.min || length > v.max {
 		resp.Diagnostics.AddAttributeError(
 			req.AttributePath,
 			v.Description(ctx),
@@ -64,7 +64,6 @@ func (v lengthValidator) Validate(ctx context.Context, req tfsdk.ValidateAttribu
 // attribute value:
 //
 //   - Has a length between min and max.
-//
 func Length(min, max int) tfsdk.AttributeValidator {
 	return lengthValidator{min: min, max: max}
 }
