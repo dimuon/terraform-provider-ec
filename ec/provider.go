@@ -25,7 +25,7 @@ import (
 	"github.com/elastic/terraform-provider-ec/ec/ecdatasource/deploymentdatasource"
 	"github.com/elastic/terraform-provider-ec/ec/ecdatasource/deploymentsdatasource"
 	"github.com/elastic/terraform-provider-ec/ec/ecdatasource/stackdatasource"
-	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource"
+	"github.com/elastic/terraform-provider-ec/ec/ecresource/deploymentresource"
 	"github.com/elastic/terraform-provider-ec/ec/ecresource/elasticsearchkeystoreresource"
 	"github.com/elastic/terraform-provider-ec/ec/ecresource/extensionresource"
 	"github.com/elastic/terraform-provider-ec/ec/ecresource/trafficfilterassocresource"
@@ -75,11 +75,11 @@ func LegacyProvider() *schema.Provider {
 		Schema:               newSchema(),
 		DataSourcesMap:       map[string]*schema.Resource{},
 		ResourcesMap: map[string]*schema.Resource{
-			// "ec_deployment":                            deploymentresource.Resource(),
-			"ec_deployment_elasticsearch_keystore":     elasticsearchkeystoreresource.Resource(),
-			"ec_deployment_traffic_filter":             trafficfilterresource.Resource(),
-			"ec_deployment_traffic_filter_association": trafficfilterassocresource.Resource(),
-			"ec_deployment_extension":                  extensionresource.Resource(),
+			"ec_deployment":                        deploymentresource.Resource(),
+			"ec_deployment_elasticsearch_keystore": elasticsearchkeystoreresource.Resource(),
+			"ec_deployment_traffic_filter":         trafficfilterresource.Resource(),
+			//"ec_deployment_traffic_filter_association": trafficfilterassocresource.Resource(),
+			"ec_deployment_extension": extensionresource.Resource(),
 		},
 	}
 }
@@ -141,6 +141,10 @@ func newSchema() map[string]*schema.Schema {
 
 func New(version string) provider.Provider {
 	return &Provider{version: version}
+}
+
+func ProviderWithClient(client *api.API, version string) provider.Provider {
+	return &Provider{client: client, version: version}
 }
 
 var _ internal.Provider = (*Provider)(nil)
@@ -350,7 +354,8 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 
 func (p *Provider) GetResources(_ context.Context) (map[string]provider.ResourceType, diag.Diagnostics) {
 	return map[string]provider.ResourceType{
-		"ec_deployment": deploymentresource.DeploymentResourceType{},
+		//"ec_deployment": deploymentresource.DeploymentResourceType{},
+		"ec_deployment_traffic_filter_association": trafficfilterassocresource.ResourceType{},
 	}, nil
 }
 

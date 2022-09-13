@@ -18,16 +18,11 @@
 package trafficfilterassocresource
 
 import (
-	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi/trafficfilterapi"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"context"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 )
 
-const entityType = "deployment"
-
-func expand(d *schema.ResourceData) trafficfilterapi.CreateAssociationParams {
-	return trafficfilterapi.CreateAssociationParams{
-		ID:         d.Get("traffic_filter_id").(string),
-		EntityID:   d.Get("deployment_id").(string),
-		EntityType: entityType,
-	}
+func (t trafficFilterAssocResource) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
+	//TODO implement me
+	panic("ec_deployment_traffic_filter_association resources can not be updated!")
 }

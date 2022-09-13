@@ -45,9 +45,7 @@ func protoV5ProviderFactories() map[string]func() (tfprotov5.ProviderServer, err
 				func() tfprotov5.ProviderServer {
 					return ec.LegacyProvider().GRPCProvider()
 				},
-				func() tfprotov5.ProviderServer {
-					return providerserver.NewProtocol5(ec.New("acc-tests"))()
-				},
+				providerserver.NewProtocol5(ec.New("acc-tests")),
 			)
 		},
 	}
