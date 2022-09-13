@@ -31,6 +31,7 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 
 	"github.com/elastic/terraform-provider-ec/ec/internal"
+	"github.com/elastic/terraform-provider-ec/ec/internal/flatteners"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
 )
 
@@ -118,7 +119,9 @@ func modelToState(ctx context.Context, res *models.DeploymentGetResponse, state 
 	diags.Append(flattenIntegrationsServerResources(ctx, res.Resources.IntegrationsServer, &state.IntegrationsServer)...)
 	diags.Append(flattenEnterpriseSearchResources(ctx, res.Resources.EnterpriseSearch, &state.EnterpriseSearch)...)
 
-	state.Tags = flattenTags(res.Metadata)
+	if res.Metadata != nil {
+		state.Tags = flatteners.FlattenTags(res.Metadata.Tags)
+	}
 
 	return diags
 }
