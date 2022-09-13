@@ -15,27 +15,20 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package flatteners
+package deploymentresource
 
 import (
-	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/types"
-
 	"github.com/elastic/cloud-sdk-go/pkg/models"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// flattenTags takes in Deployment Metadata resource models and returns its
-// Tags in flattened form.
-func FlattenTags(metadataItems []*models.MetadataItem) types.Map {
-	if len(metadataItems) == 0 {
-		return types.Map{ElemType: types.StringType, Elems: map[string]attr.Value{}}
-	}
+type ElasticsearchExtension struct {
+	Name    types.String `tfsdk:"name"`
+	Type    types.String `tfsdk:"type"`
+	Version types.String `tfsdk:"version"`
+	Url     types.String `tfsdk:"url"`
+}
 
-	var tags = make(map[string]attr.Value)
-	for _, res := range metadataItems {
-		if res.Key != nil {
-			tags[*res.Key] = types.String{Value: *res.Value}
-		}
-	}
-	return types.Map{ElemType: types.StringType, Elems: tags}
+func (esc *ElasticsearchExtension) fromModel(in []*models.ElasticsearchUserBundle) error {
+	return nil
 }

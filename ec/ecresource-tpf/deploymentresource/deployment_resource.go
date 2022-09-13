@@ -1060,25 +1060,31 @@ type Resource struct {
 	client *api.API
 }
 
-func (r Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	// Prevent panic if the provider has not been configured.
+func resourceReady(r Resource, dg *diag.Diagnostics) bool {
 	if r.client == nil {
-		resp.Diagnostics.AddError(
+		dg.AddError(
 			"Unconfigured API Client",
 			"Expected configured API client. Please report this issue to the provider developers.",
 		)
 
+		return false
+	}
+	return true
+}
+
+func (r Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	if !resourceReady(r, &resp.Diagnostics) {
 		return
 	}
 
-	var cfg DeploymentData
+	var cfg Deployment
 	diags := req.Config.Get(ctx, &cfg)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	var plan DeploymentData
+	var plan Deployment
 	diags = req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -1119,7 +1125,10 @@ func (r Resource) Create(ctx context.Context, req resource.CreateRequest, resp *
 }
 
 func (r Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state DeploymentData
+	if !resourceReady(r, &resp.Diagnostics) {
+		return
+	}
+	var state Deployment
 
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -1128,21 +1137,17 @@ func (r Resource) Read(ctx context.Context, req resource.ReadRequest, resp *reso
 		return
 	}
 
-	// If applicable, this is a great opportunity to initialize any necessary
-	// provider client data and make a call using it.
-	// example, err := d.provider.client.ReadExample(...)
-	// if err != nil {
-	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read example, got error: %s", err))
-	//     return
-	// }
-	//  r.provider.client
+	if err := read(ctx, r.client, &state); err != nil {
+		resp.Diagnostics.AddError("Client Error", err.Error())
+		return
+	}
 
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 }
 
 func (r Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data DeploymentData
+	var data Deployment
 
 	diags := req.Plan.Get(ctx, &data)
 	resp.Diagnostics.Append(diags...)
@@ -1164,7 +1169,7 @@ func (r Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *
 }
 
 func (r Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var data DeploymentData
+	var data Deployment
 
 	diags := req.State.Get(ctx, &data)
 	resp.Diagnostics.Append(diags...)
