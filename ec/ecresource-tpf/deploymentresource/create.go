@@ -24,7 +24,7 @@ import (
 )
 
 // CreateResource will createResource a new deployment from the specified settings.
-func Create(ctx context.Context, client *api.API, cfg, plan *DeploymentData) (resp *DeploymentData, errors []error) {
+func Create(ctx context.Context, client *api.API, cfg, plan *Deployment) (resp *Deployment, errors []error) {
 	// reqID := deploymentapi.RequestID("")
 
 	// req, err := createResourceToModel(client, cfg, plan)

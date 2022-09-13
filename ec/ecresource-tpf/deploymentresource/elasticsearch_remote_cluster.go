@@ -15,27 +15,38 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package flatteners
+package deploymentresource
 
 import (
-	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/types"
-
 	"github.com/elastic/cloud-sdk-go/pkg/models"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// flattenTags takes in Deployment Metadata resource models and returns its
-// Tags in flattened form.
-func FlattenTags(metadataItems []*models.MetadataItem) types.Map {
-	if len(metadataItems) == 0 {
-		return types.Map{ElemType: types.StringType, Elems: map[string]attr.Value{}}
-	}
+type ElasticsearchRemoteCluster struct {
+	DeploymentId    types.String `tfsdk:"deployment_id"`
+	Alias           types.String `tfsdk:"alias"`
+	RefId           types.String `tfsdk:"ref_id"`
+	SkipUnavailable types.Bool   `tfsdk:"skip_unavailable"`
+}
 
-	var tags = make(map[string]attr.Value)
-	for _, res := range metadataItems {
-		if res.Key != nil {
-			tags[*res.Key] = types.String{Value: *res.Value}
+func (rem *ElasticsearchRemoteCluster) fromModel(in models.RemoteResources) error {
+	for _, r := range in.Resources {
+		if r.DeploymentID != nil && *r.DeploymentID != "" {
+			rem.DeploymentId.Value = *r.DeploymentID
+		}
+
+		if r.ElasticsearchRefID != nil && *r.ElasticsearchRefID != "" {
+			rem.RefId.Value = *r.ElasticsearchRefID
+		}
+
+		if r.Alias != nil && *r.Alias != "" {
+			rem.Alias.Value = *r.Alias
+		}
+
+		if r.SkipUnavailable != nil {
+			rem.SkipUnavailable.Value = *r.SkipUnavailable
 		}
 	}
-	return types.Map{ElemType: types.StringType, Elems: tags}
+
+	return nil
 }

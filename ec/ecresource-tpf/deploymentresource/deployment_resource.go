@@ -1054,23 +1054,30 @@ type deploymentResource struct {
 	provider internal.Provider
 }
 
-func (r deploymentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	if r.provider.GetClient() == nil {
-		resp.Diagnostics.AddError(
+func providerReady(p internal.Provider, dg *diag.Diagnostics) bool {
+	if p.GetClient() == nil {
+		dg.AddError(
 			"Provider not configured",
 			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
 		)
+		return false
+	}
+	return true
+}
+
+func (r deploymentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	if !providerReady(r.provider, &resp.Diagnostics) {
 		return
 	}
 
-	var cfg DeploymentData
+	var cfg Deployment
 	diags := req.Config.Get(ctx, &cfg)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	var plan DeploymentData
+	var plan Deployment
 	diags = req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -1111,7 +1118,11 @@ func (r deploymentResource) Create(ctx context.Context, req resource.CreateReque
 }
 
 func (r deploymentResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state DeploymentData
+	if !providerReady(r.provider, &resp.Diagnostics) {
+		return
+	}
+
+	var state Deployment
 
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -1120,21 +1131,19 @@ func (r deploymentResource) Read(ctx context.Context, req resource.ReadRequest, 
 		return
 	}
 
-	// If applicable, this is a great opportunity to initialize any necessary
-	// provider client data and make a call using it.
-	// example, err := d.provider.client.ReadExample(...)
-	// if err != nil {
-	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read example, got error: %s", err))
-	//     return
-	// }
-	//  r.provider.client
+	client := r.provider.GetClient()
+
+	if err := read(ctx, client, &state); err != nil {
+		resp.Diagnostics.AddError("Client Error", err.Error())
+		return
+	}
 
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 }
 
 func (r deploymentResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data DeploymentData
+	var data Deployment
 
 	diags := req.Plan.Get(ctx, &data)
 	resp.Diagnostics.Append(diags...)
@@ -1156,7 +1165,7 @@ func (r deploymentResource) Update(ctx context.Context, req resource.UpdateReque
 }
 
 func (r deploymentResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var data DeploymentData
+	var data Deployment
 
 	diags := req.State.Get(ctx, &data)
 	resp.Diagnostics.Append(diags...)
