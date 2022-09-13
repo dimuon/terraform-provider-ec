@@ -59,6 +59,7 @@ var strategiesList = []string{
 
 func (t DeploymentResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
+		Version: 1,
 		// This description is used by the documentation generator and the language server.
 		MarkdownDescription: "Elastic Cloud Deployment resource",
 
@@ -71,6 +72,7 @@ func (t DeploymentResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, di
 			"alias": {
 				Type:     types.StringType,
 				Computed: true,
+				Optional: true,
 			},
 			"version": {
 				Type:        types.StringType,
@@ -136,7 +138,7 @@ func (t DeploymentResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, di
 				MaxItems:    1,
 				Attributes: map[string]tfsdk.Attribute{
 					"autoscale": {
-						Type:        types.BoolType,
+						Type:        types.StringType,
 						Description: `Enable or disable autoscaling. Defaults to the setting coming from the deployment template. Accepted values are "true" or "false".`,
 						Computed:    true,
 						Optional:    true,
@@ -175,6 +177,30 @@ func (t DeploymentResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, di
 						Description: "The Elasticsearch resource HTTPs endpoint",
 						Computed:    true,
 					},
+					"trust_account": {
+						Description: "Optional Elasticsearch account trust settings.",
+						Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
+							"account_id": {
+								Description: "The ID of the Account.",
+								Type:        types.StringType,
+								Required:    true,
+							},
+							"trust_all": {
+								Description: "If true, all clusters in this account will by default be trusted and the `trust_allowlist` is ignored.",
+								Type:        types.BoolType,
+								Required:    true,
+							},
+							"trust_allowlist": {
+								Description: "The list of clusters to trust. Only used when `trust_all` is false.",
+								Type: types.SetType{
+									ElemType: types.StringType,
+								},
+								Optional: true,
+							},
+						}),
+						Computed: true,
+						Optional: true,
+					},
 				},
 
 				Blocks: map[string]tfsdk.Block{
@@ -209,7 +235,7 @@ func (t DeploymentResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, di
 								},
 							},
 							"zone_count": {
-								Type:        types.StringType,
+								Type:        types.Int64Type,
 								Description: `Optional number of zones that the Elasticsearch cluster will span. This is used to set HA`,
 								Computed:    true,
 								Optional:    true,
@@ -245,6 +271,53 @@ func (t DeploymentResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, di
 								Description: `The computed list of node roles for the current topology element`,
 								Computed:    true,
 							},
+							// "autoscaling": {
+							// 	Description: "Optional Elasticsearch autoscaling settings, such a maximum and minimum size and resources.",
+							// 	Optional:    true,
+							// 	Computed:    true,
+							// 	Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+							// 		"max_size_resource": {
+							// 			Description: "Maximum resource type for the maximum autoscaling setting.",
+							// 			Type:        types.StringType,
+							// 			Optional:    true,
+							// 			Computed:    true,
+							// 		},
+							// 		"max_size": {
+							// 			Description: "Maximum size value for the maximum autoscaling setting.",
+							// 			Type:        types.StringType,
+							// 			Optional:    true,
+							// 			Computed:    true,
+							// 		},
+							// 		"min_size_resource": {
+							// 			Description: "Minimum resource type for the minimum autoscaling setting.",
+							// 			Type:        types.StringType,
+							// 			Optional:    true,
+							// 			Computed:    true,
+							// 		},
+							// 		"min_size": {
+							// 			Description: "Minimum size value for the minimum autoscaling setting.",
+							// 			Type:        types.StringType,
+							// 			Optional:    true,
+							// 			Computed:    true,
+							// 		},
+							// 		"policy_override_json": {
+							// 			Type:        types.StringType,
+							// 			Description: "Computed policy overrides set directly via the API or other clients.",
+							// 			Computed:    true,
+							// 		},
+							// 	}),
+							// 	// Type: types.ListType{
+							// 	// 	ElemType: types.ObjectType{
+							// 	// 		AttrTypes: map[string]attr.Type{
+							// 	// 			"max_size_resource":    types.StringType,
+							// 	// 			"max_size":             types.StringType,
+							// 	// 			"min_size_resource":    types.StringType,
+							// 	// 			"min_size":             types.StringType,
+							// 	// 			"policy_override_json": types.StringType,
+							// 	// 		},
+							// 	// 	},
+							// 	// },
+							// },
 						},
 
 						Blocks: map[string]tfsdk.Block{
@@ -453,31 +526,6 @@ func (t DeploymentResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, di
 								Description: "Bundle or plugin URL, the extension URL can be obtained from the `ec_deployment_extension.<name>.url` attribute or the API and cannot be a random HTTP address that is hosted elsewhere.",
 								Type:        types.StringType,
 								Required:    true,
-							},
-						},
-					},
-
-					"trust_account": {
-						NestingMode: tfsdk.BlockNestingModeSet,
-						Description: "Optional Elasticsearch account trust settings.",
-						MinItems:    0,
-						Attributes: map[string]tfsdk.Attribute{
-							"account_id": {
-								Description: "The ID of the Account.",
-								Type:        types.StringType,
-								Required:    true,
-							},
-							"trust_all": {
-								Description: "If true, all clusters in this account will by default be trusted and the `trust_allowlist` is ignored.",
-								Type:        types.BoolType,
-								Required:    true,
-							},
-							"trust_allowlist": {
-								Description: "The list of clusters to trust. Only used when `trust_all` is false.",
-								Type: types.SetType{
-									ElemType: types.StringType,
-								},
-								Optional: true,
 							},
 						},
 					},
