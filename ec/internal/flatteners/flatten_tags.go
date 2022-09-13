@@ -26,10 +26,6 @@ import (
 // flattenTags takes in Deployment Metadata resource models and returns its
 // Tags in flattened form.
 func FlattenTags(metadataItems []*models.MetadataItem) types.Map {
-	if len(metadataItems) == 0 {
-		return types.Map{ElemType: types.StringType, Elems: map[string]attr.Value{}}
-	}
-
 	var tags = make(map[string]attr.Value)
 	for _, res := range metadataItems {
 		if res.Key != nil {

@@ -27,27 +27,29 @@ import (
 )
 
 type Deployment struct {
-	Id                    types.String       `tfsdk:"id"`
-	Alias                 types.String       `tfsdk:"alias"`
-	Version               types.String       `tfsdk:"version"`
-	Region                types.String       `tfsdk:"region"`
-	DeploymentTemplateId  types.String       `tfsdk:"deployment_template_id"`
-	Name                  types.String       `tfsdk:"name"`
-	RequestId             types.String       `tfsdk:"request_id"`
-	ElasticsearchUsername types.String       `tfsdk:"elasticsearch_username"`
-	ElasticsearchPassword types.String       `tfsdk:"elasticsearch_password"`
-	ApmSecretToken        types.String       `tfsdk:"apm_secret_token"`
-	TrafficFilter         types.Set          `tfsdk:"traffic_filter"`
-	Tags                  types.Map          `tfsdk:"tags"`
-	Elasticsearch         Elasticsearch      `tfsdk:"elasticsearch"`
-	Kibana                Kibana             `tfsdk:"kibana"`
-	Apm                   Apm                `tfsdk:"apm"`
-	IntegrationsServer    IntegrationsServer `tfsdk:"integrations_server"`
-	EnterpriseSearch      EnterpriseSearch   `tfsdk:"enterprise_search"`
-	Observability         Observability      `tfsdk:"observability"`
+	Id                    types.String         `tfsdk:"id"`
+	Alias                 types.String         `tfsdk:"alias"`
+	Version               types.String         `tfsdk:"version"`
+	Region                types.String         `tfsdk:"region"`
+	DeploymentTemplateId  types.String         `tfsdk:"deployment_template_id"`
+	Name                  types.String         `tfsdk:"name"`
+	RequestId             types.String         `tfsdk:"request_id"`
+	ElasticsearchUsername types.String         `tfsdk:"elasticsearch_username"`
+	ElasticsearchPassword types.String         `tfsdk:"elasticsearch_password"`
+	ApmSecretToken        types.String         `tfsdk:"apm_secret_token"`
+	TrafficFilter         []string             `tfsdk:"traffic_filter"`
+	Tags                  types.Map            `tfsdk:"tags"`
+	Elasticsearch         Elasticsearches      `tfsdk:"elasticsearch"`
+	Kibana                []Kibana             `tfsdk:"kibana"`
+	Apm                   []Apm                `tfsdk:"apm"`
+	IntegrationsServer    []IntegrationsServer `tfsdk:"integrations_server"`
+	EnterpriseSearch      []EnterpriseSearch   `tfsdk:"enterprise_search"`
+	Observability         []Observability      `tfsdk:"observability"`
 }
 
-func (dep *Deployment) fromModel(res *models.DeploymentGetResponse, remotes models.RemoteResources) error {
+type Elasticsearches []Elasticsearch
+
+func (dep *Deployment) fromModel(res *models.DeploymentGetResponse, remotes *models.RemoteResources) error {
 	if res.Name == nil {
 		return fmt.Errorf("server response doesn't contain name")
 	}
@@ -55,7 +57,7 @@ func (dep *Deployment) fromModel(res *models.DeploymentGetResponse, remotes mode
 
 	dep.Alias.Value = res.Alias
 
-	if res.Metadata != nil {
+	if res.Metadata != nil && len(res.Metadata.Tags) >= 0 {
 		dep.Tags = flatteners.FlattenTags(res.Metadata.Tags)
 	}
 
@@ -81,9 +83,32 @@ func (dep *Deployment) fromModel(res *models.DeploymentGetResponse, remotes mode
 			return fmt.Errorf("failed reading deployment: %w", err)
 		}
 
-		if len(res.Resources.Elasticsearch) > 0 && util.IsCurrentEsPlanEmpty(res.Resources.Elasticsearch[0]) || isEsResourceStopped(res.Resources.Elasticsearch[0]) {
-			dep.Elasticsearch.fromModel(res.Resources.Elasticsearch[0], *res.Name, remotes)
+		if err := dep.Elasticsearch.fromModel(res.Resources.Elasticsearch, remotes); err != nil {
+			return err
 		}
+	}
+
+	return nil
+}
+
+func (ess *Elasticsearches) fromModel(in []*models.ElasticsearchResourceInfo, remotes *models.RemoteResources) error {
+	if len(in) == 0 {
+		return nil
+	}
+
+	if *ess == nil {
+		*ess = make([]Elasticsearch, 0, len(in))
+	}
+
+	for _, model := range in {
+		if util.IsCurrentEsPlanEmpty(model) || isEsResourceStopped(model) {
+			continue
+		}
+		var es Elasticsearch
+		if err := es.fromModel(model, remotes); err != nil {
+			return err
+		}
+		*ess = append(*ess, es)
 	}
 
 	return nil
@@ -97,7 +122,7 @@ type ElasticsearchSnapshotSource struct {
 type ElasticsearchTrustAccount struct {
 	AccountId      types.String `tfsdk:"account_id"`
 	TrustAll       types.Bool   `tfsdk:"trust_all"`
-	TrustAllowlist types.Set    `tfsdk:"trust_allowlist"`
+	TrustAllowlist []string     `tfsdk:"trust_allowlist"`
 }
 
 type ElasticsearchTrustExternal struct {
