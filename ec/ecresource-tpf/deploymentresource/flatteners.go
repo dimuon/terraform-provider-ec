@@ -28,7 +28,7 @@ import (
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
 )
 
-func modelToState(ctx context.Context, res *models.DeploymentGetResponse, remotes models.RemoteResources, state *Deployment) error {
+func modelToState(ctx context.Context, res *models.DeploymentGetResponse, remotes *models.RemoteResources, state *Deployment) error {
 	var dep Deployment
 
 	if err := dep.fromModel(res, remotes); err != nil {
@@ -36,89 +36,6 @@ func modelToState(ctx context.Context, res *models.DeploymentGetResponse, remote
 	}
 
 	*state = dep
-
-	// if res.Name == nil {
-	// 	return fmt.Errorf("server response doesn't contain name")
-	// }
-	// state.Name.Value = *res.Name
-
-	// state.Alias.Value = res.Alias
-
-	// if res.Metadata != nil {
-	// 	state.Tags = flatteners.FlattenTags(res.Metadata.Tags)
-	// }
-
-	// if res.Resources != nil {
-	// 	var err error
-
-	// 	state.DeploymentTemplateId.Value, err = getDeploymentTemplateID(res.Resources)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-
-	// 	state.Region.Value = getRegion(res.Resources)
-
-	// 	// We're reconciling the version and storing the lowest version of any
-	// 	// of the deployment resources. This ensures that if an upgrade fails,
-	// 	// the state version will be lower than the desired version, making
-	// 	// retries possible. Once more resource types are added, the function
-	// 	// needs to be modified to check those as well.
-	// 	state.Version.Value, err = getLowestVersion(res.Resources)
-	// 	if err != nil {
-	// 		// This code path is highly unlikely, but we're bubbling up the
-	// 		// error in case one of the versions isn't parseable by semver.
-	// 		return fmt.Errorf("failed reading deployment: %w", err)
-	// 	}
-
-	// 	esFlattened, err := flattenEsResources(res.Resources.Elasticsearch, *res.Name, remotes)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	// state.Elasticsearch =
-	// 	if err := d.Set("elasticsearch", esFlattened); err != nil {
-	// 		return err
-	// 	}
-
-	// 	kibanaFlattened := flattenKibanaResources(res.Resources.Kibana, *res.Name)
-	// 	if len(kibanaFlattened) > 0 {
-	// 		if err := d.Set("kibana", kibanaFlattened); err != nil {
-	// 			return err
-	// 		}
-	// 	}
-
-	// 	apmFlattened := flattenApmResources(res.Resources.Apm, *res.Name)
-	// 	if len(apmFlattened) > 0 {
-	// 		if err := d.Set("apm", apmFlattened); err != nil {
-	// 			return err
-	// 		}
-	// 	}
-
-	// 	integrationsServerFlattened := flattenIntegrationsServerResources(res.Resources.IntegrationsServer, *res.Name)
-	// 	if len(integrationsServerFlattened) > 0 {
-	// 		if err := d.Set("integrations_server", integrationsServerFlattened); err != nil {
-	// 			return err
-	// 		}
-	// 	}
-
-	// 	enterpriseSearchFlattened := flattenEssResources(res.Resources.EnterpriseSearch, *res.Name)
-	// 	if len(enterpriseSearchFlattened) > 0 {
-	// 		if err := d.Set("enterprise_search", enterpriseSearchFlattened); err != nil {
-	// 			return err
-	// 		}
-	// 	}
-
-	// 	if settings := flattenTrafficFiltering(res.Settings); settings != nil {
-	// 		if err := d.Set("traffic_filter", settings); err != nil {
-	// 			return err
-	// 		}
-	// 	}
-
-	// 	if observability := flattenObservability(res.Settings); len(observability) > 0 {
-	// 		if err := d.Set("observability", observability); err != nil {
-	// 			return err
-	// 		}
-	// 	}
-	// }
 
 	return nil
 }

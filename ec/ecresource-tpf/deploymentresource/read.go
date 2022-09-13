@@ -56,7 +56,7 @@ func read(ctx context.Context, client *api.API, state *Deployment) error {
 
 	remotes, err := esremoteclustersapi.Get(esremoteclustersapi.GetParams{
 		API: client, DeploymentID: state.Id.Value,
-		RefID: state.Elasticsearch.RefId.Value,
+		RefID: state.Elasticsearch[0].RefId.Value,
 	})
 	if err != nil {
 		return fmt.Errorf("failed reading remote clusters - %w", err)
@@ -65,7 +65,7 @@ func read(ctx context.Context, client *api.API, state *Deployment) error {
 		remotes = &models.RemoteResources{}
 	}
 
-	if err := modelToState(ctx, res, *remotes, state); err != nil {
+	if err := modelToState(ctx, res, remotes, state); err != nil {
 		return err
 	}
 
