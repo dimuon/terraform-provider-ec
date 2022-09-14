@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
-	"github.com/elastic/terraform-provider-ec/ec/internal/flatteners"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -38,7 +37,7 @@ type Deployment struct {
 	ElasticsearchPassword types.String         `tfsdk:"elasticsearch_password"`
 	ApmSecretToken        types.String         `tfsdk:"apm_secret_token"`
 	TrafficFilter         []string             `tfsdk:"traffic_filter"`
-	Tags                  types.Map            `tfsdk:"tags"`
+	Tags                  map[string]string    `tfsdk:"tags"`
 	Elasticsearch         Elasticsearches      `tfsdk:"elasticsearch"`
 	Kibana                []Kibana             `tfsdk:"kibana"`
 	Apm                   []Apm                `tfsdk:"apm"`
@@ -58,7 +57,7 @@ func (dep *Deployment) fromModel(res *models.DeploymentGetResponse, remotes *mod
 	dep.Alias.Value = res.Alias
 
 	if res.Metadata != nil && len(res.Metadata.Tags) >= 0 {
-		dep.Tags = flatteners.FlattenTags(res.Metadata.Tags)
+		// dep.Tags = flatteners.FlattenTags(res.Metadata.Tags)
 	}
 
 	if res.Resources != nil {
