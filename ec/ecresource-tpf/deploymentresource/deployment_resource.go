@@ -177,30 +177,30 @@ func (t DeploymentResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, di
 						Description: "The Elasticsearch resource HTTPs endpoint",
 						Computed:    true,
 					},
-					"trust_account": {
-						Description: "Optional Elasticsearch account trust settings.",
-						Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
-							"account_id": {
-								Description: "The ID of the Account.",
-								Type:        types.StringType,
-								Required:    true,
-							},
-							"trust_all": {
-								Description: "If true, all clusters in this account will by default be trusted and the `trust_allowlist` is ignored.",
-								Type:        types.BoolType,
-								Required:    true,
-							},
-							"trust_allowlist": {
-								Description: "The list of clusters to trust. Only used when `trust_all` is false.",
-								Type: types.SetType{
-									ElemType: types.StringType,
-								},
-								Optional: true,
-							},
-						}),
-						Computed: true,
-						Optional: true,
-					},
+					// "trust_account": {
+					// 	Description: "Optional Elasticsearch account trust settings.",
+					// 	Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
+					// 		"account_id": {
+					// 			Description: "The ID of the Account.",
+					// 			Type:        types.StringType,
+					// 			Required:    true,
+					// 		},
+					// 		"trust_all": {
+					// 			Description: "If true, all clusters in this account will by default be trusted and the `trust_allowlist` is ignored.",
+					// 			Type:        types.BoolType,
+					// 			Required:    true,
+					// 		},
+					// 		"trust_allowlist": {
+					// 			Description: "The list of clusters to trust. Only used when `trust_all` is false.",
+					// 			Type: types.SetType{
+					// 				ElemType: types.StringType,
+					// 			},
+					// 			Optional: true,
+					// 		},
+					// 	}),
+					// 	Computed: true,
+					// 	Optional: true,
+					// },
 				},
 
 				Blocks: map[string]tfsdk.Block{
@@ -528,6 +528,31 @@ func (t DeploymentResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, di
 								Required:    true,
 							},
 						},
+					},
+
+					"trust_account": {
+						NestingMode: tfsdk.BlockNestingModeSet,
+						Description: "Optional Elasticsearch account trust settings.",
+						Attributes: map[string]tfsdk.Attribute{
+							"account_id": {
+								Description: "The ID of the Account.",
+								Type:        types.StringType,
+								Required:    true,
+							},
+							"trust_all": {
+								Description: "If true, all clusters in this account will by default be trusted and the `trust_allowlist` is ignored.",
+								Type:        types.BoolType,
+								Required:    true,
+							},
+							"trust_allowlist": {
+								Description: "The list of clusters to trust. Only used when `trust_all` is false.",
+								Type: types.SetType{
+									ElemType: types.StringType,
+								},
+								Optional: true,
+							},
+						},
+						MinItems: 0,
 					},
 
 					"trust_external": {
