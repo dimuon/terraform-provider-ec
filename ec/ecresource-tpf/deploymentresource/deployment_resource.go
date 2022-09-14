@@ -185,38 +185,11 @@ func (r *Resource) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostic
 						Description: "The Elasticsearch resource HTTPs endpoint",
 						Computed:    true,
 					},
-					// "trust_account": {
-					// 	Description: "Optional Elasticsearch account trust settings.",
-					// 	Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
-					// 		"account_id": {
-					// 			Description: "The ID of the Account.",
-					// 			Type:        types.StringType,
-					// 			Required:    true,
-					// 		},
-					// 		"trust_all": {
-					// 			Description: "If true, all clusters in this account will by default be trusted and the `trust_allowlist` is ignored.",
-					// 			Type:        types.BoolType,
-					// 			Required:    true,
-					// 		},
-					// 		"trust_allowlist": {
-					// 			Description: "The list of clusters to trust. Only used when `trust_all` is false.",
-					// 			Type: types.SetType{
-					// 				ElemType: types.StringType,
-					// 			},
-					// 			Optional: true,
-					// 		},
-					// 	}),
-					// 	Computed: true,
-					// 	Optional: true,
-					// },
-				},
-
-				Blocks: map[string]tfsdk.Block{
 					"topology": {
-						NestingMode: tfsdk.BlockNestingModeList,
-						MinItems:    0,
+						Computed:    true,
+						Optional:    true,
 						Description: `Optional topology element which must be set once but can be set multiple times to compose complex topologies`,
-						Attributes: map[string]tfsdk.Attribute{
+						Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 							"id": {
 								Type:        types.StringType,
 								Description: `Required topology ID from the deployment template`,
@@ -279,62 +252,11 @@ func (r *Resource) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostic
 								Description: `The computed list of node roles for the current topology element`,
 								Computed:    true,
 							},
-							// "autoscaling": {
-							// 	Description: "Optional Elasticsearch autoscaling settings, such a maximum and minimum size and resources.",
-							// 	Optional:    true,
-							// 	Computed:    true,
-							// 	Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
-							// 		"max_size_resource": {
-							// 			Description: "Maximum resource type for the maximum autoscaling setting.",
-							// 			Type:        types.StringType,
-							// 			Optional:    true,
-							// 			Computed:    true,
-							// 		},
-							// 		"max_size": {
-							// 			Description: "Maximum size value for the maximum autoscaling setting.",
-							// 			Type:        types.StringType,
-							// 			Optional:    true,
-							// 			Computed:    true,
-							// 		},
-							// 		"min_size_resource": {
-							// 			Description: "Minimum resource type for the minimum autoscaling setting.",
-							// 			Type:        types.StringType,
-							// 			Optional:    true,
-							// 			Computed:    true,
-							// 		},
-							// 		"min_size": {
-							// 			Description: "Minimum size value for the minimum autoscaling setting.",
-							// 			Type:        types.StringType,
-							// 			Optional:    true,
-							// 			Computed:    true,
-							// 		},
-							// 		"policy_override_json": {
-							// 			Type:        types.StringType,
-							// 			Description: "Computed policy overrides set directly via the API or other clients.",
-							// 			Computed:    true,
-							// 		},
-							// 	}),
-							// 	// Type: types.ListType{
-							// 	// 	ElemType: types.ObjectType{
-							// 	// 		AttrTypes: map[string]attr.Type{
-							// 	// 			"max_size_resource":    types.StringType,
-							// 	// 			"max_size":             types.StringType,
-							// 	// 			"min_size_resource":    types.StringType,
-							// 	// 			"min_size":             types.StringType,
-							// 	// 			"policy_override_json": types.StringType,
-							// 	// 		},
-							// 	// 	},
-							// 	// },
-							// },
-						},
-
-						Blocks: map[string]tfsdk.Block{
 							"autoscaling": {
-								NestingMode: tfsdk.BlockNestingModeList,
-								MinItems:    0,
-								MaxItems:    1,
 								Description: "Optional Elasticsearch autoscaling settings, such a maximum and minimum size and resources.",
-								Attributes: map[string]tfsdk.Attribute{
+								Optional:    true,
+								Computed:    true,
+								Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 									"max_size_resource": {
 										Description: "Maximum resource type for the maximum autoscaling setting.",
 										Type:        types.StringType,
@@ -364,15 +286,12 @@ func (r *Resource) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostic
 										Description: "Computed policy overrides set directly via the API or other clients.",
 										Computed:    true,
 									},
-								},
+								}),
 							},
-
 							"config": {
-								NestingMode: tfsdk.BlockNestingModeList,
-								MinItems:    0,
-								MaxItems:    1,
 								Description: `Computed read-only configuration to avoid unsetting plan settings from 'topology.elasticsearch'`,
-								Attributes: map[string]tfsdk.Attribute{
+								Computed:    true,
+								Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 									"plugins": {
 										Type: types.SetType{
 											ElemType: types.StringType,
@@ -400,10 +319,241 @@ func (r *Resource) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostic
 										Description: `YAML-formatted admin (ECE) level "elasticsearch.yml" setting overrides`,
 										Computed:    true,
 									},
-								},
+								}),
 							},
-						},
+
+							// Type: types.ListType{
+							// 	ElemType: types.ObjectType{
+							// 		AttrTypes: map[string]attr.Type{
+							// 			"max_size_resource":    types.StringType,
+							// 			"max_size":             types.StringType,
+							// 			"min_size_resource":    types.StringType,
+							// 			"min_size":             types.StringType,
+							// 			"policy_override_json": types.StringType,
+							// 		},
+							// 	},
+							// },
+						}),
 					},
+					// "trust_account": {
+					// 	Description: "Optional Elasticsearch account trust settings.",
+					// 	Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
+					// 		"account_id": {
+					// 			Description: "The ID of the Account.",
+					// 			Type:        types.StringType,
+					// 			Required:    true,
+					// 		},
+					// 		"trust_all": {
+					// 			Description: "If true, all clusters in this account will by default be trusted and the `trust_allowlist` is ignored.",
+					// 			Type:        types.BoolType,
+					// 			Required:    true,
+					// 		},
+					// 		"trust_allowlist": {
+					// 			Description: "The list of clusters to trust. Only used when `trust_all` is false.",
+					// 			Type: types.SetType{
+					// 				ElemType: types.StringType,
+					// 			},
+					// 			Optional: true,
+					// 		},
+					// 	}),
+					// 	Computed: true,
+					// 	Optional: true,
+					// },
+				},
+
+				Blocks: map[string]tfsdk.Block{
+					// "topology": {
+					// 	NestingMode: tfsdk.BlockNestingModeList,
+					// 	MinItems:    0,
+					// 	Description: `Optional topology element which must be set once but can be set multiple times to compose complex topologies`,
+					// 	Attributes: map[string]tfsdk.Attribute{
+					// 		"id": {
+					// 			Type:        types.StringType,
+					// 			Description: `Required topology ID from the deployment template`,
+					// 			Required:    true,
+					// 		},
+					// 		"instance_configuration_id": {
+					// 			Type:        types.StringType,
+					// 			Description: `Computed Instance Configuration ID of the topology element`,
+					// 			Computed:    true,
+					// 		},
+					// 		"size": {
+					// 			Type:        types.StringType,
+					// 			Description: `Optional amount of memory per node in the "<size in GB>g" notation`,
+					// 			Computed:    true,
+					// 			Optional:    true,
+					// 		},
+					// 		"size_resource": {
+					// 			Type:        types.StringType,
+					// 			Description: `Optional size type, defaults to "memory".`,
+					// 			Optional:    true,
+					// 			Computed:    true,
+					// 			PlanModifiers: []tfsdk.AttributePlanModifier{
+					// 				planmodifier.DefaultValue(types.String{Value: "memory"}),
+					// 			},
+					// 		},
+					// 		"zone_count": {
+					// 			Type:        types.Int64Type,
+					// 			Description: `Optional number of zones that the Elasticsearch cluster will span. This is used to set HA`,
+					// 			Computed:    true,
+					// 			Optional:    true,
+					// 		},
+					// 		"node_type_data": {
+					// 			Type:        types.StringType,
+					// 			Description: `The node type for the Elasticsearch Topology element (data node)`,
+					// 			Computed:    true,
+					// 			Optional:    true,
+					// 		},
+					// 		"node_type_master": {
+					// 			Type:        types.StringType,
+					// 			Description: `The node type for the Elasticsearch Topology element (master node)`,
+					// 			Computed:    true,
+					// 			Optional:    true,
+					// 		},
+					// 		"node_type_ingest": {
+					// 			Type:        types.StringType,
+					// 			Description: `The node type for the Elasticsearch Topology element (ingest node)`,
+					// 			Computed:    true,
+					// 			Optional:    true,
+					// 		},
+					// 		"node_type_ml": {
+					// 			Type:        types.StringType,
+					// 			Description: `The node type for the Elasticsearch Topology element (machine learning node)`,
+					// 			Computed:    true,
+					// 			Optional:    true,
+					// 		},
+					// 		"node_roles": {
+					// 			Type: types.SetType{
+					// 				ElemType: types.StringType,
+					// 			},
+					// 			Description: `The computed list of node roles for the current topology element`,
+					// 			Computed:    true,
+					// 		},
+					// 		// "autoscaling": {
+					// 		// 	Description: "Optional Elasticsearch autoscaling settings, such a maximum and minimum size and resources.",
+					// 		// 	Optional:    true,
+					// 		// 	Computed:    true,
+					// 		// 	Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+					// 		// 		"max_size_resource": {
+					// 		// 			Description: "Maximum resource type for the maximum autoscaling setting.",
+					// 		// 			Type:        types.StringType,
+					// 		// 			Optional:    true,
+					// 		// 			Computed:    true,
+					// 		// 		},
+					// 		// 		"max_size": {
+					// 		// 			Description: "Maximum size value for the maximum autoscaling setting.",
+					// 		// 			Type:        types.StringType,
+					// 		// 			Optional:    true,
+					// 		// 			Computed:    true,
+					// 		// 		},
+					// 		// 		"min_size_resource": {
+					// 		// 			Description: "Minimum resource type for the minimum autoscaling setting.",
+					// 		// 			Type:        types.StringType,
+					// 		// 			Optional:    true,
+					// 		// 			Computed:    true,
+					// 		// 		},
+					// 		// 		"min_size": {
+					// 		// 			Description: "Minimum size value for the minimum autoscaling setting.",
+					// 		// 			Type:        types.StringType,
+					// 		// 			Optional:    true,
+					// 		// 			Computed:    true,
+					// 		// 		},
+					// 		// 		"policy_override_json": {
+					// 		// 			Type:        types.StringType,
+					// 		// 			Description: "Computed policy overrides set directly via the API or other clients.",
+					// 		// 			Computed:    true,
+					// 		// 		},
+					// 		// 	}),
+					// 		// 	// Type: types.ListType{
+					// 		// 	// 	ElemType: types.ObjectType{
+					// 		// 	// 		AttrTypes: map[string]attr.Type{
+					// 		// 	// 			"max_size_resource":    types.StringType,
+					// 		// 	// 			"max_size":             types.StringType,
+					// 		// 	// 			"min_size_resource":    types.StringType,
+					// 		// 	// 			"min_size":             types.StringType,
+					// 		// 	// 			"policy_override_json": types.StringType,
+					// 		// 	// 		},
+					// 		// 	// 	},
+					// 		// 	// },
+					// 		// },
+					// 	},
+
+					// 	Blocks: map[string]tfsdk.Block{
+					// 		"autoscaling": {
+					// 			NestingMode: tfsdk.BlockNestingModeList,
+					// 			MinItems:    0,
+					// 			MaxItems:    1,
+					// 			Description: "Optional Elasticsearch autoscaling settings, such a maximum and minimum size and resources.",
+					// 			Attributes: map[string]tfsdk.Attribute{
+					// 				"max_size_resource": {
+					// 					Description: "Maximum resource type for the maximum autoscaling setting.",
+					// 					Type:        types.StringType,
+					// 					Optional:    true,
+					// 					Computed:    true,
+					// 				},
+					// 				"max_size": {
+					// 					Description: "Maximum size value for the maximum autoscaling setting.",
+					// 					Type:        types.StringType,
+					// 					Optional:    true,
+					// 					Computed:    true,
+					// 				},
+					// 				"min_size_resource": {
+					// 					Description: "Minimum resource type for the minimum autoscaling setting.",
+					// 					Type:        types.StringType,
+					// 					Optional:    true,
+					// 					Computed:    true,
+					// 				},
+					// 				"min_size": {
+					// 					Description: "Minimum size value for the minimum autoscaling setting.",
+					// 					Type:        types.StringType,
+					// 					Optional:    true,
+					// 					Computed:    true,
+					// 				},
+					// 				"policy_override_json": {
+					// 					Type:        types.StringType,
+					// 					Description: "Computed policy overrides set directly via the API or other clients.",
+					// 					Computed:    true,
+					// 				},
+					// 			},
+					// 		},
+
+					// 		"config": {
+					// 			NestingMode: tfsdk.BlockNestingModeList,
+					// 			MinItems:    0,
+					// 			MaxItems:    1,
+					// 			Description: `Computed read-only configuration to avoid unsetting plan settings from 'topology.elasticsearch'`,
+					// 			Attributes: map[string]tfsdk.Attribute{
+					// 				"plugins": {
+					// 					Type: types.SetType{
+					// 						ElemType: types.StringType,
+					// 					},
+					// 					Description: "List of Elasticsearch supported plugins, which vary from version to version. Check the Stack Pack version to see which plugins are supported for each version. This is currently only available from the UI and [ecctl](https://www.elastic.co/guide/en/ecctl/master/ecctl_stack_list.html)",
+					// 					Computed:    true,
+					// 				},
+					// 				"user_settings_json": {
+					// 					Type:        types.StringType,
+					// 					Description: `JSON-formatted user level "elasticsearch.yml" setting overrides`,
+					// 					Computed:    true,
+					// 				},
+					// 				"user_settings_override_json": {
+					// 					Type:        types.StringType,
+					// 					Description: `JSON-formatted admin (ECE) level "elasticsearch.yml" setting overrides`,
+					// 					Computed:    true,
+					// 				},
+					// 				"user_settings_yaml": {
+					// 					Type:        types.StringType,
+					// 					Description: `YAML-formatted user level "elasticsearch.yml" setting overrides`,
+					// 					Computed:    true,
+					// 				},
+					// 				"user_settings_override_yaml": {
+					// 					Type:        types.StringType,
+					// 					Description: `YAML-formatted admin (ECE) level "elasticsearch.yml" setting overrides`,
+					// 					Computed:    true,
+					// 				},
+					// 			},
+					// 		},
+					// 	},
+					// },
 
 					"config": {
 						NestingMode: tfsdk.BlockNestingModeList,
