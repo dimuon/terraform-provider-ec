@@ -73,9 +73,9 @@ func (r *Resource) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostic
 
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
-				Type:     types.StringType,
-				Computed: true,
-				Optional: true,
+				Type:                types.StringType,
+				Computed:            true,
+				MarkdownDescription: "Unique identifier of this resource.",
 			},
 			"alias": {
 				Type:     types.StringType,

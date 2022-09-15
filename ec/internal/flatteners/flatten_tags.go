@@ -35,3 +35,15 @@ func FlattenTags(metadataItems []*models.MetadataItem) types.Map {
 	}
 	return types.Map{ElemType: types.StringType, Elems: tags}
 }
+
+// flattenTags takes in Deployment Metadata resource models and returns its
+// Tags as Go map
+func TagsToMap(metadataItems []*models.MetadataItem) (res map[string]string) {
+	res = make(map[string]string)
+	for _, item := range metadataItems {
+		if item.Key != nil {
+			res[*item.Key] = *item.Value
+		}
+	}
+	return
+}

@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
+	"github.com/elastic/terraform-provider-ec/ec/internal/flatteners"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -48,43 +49,52 @@ type Deployment struct {
 
 type Elasticsearches []Elasticsearch
 
+func missingField(field string) error {
+	return fmt.Errorf("server response doesn't contain deployment '%s'", field)
+}
+
 func (dep *Deployment) fromModel(res *models.DeploymentGetResponse, remotes *models.RemoteResources) error {
-	if res.Name == nil {
-		return fmt.Errorf("server response doesn't contain name")
+	if res.ID == nil {
+		return missingField("ID")
 	}
-	dep.Name.Value = *res.Name
+	dep.Id.Value = *res.ID
 
 	dep.Alias.Value = res.Alias
 
-	if res.Metadata != nil && len(res.Metadata.Tags) >= 0 {
-		// dep.Tags = flatteners.FlattenTags(res.Metadata.Tags)
+	if res.Name == nil {
+		return missingField("Name")
+	}
+	dep.Name.Value = *res.Name
+
+	dep.Tags = flatteners.TagsToMap(res.Metadata.Tags)
+
+	if res.Resources == nil {
+		return nil
 	}
 
-	if res.Resources != nil {
-		var err error
+	var err error
 
-		dep.DeploymentTemplateId.Value, err = getDeploymentTemplateID(res.Resources)
-		if err != nil {
-			return err
-		}
+	dep.DeploymentTemplateId.Value, err = getDeploymentTemplateID(res.Resources)
+	if err != nil {
+		return err
+	}
 
-		dep.Region.Value = getRegion(res.Resources)
+	dep.Region.Value = getRegion(res.Resources)
 
-		// We're reconciling the version and storing the lowest version of any
-		// of the deployment resources. This ensures that if an upgrade fails,
-		// the state version will be lower than the desired version, making
-		// retries possible. Once more resource types are added, the function
-		// needs to be modified to check those as well.
-		dep.Version.Value, err = getLowestVersion(res.Resources)
-		if err != nil {
-			// This code path is highly unlikely, but we're bubbling up the
-			// error in case one of the versions isn't parseable by semver.
-			return fmt.Errorf("failed reading deployment: %w", err)
-		}
+	// We're reconciling the version and storing the lowest version of any
+	// of the deployment resources. This ensures that if an upgrade fails,
+	// the state version will be lower than the desired version, making
+	// retries possible. Once more resource types are added, the function
+	// needs to be modified to check those as well.
+	dep.Version.Value, err = getLowestVersion(res.Resources)
+	if err != nil {
+		// This code path is highly unlikely, but we're bubbling up the
+		// error in case one of the versions isn't parseable by semver.
+		return fmt.Errorf("failed reading deployment: %w", err)
+	}
 
-		if err := dep.Elasticsearch.fromModel(res.Resources.Elasticsearch, remotes); err != nil {
-			return err
-		}
+	if err := dep.Elasticsearch.fromModel(res.Resources.Elasticsearch, remotes); err != nil {
+		return err
 	}
 
 	return nil
