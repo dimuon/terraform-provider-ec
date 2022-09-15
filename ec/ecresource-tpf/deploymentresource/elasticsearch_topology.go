@@ -22,23 +22,32 @@ import (
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 type ElasticsearchTopology struct {
-	Id                      types.String                       `tfsdk:"id"`
-	InstanceConfigurationId types.String                       `tfsdk:"instance_configuration_id"`
-	Size                    types.String                       `tfsdk:"size"`
-	SizeResource            types.String                       `tfsdk:"size_resource"`
-	ZoneCount               types.Int64                        `tfsdk:"zone_count"`
-	NodeTypeData            types.String                       `tfsdk:"node_type_data"`
-	NodeTypeMaster          types.String                       `tfsdk:"node_type_master"`
-	NodeTypeIngest          types.String                       `tfsdk:"node_type_ingest"`
-	NodeTypeMl              types.String                       `tfsdk:"node_type_ml"`
-	NodeRoles               types.Set                          `tfsdk:"node_roles"`
-	Autoscaling             []ElasticsearchTopologyAutoscaling `tfsdk:"autoscaling"`
-	Config                  []ElasticsearchTopologyConfig      `tfsdk:"config"`
+	Id                      types.String                      `tfsdk:"id"`
+	InstanceConfigurationId types.String                      `tfsdk:"instance_configuration_id"`
+	Size                    types.String                      `tfsdk:"size"`
+	SizeResource            types.String                      `tfsdk:"size_resource"`
+	ZoneCount               types.Int64                       `tfsdk:"zone_count"`
+	NodeTypeData            types.String                      `tfsdk:"node_type_data"`
+	NodeTypeMaster          types.String                      `tfsdk:"node_type_master"`
+	NodeTypeIngest          types.String                      `tfsdk:"node_type_ingest"`
+	NodeTypeMl              types.String                      `tfsdk:"node_type_ml"`
+	NodeRoles               []string                          `tfsdk:"node_roles"`
+	Autoscaling             ElasticsearchTopologyAutoscalings `tfsdk:"autoscaling"`
+	Config                  []ElasticsearchTopologyConfig     `tfsdk:"config"`
+}
+
+type ElasticsearchTopologyAutoscalings []ElasticsearchTopologyAutoscaling
+
+func (autos *ElasticsearchTopologyAutoscalings) fromModel(in *models.ElasticsearchClusterTopologyElement) error {
+	if *autos == nil {
+		*autos = make(ElasticsearchTopologyAutoscalings, 1)
+	}
+	(*autos)[0].fromModel(in)
+	return nil
 }
 
 func (est *ElasticsearchTopology) fromModel(topology *models.ElasticsearchClusterTopologyElement) error {
@@ -74,16 +83,12 @@ func (est *ElasticsearchTopology) fromModel(topology *models.ElasticsearchCluste
 	}
 
 	if len(topology.NodeRoles) > 0 {
-		est.NodeRoles.ElemType = types.StringType
-		est.NodeRoles.Elems = make([]attr.Value, 0, len(topology.NodeRoles))
-		for _, role := range topology.NodeRoles {
-			est.NodeRoles.Elems = append(est.NodeRoles.Elems, types.String{Value: role})
-		}
+		est.NodeRoles = append(est.NodeRoles, topology.NodeRoles...)
 	}
 
-	// if err := est.Autoscaling.fromModel(topology); err != nil {
-	// 	return err
-	// }
+	if err := est.Autoscaling.fromModel(topology); err != nil {
+		return err
+	}
 
 	// Computed config object to avoid unsetting legacy topology config settings.
 	// if err := est.Config.fromModel(topology.Elasticsearch); err != nil {
