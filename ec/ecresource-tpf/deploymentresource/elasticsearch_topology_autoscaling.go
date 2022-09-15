@@ -26,6 +26,20 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+type ElasticsearchTopologyAutoscalings []ElasticsearchTopologyAutoscaling
+
+func (autos *ElasticsearchTopologyAutoscalings) fromModel(in *models.ElasticsearchClusterTopologyElement) error {
+	var auto ElasticsearchTopologyAutoscaling
+	auto.fromModel(in)
+
+	if auto != (ElasticsearchTopologyAutoscaling{}) && *autos == nil {
+		*autos = make(ElasticsearchTopologyAutoscalings, 1)
+		(*autos)[0] = auto
+	}
+
+	return nil
+}
+
 type ElasticsearchTopologyAutoscaling struct {
 	MaxSizeResource    types.String `tfsdk:"max_size_resource"`
 	MaxSize            types.String `tfsdk:"max_size"`
@@ -35,6 +49,11 @@ type ElasticsearchTopologyAutoscaling struct {
 }
 
 func (a *ElasticsearchTopologyAutoscaling) fromModel(topology *models.ElasticsearchClusterTopologyElement) error {
+	if ascale := topology.AutoscalingMax; ascale != nil {
+		a.MaxSizeResource.Value = *ascale.Resource
+		a.MaxSize.Value = util.MemoryToState(*ascale.Value)
+	}
+
 	if ascale := topology.AutoscalingMin; ascale != nil {
 		a.MinSizeResource.Value = *ascale.Resource
 		a.MinSize.Value = util.MemoryToState(*ascale.Value)

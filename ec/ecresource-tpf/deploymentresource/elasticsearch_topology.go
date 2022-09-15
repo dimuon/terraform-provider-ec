@@ -37,17 +37,7 @@ type ElasticsearchTopology struct {
 	NodeTypeMl              types.String                      `tfsdk:"node_type_ml"`
 	NodeRoles               []string                          `tfsdk:"node_roles"`
 	Autoscaling             ElasticsearchTopologyAutoscalings `tfsdk:"autoscaling"`
-	Config                  []ElasticsearchTopologyConfig     `tfsdk:"config"`
-}
-
-type ElasticsearchTopologyAutoscalings []ElasticsearchTopologyAutoscaling
-
-func (autos *ElasticsearchTopologyAutoscalings) fromModel(in *models.ElasticsearchClusterTopologyElement) error {
-	if *autos == nil {
-		*autos = make(ElasticsearchTopologyAutoscalings, 1)
-	}
-	(*autos)[0].fromModel(in)
-	return nil
+	Config                  ElasticsearchTopologyConfigs      `tfsdk:"config"`
 }
 
 func (est *ElasticsearchTopology) fromModel(topology *models.ElasticsearchClusterTopologyElement) error {
@@ -90,10 +80,9 @@ func (est *ElasticsearchTopology) fromModel(topology *models.ElasticsearchCluste
 		return err
 	}
 
-	// Computed config object to avoid unsetting legacy topology config settings.
-	// if err := est.Config.fromModel(topology.Elasticsearch); err != nil {
-	// 	return err
-	// }
+	if err := est.Config.fromModel(topology.Elasticsearch); err != nil {
+		return err
+	}
 
 	return nil
 }
