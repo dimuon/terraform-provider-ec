@@ -135,6 +135,7 @@ func (t DeploymentResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, di
 			"elasticsearch": {
 				Description: "Required Elasticsearch resource definition",
 				NestingMode: tfsdk.BlockNestingModeList,
+				MinItems:    1,
 				MaxItems:    1,
 				Attributes: map[string]tfsdk.Attribute{
 					"autoscale": {
