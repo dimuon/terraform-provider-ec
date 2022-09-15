@@ -32,9 +32,10 @@ func (autos *ElasticsearchTopologyAutoscalings) fromModel(in *models.Elasticsear
 	var auto ElasticsearchTopologyAutoscaling
 	auto.fromModel(in)
 
-	if auto != (ElasticsearchTopologyAutoscaling{}) && *autos == nil {
-		*autos = make(ElasticsearchTopologyAutoscalings, 1)
-		(*autos)[0] = auto
+	*autos = nil
+
+	if auto != (ElasticsearchTopologyAutoscaling{}) {
+		*autos = []ElasticsearchTopologyAutoscaling{auto}
 	}
 
 	return nil

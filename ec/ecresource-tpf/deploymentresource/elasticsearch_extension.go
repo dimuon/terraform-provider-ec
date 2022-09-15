@@ -22,6 +22,34 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+type ElasticsearchExtensions []ElasticsearchExtension
+
+func (exts *ElasticsearchExtensions) fromModel(in *models.ElasticsearchConfiguration) error {
+	if len(in.UserBundles) == 0 && len(in.UserPlugins) == 0 {
+		*exts = nil
+		return nil
+	}
+
+	*exts = make(ElasticsearchExtensions, 0, len(in.UserBundles)+len(in.UserPlugins))
+	for _, model := range in.UserBundles {
+		var ext ElasticsearchExtension
+		if err := ext.fromUserBundle(model); err != nil {
+			return err
+		}
+		*exts = append(*exts, ext)
+	}
+
+	for _, model := range in.UserPlugins {
+		var ext ElasticsearchExtension
+		if err := ext.fromUserPlugin(model); err != nil {
+			return err
+		}
+		*exts = append(*exts, ext)
+	}
+
+	return nil
+}
+
 type ElasticsearchExtension struct {
 	Name    types.String `tfsdk:"name"`
 	Type    types.String `tfsdk:"type"`
@@ -29,6 +57,44 @@ type ElasticsearchExtension struct {
 	Url     types.String `tfsdk:"url"`
 }
 
-func (esc *ElasticsearchExtension) fromModel(in []*models.ElasticsearchUserBundle) error {
+func (ext *ElasticsearchExtension) fromUserBundle(in *models.ElasticsearchUserBundle) error {
+	ext.Type.Value = "bundle"
+
+	if in.ElasticsearchVersion == nil {
+		return missingField("ElasticsearchUserBundle.ElasticsearchVersion")
+	}
+	ext.Version.Value = *in.ElasticsearchVersion
+
+	if in.URL == nil {
+		return missingField("ElasticsearchUserBundle.URL")
+	}
+	ext.Url.Value = *in.URL
+
+	if in.Name == nil {
+		return missingField("ElasticsearchUserBundle.Name")
+	}
+	ext.Name.Value = *in.Name
+
+	return nil
+}
+
+func (ext *ElasticsearchExtension) fromUserPlugin(in *models.ElasticsearchUserPlugin) error {
+	ext.Type.Value = "plugin"
+
+	if in.ElasticsearchVersion == nil {
+		return missingField("ElasticsearchUserPlugin.ElasticsearchVersion")
+	}
+	ext.Version.Value = *in.ElasticsearchVersion
+
+	if in.URL == nil {
+		return missingField("ElasticsearchUserPlugin.URL")
+	}
+	ext.Url.Value = *in.URL
+
+	if in.Name == nil {
+		return missingField("ElasticsearchUserPlugin.Name")
+	}
+	ext.Name.Value = *in.Name
+
 	return nil
 }

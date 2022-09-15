@@ -22,6 +22,24 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+type ElasticsearchRemoteClusters []ElasticsearchRemoteCluster
+
+func (rems *ElasticsearchRemoteClusters) fromModel(in []*models.RemoteResourceRef) error {
+	if len(in) == 0 {
+		*rems = nil
+		return nil
+	}
+
+	*rems = make(ElasticsearchRemoteClusters, 0, len(in))
+	for _, model := range in {
+		var remote ElasticsearchRemoteCluster
+		remote.fromModel(model)
+		*rems = append(*rems, remote)
+	}
+
+	return nil
+}
+
 type ElasticsearchRemoteCluster struct {
 	DeploymentId    types.String `tfsdk:"deployment_id"`
 	Alias           types.String `tfsdk:"alias"`
@@ -29,23 +47,21 @@ type ElasticsearchRemoteCluster struct {
 	SkipUnavailable types.Bool   `tfsdk:"skip_unavailable"`
 }
 
-func (rem *ElasticsearchRemoteCluster) fromModel(in models.RemoteResources) error {
-	for _, r := range in.Resources {
-		if r.DeploymentID != nil && *r.DeploymentID != "" {
-			rem.DeploymentId.Value = *r.DeploymentID
-		}
+func (rem *ElasticsearchRemoteCluster) fromModel(in *models.RemoteResourceRef) error {
+	if in.DeploymentID != nil && *in.DeploymentID != "" {
+		rem.DeploymentId.Value = *in.DeploymentID
+	}
 
-		if r.ElasticsearchRefID != nil && *r.ElasticsearchRefID != "" {
-			rem.RefId.Value = *r.ElasticsearchRefID
-		}
+	if in.ElasticsearchRefID != nil && *in.ElasticsearchRefID != "" {
+		rem.RefId.Value = *in.ElasticsearchRefID
+	}
 
-		if r.Alias != nil && *r.Alias != "" {
-			rem.Alias.Value = *r.Alias
-		}
+	if in.Alias != nil && *in.Alias != "" {
+		rem.Alias.Value = *in.Alias
+	}
 
-		if r.SkipUnavailable != nil {
-			rem.SkipUnavailable.Value = *r.SkipUnavailable
-		}
+	if in.SkipUnavailable != nil {
+		rem.SkipUnavailable.Value = *in.SkipUnavailable
 	}
 
 	return nil

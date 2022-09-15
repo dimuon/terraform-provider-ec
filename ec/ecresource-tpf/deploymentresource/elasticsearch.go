@@ -18,7 +18,6 @@
 package deploymentresource
 
 import (
-	"sort"
 	"strconv"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
@@ -36,17 +35,15 @@ type Elasticsearch struct {
 	CloudID        types.String                  `tfsdk:"cloud_id"`
 	HttpEndpoint   types.String                  `tfsdk:"http_endpoint"`
 	HttpsEndpoint  types.String                  `tfsdk:"https_endpoint"`
-	Topology       ElasticSearchTopologies       `tfsdk:"topology"` //  []ElasticsearchTopology
-	Config         []ElasticsearchConfig         `tfsdk:"config"`
-	RemoteCluster  []ElasticsearchRemoteCluster  `tfsdk:"remote_cluster"`
+	Topology       ElasticSearchTopologies       `tfsdk:"topology"`
+	Config         ElasticsearchConfigs          `tfsdk:"config"`
+	RemoteCluster  ElasticsearchRemoteClusters   `tfsdk:"remote_cluster"`
 	SnapshotSource []ElasticsearchSnapshotSource `tfsdk:"snapshot_source"`
-	Extension      []ElasticsearchExtension      `tfsdk:"extension"`
+	Extension      ElasticsearchExtensions       `tfsdk:"extension"`
 	TrustAccount   []ElasticsearchTrustAccount   `tfsdk:"trust_account"`
 	TrustExternal  []ElasticsearchTrustExternal  `tfsdk:"trust_external"`
 	Strategy       []ElasticsearchStrategy       `tfsdk:"strategy"`
 }
-
-type ElasticSearchTopologies []ElasticsearchTopology
 
 func (es *Elasticsearch) fromModel(in *models.ElasticsearchResourceInfo, remotes *models.RemoteResources) error {
 	if util.IsCurrentEsPlanEmpty(in) || isEsResourceStopped(in) {
@@ -78,54 +75,11 @@ func (es *Elasticsearch) fromModel(in *models.ElasticsearchResourceInfo, remotes
 
 	es.HttpEndpoint.Value, es.HttpsEndpoint.Value = flatteners.FlattenEndpoints(in.Info.Metadata)
 
-	// es.Config.fromModel(plan.Elasticsearch)
+	es.Config.fromModel(plan.Elasticsearch)
 
-	// es.RemoteCluster.fromModel(remotes)
+	es.RemoteCluster.fromModel(remotes.Resources)
 
-	// extensions := schema.NewSet(esExtensionHash, nil)
-	// for _, ext := range flattenEsBundles(plan.Elasticsearch.UserBundles) {
-	// 	extensions.Add(ext)
-	// }
-
-	// for _, ext := range flattenEsPlugins(plan.Elasticsearch.UserPlugins) {
-	// 	extensions.Add(ext)
-	// }
-
-	// if extensions.Len() > 0 {
-	// 	m["extension"] = extensions
-	// }
-
-	// if settings := res.Info.Settings; settings != nil {
-	// 	if trust := flattenAccountTrust(settings.Trust); trust != nil {
-	// 		m["trust_account"] = trust
-	// 	}
-
-	// 	if trust := flattenExternalTrust(settings.Trust); trust != nil {
-	// 		m["trust_external"] = trust
-	// 	}
-	// }
+	es.Extension.fromModel(plan.Elasticsearch)
 
 	return nil
-}
-
-func (tops *ElasticSearchTopologies) fromModel(in []*models.ElasticsearchClusterTopologyElement, autoscaling bool) {
-	if len(in) == 0 {
-		return
-	}
-	if *tops == nil {
-		*tops = make([]ElasticsearchTopology, 0, len(in))
-	}
-	for _, model := range in {
-		if !isPotentiallySizedTopology(model, autoscaling) {
-			continue
-		}
-		var top ElasticsearchTopology
-		top.fromModel(model)
-		*tops = append(*tops, top)
-	}
-	sort.SliceStable(*tops, func(i, j int) bool {
-		a := (*tops)[i]
-		b := (*tops)[j]
-		return a.Id.Value < b.Id.Value
-	})
 }

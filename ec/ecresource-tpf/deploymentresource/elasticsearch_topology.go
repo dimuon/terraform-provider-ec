@@ -18,12 +18,39 @@
 package deploymentresource
 
 import (
+	"sort"
 	"strconv"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
+
+type ElasticSearchTopologies []ElasticsearchTopology
+
+func (tops *ElasticSearchTopologies) fromModel(in []*models.ElasticsearchClusterTopologyElement, autoscaling bool) {
+	if len(in) == 0 {
+		*tops = nil
+		return
+	}
+
+	*tops = make([]ElasticsearchTopology, 0, len(in))
+
+	for _, model := range in {
+		if !isPotentiallySizedTopology(model, autoscaling) {
+			continue
+		}
+		var top ElasticsearchTopology
+		top.fromModel(model)
+		*tops = append(*tops, top)
+	}
+
+	sort.SliceStable(*tops, func(i, j int) bool {
+		a := (*tops)[i]
+		b := (*tops)[j]
+		return a.Id.Value < b.Id.Value
+	})
+}
 
 type ElasticsearchTopology struct {
 	Id                      types.String                      `tfsdk:"id"`
@@ -37,7 +64,7 @@ type ElasticsearchTopology struct {
 	NodeTypeMl              types.String                      `tfsdk:"node_type_ml"`
 	NodeRoles               []string                          `tfsdk:"node_roles"`
 	Autoscaling             ElasticsearchTopologyAutoscalings `tfsdk:"autoscaling"`
-	Config                  ElasticsearchTopologyConfigs      `tfsdk:"config"`
+	Config                  ElasticsearchConfigs              `tfsdk:"config"`
 }
 
 func (est *ElasticsearchTopology) fromModel(topology *models.ElasticsearchClusterTopologyElement) error {
