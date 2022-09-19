@@ -22,7 +22,6 @@ import (
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/terraform-provider-ec/ec/internal/flatteners"
-	"github.com/elastic/terraform-provider-ec/ec/internal/util"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -39,7 +38,7 @@ type Deployment struct {
 	ApmSecretToken        types.String         `tfsdk:"apm_secret_token"`
 	TrafficFilter         []string             `tfsdk:"traffic_filter"`
 	Tags                  map[string]string    `tfsdk:"tags"`
-	Elasticsearch         Elasticsearches      `tfsdk:"elasticsearch"`
+	Elasticsearch         []Elasticsearch      `tfsdk:"elasticsearch"`
 	Kibana                []Kibana             `tfsdk:"kibana"`
 	Apm                   []Apm                `tfsdk:"apm"`
 	IntegrationsServer    []IntegrationsServer `tfsdk:"integrations_server"`
@@ -47,36 +46,36 @@ type Deployment struct {
 	Observability         []Observability      `tfsdk:"observability"`
 }
 
-type Elasticsearches []Elasticsearch
-
 func missingField(field string) error {
 	return fmt.Errorf("server response doesn't contain deployment '%s'", field)
 }
 
-func (dep *Deployment) fromModel(res *models.DeploymentGetResponse, remotes *models.RemoteResources) error {
+func NewDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteResources) (*Deployment, error) {
+	var dep Deployment
+
 	if res.ID == nil {
-		return missingField("ID")
+		return nil, missingField("ID")
 	}
 	dep.Id.Value = *res.ID
 
 	dep.Alias.Value = res.Alias
 
 	if res.Name == nil {
-		return missingField("Name")
+		return nil, missingField("Name")
 	}
 	dep.Name.Value = *res.Name
 
 	dep.Tags = flatteners.TagsToMap(res.Metadata.Tags)
 
 	if res.Resources == nil {
-		return nil
+		return nil, nil
 	}
 
 	var err error
 
 	dep.DeploymentTemplateId.Value, err = getDeploymentTemplateID(res.Resources)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	dep.Region.Value = getRegion(res.Resources)
@@ -90,54 +89,19 @@ func (dep *Deployment) fromModel(res *models.DeploymentGetResponse, remotes *mod
 	if err != nil {
 		// This code path is highly unlikely, but we're bubbling up the
 		// error in case one of the versions isn't parseable by semver.
-		return fmt.Errorf("failed reading deployment: %w", err)
+		return nil, fmt.Errorf("failed reading deployment: %w", err)
 	}
 
-	if err := dep.Elasticsearch.fromModel(res.Resources.Elasticsearch, remotes); err != nil {
-		return err
+	if dep.Elasticsearch, err = NewElasticsearches(res.Resources.Elasticsearch, remotes); err != nil {
+		return nil, err
 	}
 
-	return nil
-}
-
-func (ess *Elasticsearches) fromModel(in []*models.ElasticsearchResourceInfo, remotes *models.RemoteResources) error {
-	if len(in) == 0 {
-		return nil
-	}
-
-	if *ess == nil {
-		*ess = make([]Elasticsearch, 0, len(in))
-	}
-
-	for _, model := range in {
-		if util.IsCurrentEsPlanEmpty(model) || isEsResourceStopped(model) {
-			continue
-		}
-		var es Elasticsearch
-		if err := es.fromModel(model, remotes); err != nil {
-			return err
-		}
-		*ess = append(*ess, es)
-	}
-
-	return nil
+	return &dep, nil
 }
 
 type ElasticsearchSnapshotSource struct {
 	SourceElasticsearchClusterId types.String `tfsdk:"source_elasticsearch_cluster_id"`
 	SnapshotName                 types.String `tfsdk:"snapshot_name"`
-}
-
-type ElasticsearchTrustAccount struct {
-	AccountId      types.String `tfsdk:"account_id"`
-	TrustAll       types.Bool   `tfsdk:"trust_all"`
-	TrustAllowlist []string     `tfsdk:"trust_allowlist"`
-}
-
-type ElasticsearchTrustExternal struct {
-	RelationshipId types.String `tfsdk:"relationship_id"`
-	TrustAll       types.String `tfsdk:"trust_all"`
-	TrustAllowlist types.String `tfsdk:"trust_allowlist"`
 }
 
 type ElasticsearchStrategy struct {

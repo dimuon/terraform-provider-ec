@@ -29,9 +29,44 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi/esremoteclustersapi"
 	"github.com/elastic/cloud-sdk-go/pkg/client/deployments"
 	"github.com/elastic/cloud-sdk-go/pkg/models"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 )
 
-func read(ctx context.Context, client *api.API, state *Deployment) error {
+func (r deploymentResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	if !providerReady(r.provider, &resp.Diagnostics) {
+		return
+	}
+
+	var curState Deployment
+
+	diags := req.State.Get(ctx, &curState)
+	resp.Diagnostics.Append(diags...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	client := r.provider.GetClient()
+
+	var newState *Deployment
+	var err error
+
+	if newState, err = read(ctx, client, &curState); err != nil {
+		resp.Diagnostics.AddError("Client Error", err.Error())
+	}
+
+	if newState == nil && err == nil {
+		resp.State.RemoveResource(ctx)
+	}
+
+	if newState != nil {
+		diags = resp.State.Set(ctx, newState)
+	}
+
+	resp.Diagnostics.Append(diags...)
+}
+
+func read(ctx context.Context, client *api.API, state *Deployment) (*Deployment, error) {
 	res, err := deploymentapi.Get(deploymentapi.GetParams{
 		API: client, DeploymentID: state.Id.Value,
 		QueryParams: deputil.QueryParams{
@@ -43,15 +78,13 @@ func read(ctx context.Context, client *api.API, state *Deployment) error {
 	})
 	if err != nil {
 		if deploymentNotFound(err) {
-			state.Id.Value = ""
-			return nil
+			return nil, nil
 		}
-		return fmt.Errorf("failed reading deployment - %w", err)
+		return nil, fmt.Errorf("failed reading deployment - %w", err)
 	}
 
 	if !hasRunningResources(res) {
-		state.Id.Value = ""
-		return nil
+		return nil, nil
 	}
 
 	remotes, err := esremoteclustersapi.Get(esremoteclustersapi.GetParams{
@@ -59,17 +92,17 @@ func read(ctx context.Context, client *api.API, state *Deployment) error {
 		RefID: state.Elasticsearch[0].RefId.Value,
 	})
 	if err != nil {
-		return fmt.Errorf("failed reading remote clusters - %w", err)
+		return nil, fmt.Errorf("failed reading remote clusters - %w", err)
 	}
 	if remotes == nil {
 		remotes = &models.RemoteResources{}
 	}
 
-	if err := modelToState(ctx, res, remotes, state); err != nil {
-		return err
+	if dep, err := NewDeployment(res, remotes); err != nil {
+		return nil, err
+	} else {
+		return dep, nil
 	}
-
-	return nil
 }
 
 func deploymentNotFound(err error) bool {

@@ -23,23 +23,21 @@ import (
 
 type ElasticsearchTrustExternals []ElasticsearchTrustExternal
 
-func (exts *ElasticsearchTrustExternals) fromModel(in *models.ElasticsearchClusterTrustSettings) error {
+func NewElasticsearchTrustExternals(in *models.ElasticsearchClusterTrustSettings) ([]ElasticsearchTrustExternal, error) {
 	if in == nil || len(in.External) == 0 {
-		*exts = nil
-		return nil
+		return nil, nil
 	}
 
-	*exts = make(ElasticsearchTrustExternals, 0, len(in.External))
+	exts := make([]ElasticsearchTrustExternal, 0, len(in.External))
 	for _, model := range in.External {
-		var ext ElasticsearchTrustExternal
-		if err := ext.fromModel(model); err != nil {
-			return err
+		ext, err := NewElasticsearchTrustExternal(model)
+		if err != nil {
+			return nil, err
 		}
-		*exts = append(*exts, ext)
+		exts = append(exts, *ext)
 	}
 
-	return nil
-
+	return exts, nil
 }
 
 type ElasticsearchTrustExternal struct {
@@ -48,7 +46,8 @@ type ElasticsearchTrustExternal struct {
 	TrustAllowlist []string `tfsdk:"trust_allowlist"`
 }
 
-func (ext *ElasticsearchTrustExternal) fromModel(in *models.ExternalTrustRelationship) error {
+func NewElasticsearchTrustExternal(in *models.ExternalTrustRelationship) (*ElasticsearchTrustExternal, error) {
+	var ext ElasticsearchTrustExternal
 	if in.TrustRelationshipID != nil {
 		ext.RelationshipId = *in.TrustRelationshipID
 	}
@@ -59,5 +58,5 @@ func (ext *ElasticsearchTrustExternal) fromModel(in *models.ExternalTrustRelatio
 		ext.TrustAllowlist = make([]string, 0, len(in.TrustAllowlist))
 		ext.TrustAllowlist = append(ext.TrustAllowlist, in.TrustAllowlist...)
 	}
-	return nil
+	return &ext, nil
 }

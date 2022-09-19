@@ -22,24 +22,22 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type ElasticsearchTrustAccounts []ElasticsearchTrustAccount
-
-func (accs *ElasticsearchTrustAccounts) fromModel(in *models.ElasticsearchClusterTrustSettings) error {
+func NewElasticsearchTrustAccounts(in *models.ElasticsearchClusterTrustSettings) ([]ElasticsearchTrustAccount, error) {
 	if in == nil || len(in.Accounts) == 0 {
-		*accs = nil
-		return nil
+		return nil, nil
 	}
 
-	*accs = make(ElasticsearchTrustAccounts, 0, len(in.Accounts))
+	accs := make([]ElasticsearchTrustAccount, 0, len(in.Accounts))
+
 	for _, model := range in.Accounts {
-		var acc ElasticsearchTrustAccount
-		if err := acc.fromModel(model); err != nil {
-			return err
+		acc, err := NewElasticsearchTrustAccount(model)
+		if err != nil {
+			return nil, err
 		}
-		*accs = append(*accs, acc)
+		accs = append(accs, *acc)
 	}
 
-	return nil
+	return accs, nil
 }
 
 type ElasticsearchTrustAccount struct {
@@ -48,7 +46,8 @@ type ElasticsearchTrustAccount struct {
 	TrustAllowlist []string     `tfsdk:"trust_allowlist"`
 }
 
-func (acc *ElasticsearchTrustAccount) fromModel(in *models.AccountTrustRelationship) error {
+func NewElasticsearchTrustAccount(in *models.AccountTrustRelationship) (*ElasticsearchTrustAccount, error) {
+	var acc ElasticsearchTrustAccount
 	if in.AccountID != nil {
 		acc.AccountId.Value = *in.AccountID
 	}
@@ -58,5 +57,5 @@ func (acc *ElasticsearchTrustAccount) fromModel(in *models.AccountTrustRelations
 	if in.TrustAllowlist != nil {
 		acc.TrustAllowlist = *&in.TrustAllowlist
 	}
-	return nil
+	return &acc, nil
 }

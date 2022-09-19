@@ -26,19 +26,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type ElasticsearchTopologyAutoscalings []ElasticsearchTopologyAutoscaling
-
-func (autos *ElasticsearchTopologyAutoscalings) fromModel(in *models.ElasticsearchClusterTopologyElement) error {
-	var auto ElasticsearchTopologyAutoscaling
-	auto.fromModel(in)
-
-	*autos = nil
-
-	if auto != (ElasticsearchTopologyAutoscaling{}) {
-		*autos = []ElasticsearchTopologyAutoscaling{auto}
+func NewElasticsearchTopologyAutoscalings(in *models.ElasticsearchClusterTopologyElement) ([]ElasticsearchTopologyAutoscaling, error) {
+	auto, err := NewElasticsearchTopologyAutoscaling(in)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	if *auto != (ElasticsearchTopologyAutoscaling{}) {
+		return []ElasticsearchTopologyAutoscaling{*auto}, nil
+	}
+
+	return nil, nil
 }
 
 type ElasticsearchTopologyAutoscaling struct {
@@ -49,7 +47,9 @@ type ElasticsearchTopologyAutoscaling struct {
 	PolicyOverrideJson types.String `tfsdk:"policy_override_json"`
 }
 
-func (a *ElasticsearchTopologyAutoscaling) fromModel(topology *models.ElasticsearchClusterTopologyElement) error {
+func NewElasticsearchTopologyAutoscaling(topology *models.ElasticsearchClusterTopologyElement) (*ElasticsearchTopologyAutoscaling, error) {
+	var a ElasticsearchTopologyAutoscaling
+
 	if ascale := topology.AutoscalingMax; ascale != nil {
 		a.MaxSizeResource.Value = *ascale.Resource
 		a.MaxSize.Value = util.MemoryToState(*ascale.Value)
@@ -63,7 +63,7 @@ func (a *ElasticsearchTopologyAutoscaling) fromModel(topology *models.Elasticsea
 	if topology.AutoscalingPolicyOverrideJSON != nil {
 		b, err := json.Marshal(topology.AutoscalingPolicyOverrideJSON)
 		if err != nil {
-			return fmt.Errorf(
+			return nil, fmt.Errorf(
 				"elasticsearch topology %s: unable to persist policy_override_json: %w",
 				topology.ID, err,
 			)
@@ -71,5 +71,5 @@ func (a *ElasticsearchTopologyAutoscaling) fromModel(topology *models.Elasticsea
 		a.PolicyOverrideJson.Value = string(b)
 	}
 
-	return nil
+	return &a, nil
 }

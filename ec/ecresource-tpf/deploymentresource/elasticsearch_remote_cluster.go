@@ -22,22 +22,21 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type ElasticsearchRemoteClusters []ElasticsearchRemoteCluster
-
-func (rems *ElasticsearchRemoteClusters) fromModel(in []*models.RemoteResourceRef) error {
+func NewElasticsearchRemoteClusters(in []*models.RemoteResourceRef) ([]ElasticsearchRemoteCluster, error) {
 	if len(in) == 0 {
-		*rems = nil
-		return nil
+		return nil, nil
 	}
 
-	*rems = make(ElasticsearchRemoteClusters, 0, len(in))
+	rems := make([]ElasticsearchRemoteCluster, 0, len(in))
 	for _, model := range in {
-		var remote ElasticsearchRemoteCluster
-		remote.fromModel(model)
-		*rems = append(*rems, remote)
+		remote, err := NewElasticsearchRemoteCluster(model)
+		if err != nil {
+			return nil, err
+		}
+		rems = append(rems, *remote)
 	}
 
-	return nil
+	return rems, nil
 }
 
 type ElasticsearchRemoteCluster struct {
@@ -47,7 +46,8 @@ type ElasticsearchRemoteCluster struct {
 	SkipUnavailable types.Bool   `tfsdk:"skip_unavailable"`
 }
 
-func (rem *ElasticsearchRemoteCluster) fromModel(in *models.RemoteResourceRef) error {
+func NewElasticsearchRemoteCluster(in *models.RemoteResourceRef) (*ElasticsearchRemoteCluster, error) {
+	var rem ElasticsearchRemoteCluster
 	if in.DeploymentID != nil && *in.DeploymentID != "" {
 		rem.DeploymentId.Value = *in.DeploymentID
 	}
@@ -64,5 +64,5 @@ func (rem *ElasticsearchRemoteCluster) fromModel(in *models.RemoteResourceRef) e
 		rem.SkipUnavailable.Value = *in.SkipUnavailable
 	}
 
-	return nil
+	return &rem, nil
 }

@@ -18,7 +18,6 @@
 package deploymentresource
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -27,18 +26,6 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
 )
-
-func modelToState(ctx context.Context, res *models.DeploymentGetResponse, remotes *models.RemoteResources, state *Deployment) error {
-	var dep Deployment
-
-	if err := dep.fromModel(res, remotes); err != nil {
-		return fmt.Errorf("cannot read deployment - %w", err)
-	}
-
-	*state = dep
-
-	return nil
-}
 
 func hasRunningResources(res *models.DeploymentGetResponse) bool {
 	var hasRunning bool

@@ -26,92 +26,96 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type ElasticSearchTopologies []ElasticsearchTopology
+type ElasticsearchTopology struct {
+	Id                      types.String                       `tfsdk:"id"`
+	InstanceConfigurationId types.String                       `tfsdk:"instance_configuration_id"`
+	Size                    types.String                       `tfsdk:"size"`
+	SizeResource            types.String                       `tfsdk:"size_resource"`
+	ZoneCount               types.Int64                        `tfsdk:"zone_count"`
+	NodeTypeData            types.String                       `tfsdk:"node_type_data"`
+	NodeTypeMaster          types.String                       `tfsdk:"node_type_master"`
+	NodeTypeIngest          types.String                       `tfsdk:"node_type_ingest"`
+	NodeTypeMl              types.String                       `tfsdk:"node_type_ml"`
+	NodeRoles               []string                           `tfsdk:"node_roles"`
+	Autoscaling             []ElasticsearchTopologyAutoscaling `tfsdk:"autoscaling"`
+	Config                  []ElasticsearchConfig              `tfsdk:"config"`
+}
 
-func (tops *ElasticSearchTopologies) fromModel(in []*models.ElasticsearchClusterTopologyElement, autoscaling bool) {
+func NewTopologies(in []*models.ElasticsearchClusterTopologyElement, autoscaling bool) ([]ElasticsearchTopology, error) {
 	if len(in) == 0 {
-		*tops = nil
-		return
+		return nil, nil
 	}
 
-	*tops = make([]ElasticsearchTopology, 0, len(in))
+	tops := make([]ElasticsearchTopology, 0, len(in))
 
 	for _, model := range in {
 		if !isPotentiallySizedTopology(model, autoscaling) {
 			continue
 		}
-		var top ElasticsearchTopology
-		top.fromModel(model)
-		*tops = append(*tops, top)
+		top, err := NewTopology(model)
+		if err != nil {
+			return nil, err
+		}
+		tops = append(tops, top)
 	}
 
-	sort.SliceStable(*tops, func(i, j int) bool {
-		a := (*tops)[i]
-		b := (*tops)[j]
+	sort.SliceStable(tops, func(i, j int) bool {
+		a := (tops)[i]
+		b := (tops)[j]
 		return a.Id.Value < b.Id.Value
 	})
+
+	return tops, nil
 }
 
-type ElasticsearchTopology struct {
-	Id                      types.String                      `tfsdk:"id"`
-	InstanceConfigurationId types.String                      `tfsdk:"instance_configuration_id"`
-	Size                    types.String                      `tfsdk:"size"`
-	SizeResource            types.String                      `tfsdk:"size_resource"`
-	ZoneCount               types.Int64                       `tfsdk:"zone_count"`
-	NodeTypeData            types.String                      `tfsdk:"node_type_data"`
-	NodeTypeMaster          types.String                      `tfsdk:"node_type_master"`
-	NodeTypeIngest          types.String                      `tfsdk:"node_type_ingest"`
-	NodeTypeMl              types.String                      `tfsdk:"node_type_ml"`
-	NodeRoles               []string                          `tfsdk:"node_roles"`
-	Autoscaling             ElasticsearchTopologyAutoscalings `tfsdk:"autoscaling"`
-	Config                  ElasticsearchConfigs              `tfsdk:"config"`
-}
+func NewTopology(topology *models.ElasticsearchClusterTopologyElement) (ElasticsearchTopology, error) {
+	var top ElasticsearchTopology
 
-func (est *ElasticsearchTopology) fromModel(topology *models.ElasticsearchClusterTopologyElement) error {
-	est.Id.Value = topology.ID
+	top.Id.Value = topology.ID
 
 	if topology.InstanceConfigurationID != "" {
-		est.InstanceConfigurationId.Value = topology.InstanceConfigurationID
+		top.InstanceConfigurationId.Value = topology.InstanceConfigurationID
 	}
 
 	if topology.Size != nil {
-		est.Size.Value = util.MemoryToState(*topology.Size.Value)
-		est.SizeResource.Value = *topology.Size.Resource
+		top.Size.Value = util.MemoryToState(*topology.Size.Value)
+		top.SizeResource.Value = *topology.Size.Resource
 	}
 
-	est.ZoneCount.Value = int64(topology.ZoneCount)
+	top.ZoneCount.Value = int64(topology.ZoneCount)
 
 	if nt := topology.NodeType; nt != nil {
 		if nt.Data != nil {
-			est.NodeTypeData.Value = strconv.FormatBool(*nt.Data)
+			top.NodeTypeData.Value = strconv.FormatBool(*nt.Data)
 		}
 
 		if nt.Ingest != nil {
-			est.NodeTypeIngest.Value = strconv.FormatBool(*nt.Ingest)
+			top.NodeTypeIngest.Value = strconv.FormatBool(*nt.Ingest)
 		}
 
 		if nt.Master != nil {
-			est.NodeTypeMaster.Value = strconv.FormatBool(*nt.Master)
+			top.NodeTypeMaster.Value = strconv.FormatBool(*nt.Master)
 		}
 
 		if nt.Ml != nil {
-			est.NodeTypeMl.Value = strconv.FormatBool(*nt.Ml)
+			top.NodeTypeMl.Value = strconv.FormatBool(*nt.Ml)
 		}
 	}
 
 	if len(topology.NodeRoles) > 0 {
-		est.NodeRoles = append(est.NodeRoles, topology.NodeRoles...)
+		top.NodeRoles = append(top.NodeRoles, topology.NodeRoles...)
 	}
 
-	if err := est.Autoscaling.fromModel(topology); err != nil {
-		return err
+	var err error
+	if top.Autoscaling, err = NewElasticsearchTopologyAutoscalings(topology); err != nil {
+		return top, err
 	}
 
-	if err := est.Config.fromModel(topology.Elasticsearch); err != nil {
-		return err
+	if top.Config, err = NewElasticsearchConfigs(topology.Elasticsearch); err != nil {
+		return top, err
 	}
 
-	return nil
+	return top, nil
 }
 
 func isPotentiallySizedTopology(topology *models.ElasticsearchClusterTopologyElement, isAutoscaling bool) bool {

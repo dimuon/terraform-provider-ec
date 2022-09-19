@@ -26,18 +26,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type ElasticsearchConfigs []ElasticsearchConfig
-
-func (cfgs *ElasticsearchConfigs) fromModel(in *models.ElasticsearchConfiguration) error {
-	var cfg ElasticsearchConfig
-	cfg.fromModel(in)
-
-	*cfgs = nil
+func NewElasticsearchConfigs(in *models.ElasticsearchConfiguration) ([]ElasticsearchConfig, error) {
+	cfg, err := NewElasticsearchConfig(in)
+	if err != nil {
+		return nil, err
+	}
 
 	if !cfg.isEmpty() {
-		*cfgs = []ElasticsearchConfig{cfg}
+		return []ElasticsearchConfig{*cfg}, nil
 	}
-	return nil
+
+	return nil, nil
 }
 
 type ElasticsearchConfig struct {
@@ -53,38 +52,40 @@ func (c *ElasticsearchConfig) isEmpty() bool {
 	return reflect.ValueOf(*c).IsZero()
 }
 
-func (c *ElasticsearchConfig) fromModel(in *models.ElasticsearchConfiguration) error {
+func NewElasticsearchConfig(in *models.ElasticsearchConfiguration) (*ElasticsearchConfig, error) {
+	var cfg ElasticsearchConfig
+
 	if in == nil {
-		return nil
+		return nil, nil
 	}
 
 	if len(in.EnabledBuiltInPlugins) > 0 {
-		c.Plugins = append(c.Plugins, in.EnabledBuiltInPlugins...)
+		cfg.Plugins = append(cfg.Plugins, in.EnabledBuiltInPlugins...)
 	}
 
 	if in.UserSettingsYaml != "" {
-		c.UserSettingsYaml.Value = in.UserSettingsYaml
+		cfg.UserSettingsYaml.Value = in.UserSettingsYaml
 	}
 
 	if in.UserSettingsOverrideYaml != "" {
-		c.UserSettingsOverrideYaml.Value = in.UserSettingsOverrideYaml
+		cfg.UserSettingsOverrideYaml.Value = in.UserSettingsOverrideYaml
 	}
 
 	if o := in.UserSettingsJSON; o != nil {
 		if b, _ := json.Marshal(o); len(b) > 0 && !bytes.Equal([]byte("{}"), b) {
-			c.UserSettingsJson.Value = string(b)
+			cfg.UserSettingsJson.Value = string(b)
 		}
 	}
 
 	if o := in.UserSettingsOverrideJSON; o != nil {
 		if b, _ := json.Marshal(o); len(b) > 0 && !bytes.Equal([]byte("{}"), b) {
-			c.UserSettingsOverrideJson.Value = string(b)
+			cfg.UserSettingsOverrideJson.Value = string(b)
 		}
 	}
 
 	if in.DockerImage != "" {
-		c.DockerImage.Value = in.DockerImage
+		cfg.DockerImage.Value = in.DockerImage
 	}
 
-	return nil
+	return &cfg, nil
 }

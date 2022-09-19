@@ -35,19 +35,43 @@ type Elasticsearch struct {
 	CloudID        types.String                  `tfsdk:"cloud_id"`
 	HttpEndpoint   types.String                  `tfsdk:"http_endpoint"`
 	HttpsEndpoint  types.String                  `tfsdk:"https_endpoint"`
-	Topology       ElasticSearchTopologies       `tfsdk:"topology"`
-	Config         ElasticsearchConfigs          `tfsdk:"config"`
-	RemoteCluster  ElasticsearchRemoteClusters   `tfsdk:"remote_cluster"`
+	Topology       []ElasticsearchTopology       `tfsdk:"topology"`
+	Config         []ElasticsearchConfig         `tfsdk:"config"`
+	RemoteCluster  []ElasticsearchRemoteCluster  `tfsdk:"remote_cluster"`
 	SnapshotSource []ElasticsearchSnapshotSource `tfsdk:"snapshot_source"`
-	Extension      ElasticsearchExtensions       `tfsdk:"extension"`
+	Extension      []ElasticsearchExtension      `tfsdk:"extension"`
 	TrustAccount   []ElasticsearchTrustAccount   `tfsdk:"trust_account"`
 	TrustExternal  []ElasticsearchTrustExternal  `tfsdk:"trust_external"`
 	Strategy       []ElasticsearchStrategy       `tfsdk:"strategy"`
 }
 
-func (es *Elasticsearch) fromModel(in *models.ElasticsearchResourceInfo, remotes *models.RemoteResources) error {
+func NewElasticsearches(in []*models.ElasticsearchResourceInfo, remotes *models.RemoteResources) ([]Elasticsearch, error) {
+	if len(in) == 0 {
+		return nil, nil
+	}
+
+	ess := make([]Elasticsearch, 0, len(in))
+
+	for _, model := range in {
+		if util.IsCurrentEsPlanEmpty(model) || isEsResourceStopped(model) {
+			continue
+		}
+		var es *Elasticsearch
+		var err error
+		if es, err = NewElasticsearch(model, remotes); err != nil {
+			return nil, err
+		}
+		ess = append(ess, *es)
+	}
+
+	return ess, nil
+}
+
+func NewElasticsearch(in *models.ElasticsearchResourceInfo, remotes *models.RemoteResources) (*Elasticsearch, error) {
+	var es Elasticsearch
+
 	if util.IsCurrentEsPlanEmpty(in) || isEsResourceStopped(in) {
-		return nil
+		return &es, nil
 	}
 
 	if in.Info.ClusterID != nil && *in.Info.ClusterID != "" {
@@ -63,7 +87,12 @@ func (es *Elasticsearch) fromModel(in *models.ElasticsearchResourceInfo, remotes
 	}
 
 	plan := in.Info.PlanInfo.Current.Plan
-	es.Topology.fromModel(plan.ClusterTopology, plan.AutoscalingEnabled != nil && *plan.AutoscalingEnabled)
+	var err error
+
+	es.Topology, err = NewTopologies(plan.ClusterTopology, plan.AutoscalingEnabled != nil && *plan.AutoscalingEnabled)
+	if err != nil {
+		return &es, err
+	}
 
 	if plan.AutoscalingEnabled != nil {
 		es.Autoscale.Value = strconv.FormatBool(*plan.AutoscalingEnabled)
@@ -75,11 +104,30 @@ func (es *Elasticsearch) fromModel(in *models.ElasticsearchResourceInfo, remotes
 
 	es.HttpEndpoint.Value, es.HttpsEndpoint.Value = flatteners.FlattenEndpoints(in.Info.Metadata)
 
-	es.Config.fromModel(plan.Elasticsearch)
+	es.Config, err = NewElasticsearchConfigs(plan.Elasticsearch)
+	if err != nil {
+		return nil, err
+	}
 
-	es.RemoteCluster.fromModel(remotes.Resources)
+	es.RemoteCluster, err = NewElasticsearchRemoteClusters(remotes.Resources)
+	if err != nil {
+		return nil, err
+	}
 
-	es.Extension.fromModel(plan.Elasticsearch)
+	es.Extension, err = NewElasticsearchExtensions(plan.Elasticsearch)
+	if err != nil {
+		return nil, err
+	}
 
-	return nil
+	es.TrustAccount, err = NewElasticsearchTrustAccounts(in.Info.Settings.Trust)
+	if err != nil {
+		return nil, err
+	}
+
+	es.TrustExternal, err = NewElasticsearchTrustExternals(in.Info.Settings.Trust)
+	if err != nil {
+		return nil, err
+	}
+
+	return &es, nil
 }

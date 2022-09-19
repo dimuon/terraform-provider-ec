@@ -22,32 +22,31 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type ElasticsearchExtensions []ElasticsearchExtension
-
-func (exts *ElasticsearchExtensions) fromModel(in *models.ElasticsearchConfiguration) error {
+func NewElasticsearchExtensions(in *models.ElasticsearchConfiguration) ([]ElasticsearchExtension, error) {
 	if len(in.UserBundles) == 0 && len(in.UserPlugins) == 0 {
-		*exts = nil
-		return nil
+		return nil, nil
 	}
 
-	*exts = make(ElasticsearchExtensions, 0, len(in.UserBundles)+len(in.UserPlugins))
+	exts := make([]ElasticsearchExtension, 0, len(in.UserBundles)+len(in.UserPlugins))
+
 	for _, model := range in.UserBundles {
-		var ext ElasticsearchExtension
-		if err := ext.fromUserBundle(model); err != nil {
-			return err
+		ext, err := NewElasticsearchExtensionFromUserBundle(model)
+
+		if err != nil {
+			return nil, err
 		}
-		*exts = append(*exts, ext)
+		exts = append(exts, *ext)
 	}
 
 	for _, model := range in.UserPlugins {
-		var ext ElasticsearchExtension
-		if err := ext.fromUserPlugin(model); err != nil {
-			return err
+		ext, err := ElasticsearchExtensionFromUserPlugin(model)
+		if err != nil {
+			return nil, err
 		}
-		*exts = append(*exts, ext)
+		exts = append(exts, *ext)
 	}
 
-	return nil
+	return exts, nil
 }
 
 type ElasticsearchExtension struct {
@@ -57,44 +56,48 @@ type ElasticsearchExtension struct {
 	Url     types.String `tfsdk:"url"`
 }
 
-func (ext *ElasticsearchExtension) fromUserBundle(in *models.ElasticsearchUserBundle) error {
+func NewElasticsearchExtensionFromUserBundle(in *models.ElasticsearchUserBundle) (*ElasticsearchExtension, error) {
+	var ext ElasticsearchExtension
+
 	ext.Type.Value = "bundle"
 
 	if in.ElasticsearchVersion == nil {
-		return missingField("ElasticsearchUserBundle.ElasticsearchVersion")
+		return nil, missingField("ElasticsearchUserBundle.ElasticsearchVersion")
 	}
 	ext.Version.Value = *in.ElasticsearchVersion
 
 	if in.URL == nil {
-		return missingField("ElasticsearchUserBundle.URL")
+		return nil, missingField("ElasticsearchUserBundle.URL")
 	}
 	ext.Url.Value = *in.URL
 
 	if in.Name == nil {
-		return missingField("ElasticsearchUserBundle.Name")
+		return nil, missingField("ElasticsearchUserBundle.Name")
 	}
 	ext.Name.Value = *in.Name
 
-	return nil
+	return &ext, nil
 }
 
-func (ext *ElasticsearchExtension) fromUserPlugin(in *models.ElasticsearchUserPlugin) error {
+func ElasticsearchExtensionFromUserPlugin(in *models.ElasticsearchUserPlugin) (*ElasticsearchExtension, error) {
+	var ext ElasticsearchExtension
+
 	ext.Type.Value = "plugin"
 
 	if in.ElasticsearchVersion == nil {
-		return missingField("ElasticsearchUserPlugin.ElasticsearchVersion")
+		return nil, missingField("ElasticsearchUserPlugin.ElasticsearchVersion")
 	}
 	ext.Version.Value = *in.ElasticsearchVersion
 
 	if in.URL == nil {
-		return missingField("ElasticsearchUserPlugin.URL")
+		return nil, missingField("ElasticsearchUserPlugin.URL")
 	}
 	ext.Url.Value = *in.URL
 
 	if in.Name == nil {
-		return missingField("ElasticsearchUserPlugin.Name")
+		return nil, missingField("ElasticsearchUserPlugin.Name")
 	}
 	ext.Name.Value = *in.Name
 
-	return nil
+	return &ext, nil
 }

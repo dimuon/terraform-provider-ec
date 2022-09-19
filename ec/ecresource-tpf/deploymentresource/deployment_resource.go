@@ -132,396 +132,7 @@ func (t DeploymentResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, di
 		},
 
 		Blocks: map[string]tfsdk.Block{
-			"elasticsearch": {
-				Description: "Required Elasticsearch resource definition",
-				NestingMode: tfsdk.BlockNestingModeList,
-				MinItems:    1,
-				MaxItems:    1,
-				Attributes: map[string]tfsdk.Attribute{
-					"autoscale": {
-						Type:        types.StringType,
-						Description: `Enable or disable autoscaling. Defaults to the setting coming from the deployment template. Accepted values are "true" or "false".`,
-						Computed:    true,
-						Optional:    true,
-					},
-					"ref_id": {
-						Type:        types.StringType,
-						Description: "Optional ref_id to set on the Elasticsearch resource",
-						Optional:    true,
-						Computed:    true,
-						PlanModifiers: []tfsdk.AttributePlanModifier{
-							planmodifier.DefaultValue(types.String{Value: "main-elasticsearch"}),
-						},
-					},
-					"resource_id": {
-						Type:        types.StringType,
-						Description: "The Elasticsearch resource unique identifier",
-						Computed:    true,
-					},
-					"region": {
-						Type:        types.StringType,
-						Description: "The Elasticsearch resource region",
-						Computed:    true,
-					},
-					"cloud_id": {
-						Type:        types.StringType,
-						Description: "The encoded Elasticsearch credentials to use in Beats or Logstash",
-						Computed:    true,
-					},
-					"http_endpoint": {
-						Type:        types.StringType,
-						Description: "The Elasticsearch resource HTTP endpoint",
-						Computed:    true,
-					},
-					"https_endpoint": {
-						Type:        types.StringType,
-						Description: "The Elasticsearch resource HTTPs endpoint",
-						Computed:    true,
-					},
-					"topology": {
-						Computed:    true,
-						Optional:    true,
-						Description: `Optional topology element which must be set once but can be set multiple times to compose complex topologies`,
-						Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-							"id": {
-								Type:        types.StringType,
-								Description: `Required topology ID from the deployment template`,
-								Required:    true,
-							},
-							"instance_configuration_id": {
-								Type:        types.StringType,
-								Description: `Computed Instance Configuration ID of the topology element`,
-								Computed:    true,
-							},
-							"size": {
-								Type:        types.StringType,
-								Description: `Optional amount of memory per node in the "<size in GB>g" notation`,
-								Computed:    true,
-								Optional:    true,
-							},
-							"size_resource": {
-								Type:        types.StringType,
-								Description: `Optional size type, defaults to "memory".`,
-								Optional:    true,
-								Computed:    true,
-								PlanModifiers: []tfsdk.AttributePlanModifier{
-									planmodifier.DefaultValue(types.String{Value: "memory"}),
-								},
-							},
-							"zone_count": {
-								Type:        types.Int64Type,
-								Description: `Optional number of zones that the Elasticsearch cluster will span. This is used to set HA`,
-								Computed:    true,
-								Optional:    true,
-							},
-							"node_type_data": {
-								Type:        types.StringType,
-								Description: `The node type for the Elasticsearch Topology element (data node)`,
-								Computed:    true,
-								Optional:    true,
-							},
-							"node_type_master": {
-								Type:        types.StringType,
-								Description: `The node type for the Elasticsearch Topology element (master node)`,
-								Computed:    true,
-								Optional:    true,
-							},
-							"node_type_ingest": {
-								Type:        types.StringType,
-								Description: `The node type for the Elasticsearch Topology element (ingest node)`,
-								Computed:    true,
-								Optional:    true,
-							},
-							"node_type_ml": {
-								Type:        types.StringType,
-								Description: `The node type for the Elasticsearch Topology element (machine learning node)`,
-								Computed:    true,
-								Optional:    true,
-							},
-							"node_roles": {
-								Type: types.SetType{
-									ElemType: types.StringType,
-								},
-								Description: `The computed list of node roles for the current topology element`,
-								Computed:    true,
-							},
-							"autoscaling": {
-								Description: "Optional Elasticsearch autoscaling settings, such a maximum and minimum size and resources.",
-								Optional:    true,
-								Computed:    true,
-								Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-									"max_size_resource": {
-										Description: "Maximum resource type for the maximum autoscaling setting.",
-										Type:        types.StringType,
-										Optional:    true,
-										Computed:    true,
-									},
-									"max_size": {
-										Description: "Maximum size value for the maximum autoscaling setting.",
-										Type:        types.StringType,
-										Optional:    true,
-										Computed:    true,
-									},
-									"min_size_resource": {
-										Description: "Minimum resource type for the minimum autoscaling setting.",
-										Type:        types.StringType,
-										Optional:    true,
-										Computed:    true,
-									},
-									"min_size": {
-										Description: "Minimum size value for the minimum autoscaling setting.",
-										Type:        types.StringType,
-										Optional:    true,
-										Computed:    true,
-									},
-									"policy_override_json": {
-										Type:        types.StringType,
-										Description: "Computed policy overrides set directly via the API or other clients.",
-										Computed:    true,
-									},
-								}),
-							},
-							"config": {
-								Description: `Computed read-only configuration to avoid unsetting plan settings from 'topology.elasticsearch'`,
-								Computed:    true,
-								Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-									"plugins": {
-										Type: types.SetType{
-											ElemType: types.StringType,
-										},
-										Description: "List of Elasticsearch supported plugins, which vary from version to version. Check the Stack Pack version to see which plugins are supported for each version. This is currently only available from the UI and [ecctl](https://www.elastic.co/guide/en/ecctl/master/ecctl_stack_list.html)",
-										Computed:    true,
-									},
-									"user_settings_json": {
-										Type:        types.StringType,
-										Description: `JSON-formatted user level "elasticsearch.yml" setting overrides`,
-										Computed:    true,
-									},
-									"user_settings_override_json": {
-										Type:        types.StringType,
-										Description: `JSON-formatted admin (ECE) level "elasticsearch.yml" setting overrides`,
-										Computed:    true,
-									},
-									"user_settings_yaml": {
-										Type:        types.StringType,
-										Description: `YAML-formatted user level "elasticsearch.yml" setting overrides`,
-										Computed:    true,
-									},
-									"user_settings_override_yaml": {
-										Type:        types.StringType,
-										Description: `YAML-formatted admin (ECE) level "elasticsearch.yml" setting overrides`,
-										Computed:    true,
-									},
-								}),
-							},
-						}),
-					},
-					"trust_account": {
-						Description: "Optional Elasticsearch account trust settings.",
-						Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
-							"account_id": {
-								Description: "The ID of the Account.",
-								Type:        types.StringType,
-								Required:    true,
-							},
-							"trust_all": {
-								Description: "If true, all clusters in this account will by default be trusted and the `trust_allowlist` is ignored.",
-								Type:        types.BoolType,
-								Required:    true,
-							},
-							"trust_allowlist": {
-								Description: "The list of clusters to trust. Only used when `trust_all` is false.",
-								Type: types.SetType{
-									ElemType: types.StringType,
-								},
-								Optional: true,
-							},
-						}),
-						Computed: true,
-						Optional: true,
-					},
-				},
-
-				Blocks: map[string]tfsdk.Block{
-					"config": {
-						NestingMode: tfsdk.BlockNestingModeList,
-						MinItems:    0,
-						MaxItems:    1,
-						// TODO
-						// DiffSuppressFunc: suppressMissingOptionalConfigurationBlock,
-						Description: `Optional Elasticsearch settings which will be applied to all topologies unless overridden on the topology element`,
-						Attributes: map[string]tfsdk.Attribute{
-							"docker_image": {
-								Type:        types.StringType,
-								Description: "Optionally override the docker image the Elasticsearch nodes will use. Note that this field will only work for internal users only.",
-								Optional:    true,
-							},
-							"plugins": {
-								Type: types.SetType{
-									ElemType: types.StringType,
-								},
-								Description: "List of Elasticsearch supported plugins, which vary from version to version. Check the Stack Pack version to see which plugins are supported for each version. This is currently only available from the UI and [ecctl](https://www.elastic.co/guide/en/ecctl/master/ecctl_stack_list.html)",
-								Optional:    true,
-							},
-							"user_settings_json": {
-								Type:        types.StringType,
-								Description: `JSON-formatted user level "elasticsearch.yml" setting overrides`,
-								Optional:    true,
-							},
-							"user_settings_override_json": {
-								Type:        types.StringType,
-								Description: `JSON-formatted admin (ECE) level "elasticsearch.yml" setting overrides`,
-								Optional:    true,
-							},
-							"user_settings_yaml": {
-								Type:        types.StringType,
-								Description: `YAML-formatted user level "elasticsearch.yml" setting overrides`,
-								Optional:    true,
-							},
-							"user_settings_override_yaml": {
-								Type:        types.StringType,
-								Description: `YAML-formatted admin (ECE) level "elasticsearch.yml" setting overrides`,
-								Optional:    true,
-							},
-						},
-					},
-
-					"remote_cluster": {
-						NestingMode: tfsdk.BlockNestingModeSet,
-						MinItems:    0,
-						Description: "Optional Elasticsearch remote clusters to configure for the Elasticsearch resource, can be set multiple times",
-						Attributes: map[string]tfsdk.Attribute{
-							"deployment_id": {
-								Description: "Remote deployment ID",
-								Type:        types.StringType,
-								// TODO fix examples/deployment_css/deployment.tf#61
-								// Validators:  []tfsdk.AttributeValidator{validators.Length(32, 32)},
-								Required: true,
-							},
-							"alias": {
-								Description: "Alias for this Cross Cluster Search binding",
-								Type:        types.StringType,
-								// TODO fix examples/deployment_css/deployment.tf#62
-								// Validators:  []tfsdk.AttributeValidator{validators.NotEmpty()},
-								Required: true,
-							},
-							"ref_id": {
-								Description: `Remote elasticsearch "ref_id", it is best left to the default value`,
-								Type:        types.StringType,
-								Computed:    true,
-								PlanModifiers: []tfsdk.AttributePlanModifier{
-									planmodifier.DefaultValue(types.String{Value: "main-elasticsearch"}),
-								},
-								Optional: true,
-							},
-							"skip_unavailable": {
-								Description: "If true, skip the cluster during search when disconnected",
-								Type:        types.BoolType,
-								PlanModifiers: []tfsdk.AttributePlanModifier{
-									planmodifier.DefaultValue(types.Bool{Value: false}),
-								},
-								Optional: true,
-							},
-						},
-					},
-
-					"snapshot_source": {
-						NestingMode: tfsdk.BlockNestingModeList,
-						Description: "Optional snapshot source settings. Restore data from a snapshot of another deployment.",
-						MinItems:    0,
-						MaxItems:    1,
-						Attributes: map[string]tfsdk.Attribute{
-							"source_elasticsearch_cluster_id": {
-								Description: "ID of the Elasticsearch cluster that will be used as the source of the snapshot",
-								Type:        types.StringType,
-								Required:    true,
-							},
-							"snapshot_name": {
-								Description: "Name of the snapshot to restore. Use '__latest_success__' to get the most recent successful snapshot.",
-								Type:        types.StringType,
-								PlanModifiers: []tfsdk.AttributePlanModifier{
-									planmodifier.DefaultValue(types.String{Value: "__latest_success__"}),
-								},
-								Optional: true,
-							},
-						},
-					},
-
-					"extension": {
-						NestingMode: tfsdk.BlockNestingModeSet,
-						Description: "Optional Elasticsearch extensions such as custom bundles or plugins.",
-						MinItems:    0,
-						Attributes: map[string]tfsdk.Attribute{
-							"name": {
-								Description: "Extension name.",
-								Type:        types.StringType,
-								Required:    true,
-							},
-							"type": {
-								Description: "Extension type, only `bundle` or `plugin` are supported.",
-								Type:        types.StringType,
-								Required:    true,
-								Validators:  []tfsdk.AttributeValidator{validators.OneOf([]string{"bundle", "plugin"})},
-							},
-							"version": {
-								Description: "Elasticsearch compatibility version. Bundles should specify major or minor versions with wildcards, such as `7.*` or `*` but **plugins must use full version notation down to the patch level**, such as `7.10.1` and wildcards are not allowed.",
-								Type:        types.StringType,
-								Required:    true,
-							},
-							"url": {
-								Description: "Bundle or plugin URL, the extension URL can be obtained from the `ec_deployment_extension.<name>.url` attribute or the API and cannot be a random HTTP address that is hosted elsewhere.",
-								Type:        types.StringType,
-								Required:    true,
-							},
-						},
-					},
-
-					"trust_external": {
-						NestingMode: tfsdk.BlockNestingModeSet,
-						Description: "Optional Elasticsearch external trust settings.",
-						MinItems:    0,
-						Attributes: map[string]tfsdk.Attribute{
-							"relationship_id": {
-								Description: "The ID of the external trust relationship.",
-								Type:        types.StringType,
-								Required:    true,
-							},
-							"trust_all": {
-								Description: "If true, all clusters in this account will by default be trusted and the `trust_allowlist` is ignored.",
-								Type:        types.BoolType,
-								Required:    true,
-							},
-							"trust_allowlist": {
-								Description: "The list of clusters to trust. Only used when `trust_all` is false.",
-								Type: types.SetType{
-									ElemType: types.StringType,
-								},
-								Optional: true,
-							},
-						},
-					},
-
-					"strategy": {
-						NestingMode: tfsdk.BlockNestingModeList,
-						Description: "Configuration strategy settings.",
-						MinItems:    0,
-						MaxItems:    1,
-						Attributes: map[string]tfsdk.Attribute{
-							"type": {
-								Description: "Configuration strategy type " + strings.Join(strategiesList, ", "),
-								Type:        types.StringType,
-								Required:    true,
-								Validators:  []tfsdk.AttributeValidator{validators.OneOf(strategiesList)},
-								// TODO
-								// changes on this setting do not change the plan.
-								// DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-								// 	return true
-								// },
-							},
-						},
-					},
-				},
-			},
+			"elasticsearch": elasticsearchBlock(),
 
 			"kibana": {
 				NestingMode: tfsdk.BlockNestingModeList,
@@ -1111,31 +722,6 @@ func (r deploymentResource) Create(ctx context.Context, req resource.CreateReque
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r deploymentResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	if !providerReady(r.provider, &resp.Diagnostics) {
-		return
-	}
-
-	var state Deployment
-
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	client := r.provider.GetClient()
-
-	if err := read(ctx, client, &state); err != nil {
-		resp.Diagnostics.AddError("Client Error", err.Error())
-		return
-	}
-
-	diags = resp.State.Set(ctx, &state)
-	resp.Diagnostics.Append(diags...)
-}
-
 func (r deploymentResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var data Deployment
 
@@ -1180,3 +766,396 @@ func (r deploymentResource) Delete(ctx context.Context, req resource.DeleteReque
 // func (r deploymentResource) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
 // 	tfsdk.ResourceImportStatePassthroughID(ctx, tftypes.NewAttributePath().WithAttributeName("id"), req, resp)
 // }
+
+func elasticsearchBlock() tfsdk.Block {
+	return tfsdk.Block{
+		Description: "Required Elasticsearch resource definition",
+		NestingMode: tfsdk.BlockNestingModeList,
+		MinItems:    1,
+		MaxItems:    1,
+		Attributes: map[string]tfsdk.Attribute{
+			"autoscale": {
+				Type:        types.StringType,
+				Description: `Enable or disable autoscaling. Defaults to the setting coming from the deployment template. Accepted values are "true" or "false".`,
+				Computed:    true,
+				Optional:    true,
+			},
+			"ref_id": {
+				Type:        types.StringType,
+				Description: "Optional ref_id to set on the Elasticsearch resource",
+				Optional:    true,
+				Computed:    true,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					planmodifier.DefaultValue(types.String{Value: "main-elasticsearch"}),
+				},
+			},
+			"resource_id": {
+				Type:        types.StringType,
+				Description: "The Elasticsearch resource unique identifier",
+				Computed:    true,
+			},
+			"region": {
+				Type:        types.StringType,
+				Description: "The Elasticsearch resource region",
+				Computed:    true,
+			},
+			"cloud_id": {
+				Type:        types.StringType,
+				Description: "The encoded Elasticsearch credentials to use in Beats or Logstash",
+				Computed:    true,
+			},
+			"http_endpoint": {
+				Type:        types.StringType,
+				Description: "The Elasticsearch resource HTTP endpoint",
+				Computed:    true,
+			},
+			"https_endpoint": {
+				Type:        types.StringType,
+				Description: "The Elasticsearch resource HTTPs endpoint",
+				Computed:    true,
+			},
+			"topology": {
+				Computed:    true,
+				Optional:    true,
+				Description: `Optional topology element which must be set once but can be set multiple times to compose complex topologies`,
+				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+					"id": {
+						Type:        types.StringType,
+						Description: `Required topology ID from the deployment template`,
+						Required:    true,
+					},
+					"instance_configuration_id": {
+						Type:        types.StringType,
+						Description: `Computed Instance Configuration ID of the topology element`,
+						Computed:    true,
+					},
+					"size": {
+						Type:        types.StringType,
+						Description: `Optional amount of memory per node in the "<size in GB>g" notation`,
+						Computed:    true,
+						Optional:    true,
+					},
+					"size_resource": {
+						Type:        types.StringType,
+						Description: `Optional size type, defaults to "memory".`,
+						Optional:    true,
+						Computed:    true,
+						PlanModifiers: []tfsdk.AttributePlanModifier{
+							planmodifier.DefaultValue(types.String{Value: "memory"}),
+						},
+					},
+					"zone_count": {
+						Type:        types.Int64Type,
+						Description: `Optional number of zones that the Elasticsearch cluster will span. This is used to set HA`,
+						Computed:    true,
+						Optional:    true,
+					},
+					"node_type_data": {
+						Type:        types.StringType,
+						Description: `The node type for the Elasticsearch Topology element (data node)`,
+						Computed:    true,
+						Optional:    true,
+					},
+					"node_type_master": {
+						Type:        types.StringType,
+						Description: `The node type for the Elasticsearch Topology element (master node)`,
+						Computed:    true,
+						Optional:    true,
+					},
+					"node_type_ingest": {
+						Type:        types.StringType,
+						Description: `The node type for the Elasticsearch Topology element (ingest node)`,
+						Computed:    true,
+						Optional:    true,
+					},
+					"node_type_ml": {
+						Type:        types.StringType,
+						Description: `The node type for the Elasticsearch Topology element (machine learning node)`,
+						Computed:    true,
+						Optional:    true,
+					},
+					"node_roles": {
+						Type: types.SetType{
+							ElemType: types.StringType,
+						},
+						Description: `The computed list of node roles for the current topology element`,
+						Computed:    true,
+					},
+					"autoscaling": {
+						Description: "Optional Elasticsearch autoscaling settings, such a maximum and minimum size and resources.",
+						Optional:    true,
+						Computed:    true,
+						Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+							"max_size_resource": {
+								Description: "Maximum resource type for the maximum autoscaling setting.",
+								Type:        types.StringType,
+								Optional:    true,
+								Computed:    true,
+							},
+							"max_size": {
+								Description: "Maximum size value for the maximum autoscaling setting.",
+								Type:        types.StringType,
+								Optional:    true,
+								Computed:    true,
+							},
+							"min_size_resource": {
+								Description: "Minimum resource type for the minimum autoscaling setting.",
+								Type:        types.StringType,
+								Optional:    true,
+								Computed:    true,
+							},
+							"min_size": {
+								Description: "Minimum size value for the minimum autoscaling setting.",
+								Type:        types.StringType,
+								Optional:    true,
+								Computed:    true,
+							},
+							"policy_override_json": {
+								Type:        types.StringType,
+								Description: "Computed policy overrides set directly via the API or other clients.",
+								Computed:    true,
+							},
+						}),
+					},
+					"config": {
+						Description: `Computed read-only configuration to avoid unsetting plan settings from 'topology.elasticsearch'`,
+						Computed:    true,
+						Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+							"plugins": {
+								Type: types.SetType{
+									ElemType: types.StringType,
+								},
+								Description: "List of Elasticsearch supported plugins, which vary from version to version. Check the Stack Pack version to see which plugins are supported for each version. This is currently only available from the UI and [ecctl](https://www.elastic.co/guide/en/ecctl/master/ecctl_stack_list.html)",
+								Computed:    true,
+							},
+							"user_settings_json": {
+								Type:        types.StringType,
+								Description: `JSON-formatted user level "elasticsearch.yml" setting overrides`,
+								Computed:    true,
+							},
+							"user_settings_override_json": {
+								Type:        types.StringType,
+								Description: `JSON-formatted admin (ECE) level "elasticsearch.yml" setting overrides`,
+								Computed:    true,
+							},
+							"user_settings_yaml": {
+								Type:        types.StringType,
+								Description: `YAML-formatted user level "elasticsearch.yml" setting overrides`,
+								Computed:    true,
+							},
+							"user_settings_override_yaml": {
+								Type:        types.StringType,
+								Description: `YAML-formatted admin (ECE) level "elasticsearch.yml" setting overrides`,
+								Computed:    true,
+							},
+						}),
+					},
+				}),
+			},
+			"trust_account": {
+				Description: "Optional Elasticsearch account trust settings.",
+				Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
+					"account_id": {
+						Description: "The ID of the Account.",
+						Type:        types.StringType,
+						Required:    true,
+					},
+					"trust_all": {
+						Description: "If true, all clusters in this account will by default be trusted and the `trust_allowlist` is ignored.",
+						Type:        types.BoolType,
+						Required:    true,
+					},
+					"trust_allowlist": {
+						Description: "The list of clusters to trust. Only used when `trust_all` is false.",
+						Type: types.SetType{
+							ElemType: types.StringType,
+						},
+						Optional: true,
+					},
+				}),
+				Computed: true,
+				Optional: true,
+			},
+		},
+
+		Blocks: map[string]tfsdk.Block{
+			"config": {
+				NestingMode: tfsdk.BlockNestingModeList,
+				MinItems:    0,
+				MaxItems:    1,
+				// TODO
+				// DiffSuppressFunc: suppressMissingOptionalConfigurationBlock,
+				Description: `Optional Elasticsearch settings which will be applied to all topologies unless overridden on the topology element`,
+				Attributes: map[string]tfsdk.Attribute{
+					"docker_image": {
+						Type:        types.StringType,
+						Description: "Optionally override the docker image the Elasticsearch nodes will use. Note that this field will only work for internal users only.",
+						Optional:    true,
+					},
+					"plugins": {
+						Type: types.SetType{
+							ElemType: types.StringType,
+						},
+						Description: "List of Elasticsearch supported plugins, which vary from version to version. Check the Stack Pack version to see which plugins are supported for each version. This is currently only available from the UI and [ecctl](https://www.elastic.co/guide/en/ecctl/master/ecctl_stack_list.html)",
+						Optional:    true,
+					},
+					"user_settings_json": {
+						Type:        types.StringType,
+						Description: `JSON-formatted user level "elasticsearch.yml" setting overrides`,
+						Optional:    true,
+					},
+					"user_settings_override_json": {
+						Type:        types.StringType,
+						Description: `JSON-formatted admin (ECE) level "elasticsearch.yml" setting overrides`,
+						Optional:    true,
+					},
+					"user_settings_yaml": {
+						Type:        types.StringType,
+						Description: `YAML-formatted user level "elasticsearch.yml" setting overrides`,
+						Optional:    true,
+					},
+					"user_settings_override_yaml": {
+						Type:        types.StringType,
+						Description: `YAML-formatted admin (ECE) level "elasticsearch.yml" setting overrides`,
+						Optional:    true,
+					},
+				},
+			},
+
+			"remote_cluster": {
+				NestingMode: tfsdk.BlockNestingModeSet,
+				MinItems:    0,
+				Description: "Optional Elasticsearch remote clusters to configure for the Elasticsearch resource, can be set multiple times",
+				Attributes: map[string]tfsdk.Attribute{
+					"deployment_id": {
+						Description: "Remote deployment ID",
+						Type:        types.StringType,
+						// TODO fix examples/deployment_css/deployment.tf#61
+						// Validators:  []tfsdk.AttributeValidator{validators.Length(32, 32)},
+						Required: true,
+					},
+					"alias": {
+						Description: "Alias for this Cross Cluster Search binding",
+						Type:        types.StringType,
+						// TODO fix examples/deployment_css/deployment.tf#62
+						// Validators:  []tfsdk.AttributeValidator{validators.NotEmpty()},
+						Required: true,
+					},
+					"ref_id": {
+						Description: `Remote elasticsearch "ref_id", it is best left to the default value`,
+						Type:        types.StringType,
+						Computed:    true,
+						PlanModifiers: []tfsdk.AttributePlanModifier{
+							planmodifier.DefaultValue(types.String{Value: "main-elasticsearch"}),
+						},
+						Optional: true,
+					},
+					"skip_unavailable": {
+						Description: "If true, skip the cluster during search when disconnected",
+						Type:        types.BoolType,
+						PlanModifiers: []tfsdk.AttributePlanModifier{
+							planmodifier.DefaultValue(types.Bool{Value: false}),
+						},
+						Optional: true,
+					},
+				},
+			},
+
+			"snapshot_source": {
+				NestingMode: tfsdk.BlockNestingModeList,
+				Description: "Optional snapshot source settings. Restore data from a snapshot of another deployment.",
+				MinItems:    0,
+				MaxItems:    1,
+				Attributes: map[string]tfsdk.Attribute{
+					"source_elasticsearch_cluster_id": {
+						Description: "ID of the Elasticsearch cluster that will be used as the source of the snapshot",
+						Type:        types.StringType,
+						Required:    true,
+					},
+					"snapshot_name": {
+						Description: "Name of the snapshot to restore. Use '__latest_success__' to get the most recent successful snapshot.",
+						Type:        types.StringType,
+						PlanModifiers: []tfsdk.AttributePlanModifier{
+							planmodifier.DefaultValue(types.String{Value: "__latest_success__"}),
+						},
+						Optional: true,
+					},
+				},
+			},
+
+			"extension": {
+				NestingMode: tfsdk.BlockNestingModeSet,
+				Description: "Optional Elasticsearch extensions such as custom bundles or plugins.",
+				MinItems:    0,
+				Attributes: map[string]tfsdk.Attribute{
+					"name": {
+						Description: "Extension name.",
+						Type:        types.StringType,
+						Required:    true,
+					},
+					"type": {
+						Description: "Extension type, only `bundle` or `plugin` are supported.",
+						Type:        types.StringType,
+						Required:    true,
+						Validators:  []tfsdk.AttributeValidator{validators.OneOf([]string{"bundle", "plugin"})},
+					},
+					"version": {
+						Description: "Elasticsearch compatibility version. Bundles should specify major or minor versions with wildcards, such as `7.*` or `*` but **plugins must use full version notation down to the patch level**, such as `7.10.1` and wildcards are not allowed.",
+						Type:        types.StringType,
+						Required:    true,
+					},
+					"url": {
+						Description: "Bundle or plugin URL, the extension URL can be obtained from the `ec_deployment_extension.<name>.url` attribute or the API and cannot be a random HTTP address that is hosted elsewhere.",
+						Type:        types.StringType,
+						Required:    true,
+					},
+				},
+			},
+
+			"trust_external": {
+				NestingMode: tfsdk.BlockNestingModeSet,
+				Description: "Optional Elasticsearch external trust settings.",
+				MinItems:    0,
+				Attributes: map[string]tfsdk.Attribute{
+					"relationship_id": {
+						Description: "The ID of the external trust relationship.",
+						Type:        types.StringType,
+						Required:    true,
+					},
+					"trust_all": {
+						Description: "If true, all clusters in this account will by default be trusted and the `trust_allowlist` is ignored.",
+						Type:        types.BoolType,
+						Required:    true,
+					},
+					"trust_allowlist": {
+						Description: "The list of clusters to trust. Only used when `trust_all` is false.",
+						Type: types.SetType{
+							ElemType: types.StringType,
+						},
+						Optional: true,
+					},
+				},
+			},
+
+			"strategy": {
+				NestingMode: tfsdk.BlockNestingModeList,
+				Description: "Configuration strategy settings.",
+				MinItems:    0,
+				MaxItems:    1,
+				Attributes: map[string]tfsdk.Attribute{
+					"type": {
+						Description: "Configuration strategy type " + strings.Join(strategiesList, ", "),
+						Type:        types.StringType,
+						Required:    true,
+						Validators:  []tfsdk.AttributeValidator{validators.OneOf(strategiesList)},
+						// TODO
+						// changes on this setting do not change the plan.
+						// DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+						// 	return true
+						// },
+					},
+				},
+			},
+		},
+	}
+}
