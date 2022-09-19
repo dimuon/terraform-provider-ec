@@ -20,17 +20,9 @@ package deploymentresource
 import (
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type Topology struct {
-	InstanceConfigurationId types.String `tfsdk:"instance_configuration_id"`
-	Size                    types.String `tfsdk:"size"`
-	SizeResource            types.String `tfsdk:"size_resource"`
-	ZoneCount               types.Int64  `tfsdk:"zone_count"`
-}
-
-func NewKibanaTopology(in *models.KibanaClusterTopologyElement) (*Topology, error) {
+func NewApmTopology(in *models.ApmTopologyElement) (*Topology, error) {
 	var top Topology
 
 	top.InstanceConfigurationId.Value = in.InstanceConfigurationID
@@ -45,7 +37,7 @@ func NewKibanaTopology(in *models.KibanaClusterTopologyElement) (*Topology, erro
 	return &top, nil
 }
 
-func NewKibanaTopologies(in []*models.KibanaClusterTopologyElement) ([]Topology, error) {
+func NewApmTopologies(in []*models.ApmTopologyElement) ([]Topology, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}
@@ -56,7 +48,7 @@ func NewKibanaTopologies(in []*models.KibanaClusterTopologyElement) ([]Topology,
 			continue
 		}
 
-		top, err := NewKibanaTopology(model)
+		top, err := NewApmTopology(model)
 		if err != nil {
 			return nil, err
 		}

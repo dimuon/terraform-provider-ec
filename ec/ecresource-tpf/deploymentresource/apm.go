@@ -24,7 +24,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type Kibana struct {
+type Apm struct {
 	ElasticsearchClusterRefId types.String `tfsdk:"elasticsearch_cluster_ref_id"`
 	RefId                     types.String `tfsdk:"ref_id"`
 	ResourceId                types.String `tfsdk:"resource_id"`
@@ -32,62 +32,62 @@ type Kibana struct {
 	HttpEndpoint              types.String `tfsdk:"http_endpoint"`
 	HttpsEndpoint             types.String `tfsdk:"https_endpoint"`
 	Topology                  []Topology   `tfsdk:"topology"`
-	Config                    KibanaConfig `tfsdk:"config"`
+	Config                    ApmConfig    `tfsdk:"config"`
 }
 
-func NewKibanas(in []*models.KibanaResourceInfo) ([]Kibana, error) {
+func NewApms(in []*models.ApmResourceInfo) ([]Apm, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}
 
-	kibanas := make([]Kibana, 0, len(in))
+	apms := make([]Apm, 0, len(in))
 	for _, model := range in {
-		if util.IsCurrentKibanaPlanEmpty(model) || isKibanaResourceStopped(model) {
+		if util.IsCurrentApmPlanEmpty(model) || isApmResourceStopped(model) {
 			continue
 		}
-
-		kibana, err := NewKibana(model)
+		apm, err := NewApm(model)
 		if err != nil {
 			return nil, err
 		}
-		kibanas = append(kibanas, *kibana)
+		apms = append(apms, *apm)
 	}
-	return kibanas, nil
+	return nil, nil
 }
 
-func NewKibana(in *models.KibanaResourceInfo) (*Kibana, error) {
-	var kibana Kibana
+func NewApm(in *models.ApmResourceInfo) (*Apm, error) {
+	var apm Apm
 
 	if in.RefID != nil {
-		kibana.RefId.Value = *in.RefID
+		apm.RefId.Value = *in.RefID
 	}
 
-	if in.Info.ClusterID != nil {
-		kibana.ResourceId.Value = *in.Info.ClusterID
+	if in.Info.ID != nil {
+		apm.ResourceId.Value = *in.Info.ID
 	}
 
 	if in.Region != nil {
-		kibana.Region.Value = *in.Region
+		apm.Region.Value = *in.Region
 	}
 
 	plan := in.Info.PlanInfo.Current.Plan
 	var err error
 
-	if kibana.Topology, err = NewKibanaTopologies(plan.ClusterTopology); err != nil {
+	apm.Topology, err = NewApmTopologies(plan.ClusterTopology)
+	if err != nil {
 		return nil, err
 	}
 
 	if in.ElasticsearchClusterRefID != nil {
-		kibana.ElasticsearchClusterRefId = types.String{Value: *in.ElasticsearchClusterRefID}
+		apm.ElasticsearchClusterRefId.Value = *in.ElasticsearchClusterRefID
 	}
 
-	kibana.HttpEndpoint.Value, kibana.HttpsEndpoint.Value = flatteners.FlattenEndpoints(in.Info.Metadata)
+	apm.HttpEndpoint.Value, apm.HttpsEndpoint.Value = flatteners.FlattenEndpoints(in.Info.Metadata)
 
-	cfg, err := NewKibanaConfig(plan.Kibana)
+	cfg, err := NewApmConfig(plan.Apm)
 	if err != nil {
 		return nil, err
 	}
-	kibana.Config = *cfg
+	apm.Config = *cfg
 
-	return &kibana, nil
+	return &apm, nil
 }
