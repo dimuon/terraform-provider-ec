@@ -108,32 +108,6 @@ type ElasticsearchStrategy struct {
 	Type types.String `tfsdk:"type"`
 }
 
-type Kibana struct {
-	ElasticsearchClusterRefId types.String   `tfsdk:"elasticsearch_cluster_ref_id"`
-	RefId                     types.String   `tfsdk:"ref_id"`
-	ResourceId                types.String   `tfsdk:"resource_id"`
-	Region                    types.String   `tfsdk:"region"`
-	HttpEndpoint              types.String   `tfsdk:"http_endpoint"`
-	HttpsEndpoint             types.String   `tfsdk:"https_endpoint"`
-	Topology                  KibanaTopology `tfsdk:"topology"`
-	Config                    KibanaConfig   `tfsdk:"config"`
-}
-
-type KibanaTopology struct {
-	InstanceConfigurationId types.String `tfsdk:"instance_configuration_id"`
-	Size                    types.String `tfsdk:"size"`
-	SizeResource            types.String `tfsdk:"size_resource"`
-	ZoneCount               types.Int64  `tfsdk:"zone_count"`
-}
-
-type KibanaConfig struct {
-	DockerImage              types.String `tfsdk:"docker_image"`
-	UserSettingsJson         types.String `tfsdk:"user_settings_json"`
-	UserSettingsOverrideJson types.String `tfsdk:"user_settings_override_json"`
-	UserSettingsYaml         types.String `tfsdk:"user_settings_yaml"`
-	UserSettingsOverrideYaml types.String `tfsdk:"user_settings_override_yaml"`
-}
-
 type Apm struct {
 	ElasticsearchClusterRefId types.String `tfsdk:"elasticsearch_cluster_ref_id"`
 	RefId                     types.String `tfsdk:"ref_id"`
