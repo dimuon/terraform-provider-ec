@@ -37,7 +37,7 @@ type Deployment struct {
 	ElasticsearchPassword types.String          `tfsdk:"elasticsearch_password"`
 	ApmSecretToken        types.String          `tfsdk:"apm_secret_token"`
 	TrafficFilter         []string              `tfsdk:"traffic_filter"`
-	Tags                  map[string]string     `tfsdk:"tags"`
+	Tags                  types.Map             `tfsdk:"tags"`
 	Elasticsearch         []*Elasticsearch      `tfsdk:"elasticsearch"`
 	Kibana                []*Kibana             `tfsdk:"kibana"`
 	Apm                   []*Apm                `tfsdk:"apm"`
@@ -65,7 +65,7 @@ func NewDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteReso
 	}
 	dep.Name.Value = *res.Name
 
-	dep.Tags = flatteners.TagsToMap(res.Metadata.Tags)
+	dep.Tags = flatteners.FlattenTags(res.Metadata.Tags)
 
 	if res.Resources == nil {
 		return nil, nil

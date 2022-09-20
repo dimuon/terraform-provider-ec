@@ -68,11 +68,17 @@ func (t DeploymentResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, di
 				Type:                types.StringType,
 				Computed:            true,
 				MarkdownDescription: "Unique identifier of this resource.",
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
 			},
 			"alias": {
 				Type:     types.StringType,
 				Computed: true,
 				Optional: true,
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
 			},
 			"version": {
 				Type:        types.StringType,
@@ -103,17 +109,26 @@ func (t DeploymentResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, di
 				Type:        types.StringType,
 				Description: "Computed username obtained upon creating the Elasticsearch resource",
 				Computed:    true,
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
 			},
 			"elasticsearch_password": {
 				Type:        types.StringType,
 				Description: "Computed password obtained upon creating the Elasticsearch resource",
 				Computed:    true,
 				Sensitive:   true,
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
 			},
 			"apm_secret_token": {
 				Type:      types.StringType,
 				Computed:  true,
 				Sensitive: true,
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
 			},
 			"traffic_filter": {
 				Type: types.SetType{
@@ -779,6 +794,9 @@ func elasticsearchBlock() tfsdk.Block {
 				Description: `Enable or disable autoscaling. Defaults to the setting coming from the deployment template. Accepted values are "true" or "false".`,
 				Computed:    true,
 				Optional:    true,
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
 			},
 			"ref_id": {
 				Type:        types.StringType,
@@ -787,37 +805,56 @@ func elasticsearchBlock() tfsdk.Block {
 				Computed:    true,
 				PlanModifiers: []tfsdk.AttributePlanModifier{
 					planmodifier.DefaultValue(types.String{Value: "main-elasticsearch"}),
+					resource.UseStateForUnknown(),
 				},
 			},
 			"resource_id": {
 				Type:        types.StringType,
 				Description: "The Elasticsearch resource unique identifier",
 				Computed:    true,
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
 			},
 			"region": {
 				Type:        types.StringType,
 				Description: "The Elasticsearch resource region",
 				Computed:    true,
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
 			},
 			"cloud_id": {
 				Type:        types.StringType,
 				Description: "The encoded Elasticsearch credentials to use in Beats or Logstash",
 				Computed:    true,
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
 			},
 			"http_endpoint": {
 				Type:        types.StringType,
 				Description: "The Elasticsearch resource HTTP endpoint",
 				Computed:    true,
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
 			},
 			"https_endpoint": {
 				Type:        types.StringType,
 				Description: "The Elasticsearch resource HTTPs endpoint",
 				Computed:    true,
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
 			},
 			"topology": {
 				Computed:    true,
 				Optional:    true,
 				Description: `Optional topology element which must be set once but can be set multiple times to compose complex topologies`,
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
 				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 					"id": {
 						Type:        types.StringType,
@@ -975,6 +1012,9 @@ func elasticsearchBlock() tfsdk.Block {
 				}),
 				Computed: true,
 				Optional: true,
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
 			},
 		},
 
