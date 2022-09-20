@@ -96,6 +96,26 @@ func NewDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteReso
 		return nil, err
 	}
 
+	if dep.Kibana, err = NewKibanas(res.Resources.Kibana); err != nil {
+		return nil, err
+	}
+
+	if dep.Apm, err = NewApms(res.Resources.Apm); err != nil {
+		return nil, err
+	}
+
+	if dep.IntegrationsServer, err = NewIntegrationsServers(res.Resources.IntegrationsServer); err != nil {
+		return nil, err
+	}
+
+	if dep.EnterpriseSearch, err = NewEnterpriseSearches(res.Resources.EnterpriseSearch); err != nil {
+		return nil, err
+	}
+
+	if dep.EnterpriseSearch, err = NewEnterpriseSearches(res.Resources.EnterpriseSearch); err != nil {
+		return nil, err
+	}
+
 	return &dep, nil
 }
 
