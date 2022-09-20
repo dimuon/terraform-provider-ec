@@ -51,7 +51,7 @@ func NewApms(in []*models.ApmResourceInfo) ([]Apm, error) {
 		}
 		apms = append(apms, *apm)
 	}
-	return nil, nil
+	return apms, nil
 }
 
 func NewApm(in *models.ApmResourceInfo) (*Apm, error) {

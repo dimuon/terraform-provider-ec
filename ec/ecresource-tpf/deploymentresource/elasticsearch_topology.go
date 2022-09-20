@@ -41,7 +41,7 @@ type ElasticsearchTopology struct {
 	Config                  []ElasticsearchConfig              `tfsdk:"config"`
 }
 
-func NewTopologies(in []*models.ElasticsearchClusterTopologyElement, autoscaling bool) ([]ElasticsearchTopology, error) {
+func NewElasticsearchTopologies(in []*models.ElasticsearchClusterTopologyElement, autoscaling bool) ([]ElasticsearchTopology, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}
@@ -52,7 +52,7 @@ func NewTopologies(in []*models.ElasticsearchClusterTopologyElement, autoscaling
 		if !isPotentiallySizedTopology(model, autoscaling) {
 			continue
 		}
-		top, err := NewTopology(model)
+		top, err := NewElasticsearchTopology(model)
 		if err != nil {
 			return nil, err
 		}
@@ -68,7 +68,7 @@ func NewTopologies(in []*models.ElasticsearchClusterTopologyElement, autoscaling
 	return tops, nil
 }
 
-func NewTopology(topology *models.ElasticsearchClusterTopologyElement) (ElasticsearchTopology, error) {
+func NewElasticsearchTopology(topology *models.ElasticsearchClusterTopologyElement) (ElasticsearchTopology, error) {
 	var top ElasticsearchTopology
 
 	top.Id.Value = topology.ID

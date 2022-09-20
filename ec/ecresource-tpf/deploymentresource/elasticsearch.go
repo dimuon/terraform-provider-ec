@@ -89,7 +89,7 @@ func NewElasticsearch(in *models.ElasticsearchResourceInfo, remotes *models.Remo
 	plan := in.Info.PlanInfo.Current.Plan
 	var err error
 
-	es.Topology, err = NewTopologies(plan.ClusterTopology, plan.AutoscalingEnabled != nil && *plan.AutoscalingEnabled)
+	es.Topology, err = NewElasticsearchTopologies(plan.ClusterTopology, plan.AutoscalingEnabled != nil && *plan.AutoscalingEnabled)
 	if err != nil {
 		return &es, err
 	}
