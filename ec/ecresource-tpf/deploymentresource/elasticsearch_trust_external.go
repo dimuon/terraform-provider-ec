@@ -23,18 +23,18 @@ import (
 
 type ElasticsearchTrustExternals []ElasticsearchTrustExternal
 
-func NewElasticsearchTrustExternals(in *models.ElasticsearchClusterTrustSettings) ([]ElasticsearchTrustExternal, error) {
+func NewElasticsearchTrustExternals(in *models.ElasticsearchClusterTrustSettings) ([]*ElasticsearchTrustExternal, error) {
 	if in == nil || len(in.External) == 0 {
 		return nil, nil
 	}
 
-	exts := make([]ElasticsearchTrustExternal, 0, len(in.External))
+	exts := make([]*ElasticsearchTrustExternal, 0, len(in.External))
 	for _, model := range in.External {
 		ext, err := NewElasticsearchTrustExternal(model)
 		if err != nil {
 			return nil, err
 		}
-		exts = append(exts, *ext)
+		exts = append(exts, ext)
 	}
 
 	return exts, nil

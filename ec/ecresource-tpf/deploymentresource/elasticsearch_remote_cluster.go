@@ -22,18 +22,18 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func NewElasticsearchRemoteClusters(in []*models.RemoteResourceRef) ([]ElasticsearchRemoteCluster, error) {
+func NewElasticsearchRemoteClusters(in []*models.RemoteResourceRef) ([]*ElasticsearchRemoteCluster, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}
 
-	rems := make([]ElasticsearchRemoteCluster, 0, len(in))
+	rems := make([]*ElasticsearchRemoteCluster, 0, len(in))
 	for _, model := range in {
 		remote, err := NewElasticsearchRemoteCluster(model)
 		if err != nil {
 			return nil, err
 		}
-		rems = append(rems, *remote)
+		rems = append(rems, remote)
 	}
 
 	return rems, nil

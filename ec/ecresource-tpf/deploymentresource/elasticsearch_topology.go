@@ -27,26 +27,26 @@ import (
 )
 
 type ElasticsearchTopology struct {
-	Id                      types.String                       `tfsdk:"id"`
-	InstanceConfigurationId types.String                       `tfsdk:"instance_configuration_id"`
-	Size                    types.String                       `tfsdk:"size"`
-	SizeResource            types.String                       `tfsdk:"size_resource"`
-	ZoneCount               types.Int64                        `tfsdk:"zone_count"`
-	NodeTypeData            types.String                       `tfsdk:"node_type_data"`
-	NodeTypeMaster          types.String                       `tfsdk:"node_type_master"`
-	NodeTypeIngest          types.String                       `tfsdk:"node_type_ingest"`
-	NodeTypeMl              types.String                       `tfsdk:"node_type_ml"`
-	NodeRoles               []string                           `tfsdk:"node_roles"`
-	Autoscaling             []ElasticsearchTopologyAutoscaling `tfsdk:"autoscaling"`
-	Config                  []ElasticsearchConfig              `tfsdk:"config"`
+	Id                      types.String                        `tfsdk:"id"`
+	InstanceConfigurationId types.String                        `tfsdk:"instance_configuration_id"`
+	Size                    types.String                        `tfsdk:"size"`
+	SizeResource            types.String                        `tfsdk:"size_resource"`
+	ZoneCount               types.Int64                         `tfsdk:"zone_count"`
+	NodeTypeData            types.String                        `tfsdk:"node_type_data"`
+	NodeTypeMaster          types.String                        `tfsdk:"node_type_master"`
+	NodeTypeIngest          types.String                        `tfsdk:"node_type_ingest"`
+	NodeTypeMl              types.String                        `tfsdk:"node_type_ml"`
+	NodeRoles               []string                            `tfsdk:"node_roles"`
+	Autoscaling             []*ElasticsearchTopologyAutoscaling `tfsdk:"autoscaling"`
+	Config                  []*ElasticsearchConfig              `tfsdk:"config"`
 }
 
-func NewElasticsearchTopologies(in []*models.ElasticsearchClusterTopologyElement, autoscaling bool) ([]ElasticsearchTopology, error) {
+func NewElasticsearchTopologies(in []*models.ElasticsearchClusterTopologyElement, autoscaling bool) ([]*ElasticsearchTopology, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}
 
-	tops := make([]ElasticsearchTopology, 0, len(in))
+	tops := make([]*ElasticsearchTopology, 0, len(in))
 
 	for _, model := range in {
 		if !isPotentiallySizedTopology(model, autoscaling) {
@@ -68,7 +68,7 @@ func NewElasticsearchTopologies(in []*models.ElasticsearchClusterTopologyElement
 	return tops, nil
 }
 
-func NewElasticsearchTopology(topology *models.ElasticsearchClusterTopologyElement) (ElasticsearchTopology, error) {
+func NewElasticsearchTopology(topology *models.ElasticsearchClusterTopologyElement) (*ElasticsearchTopology, error) {
 	var top ElasticsearchTopology
 
 	top.Id.Value = topology.ID
@@ -108,14 +108,14 @@ func NewElasticsearchTopology(topology *models.ElasticsearchClusterTopologyEleme
 
 	var err error
 	if top.Autoscaling, err = NewElasticsearchTopologyAutoscalings(topology); err != nil {
-		return top, err
+		return &top, err
 	}
 
 	if top.Config, err = NewElasticsearchConfigs(topology.Elasticsearch); err != nil {
-		return top, err
+		return &top, err
 	}
 
-	return top, nil
+	return &top, nil
 }
 
 func isPotentiallySizedTopology(topology *models.ElasticsearchClusterTopologyElement, isAutoscaling bool) bool {

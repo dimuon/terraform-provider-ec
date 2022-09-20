@@ -22,19 +22,19 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func NewElasticsearchTrustAccounts(in *models.ElasticsearchClusterTrustSettings) ([]ElasticsearchTrustAccount, error) {
+func NewElasticsearchTrustAccounts(in *models.ElasticsearchClusterTrustSettings) ([]*ElasticsearchTrustAccount, error) {
 	if in == nil || len(in.Accounts) == 0 {
 		return nil, nil
 	}
 
-	accs := make([]ElasticsearchTrustAccount, 0, len(in.Accounts))
+	accs := make([]*ElasticsearchTrustAccount, 0, len(in.Accounts))
 
 	for _, model := range in.Accounts {
 		acc, err := NewElasticsearchTrustAccount(model)
 		if err != nil {
 			return nil, err
 		}
-		accs = append(accs, *acc)
+		accs = append(accs, acc)
 	}
 
 	return accs, nil

@@ -35,12 +35,12 @@ type IntegrationsServer struct {
 	Config                    IntegrationsServerConfig `tfsdk:"config"`
 }
 
-func NewIntegrationsServers(in []*models.IntegrationsServerResourceInfo) ([]IntegrationsServer, error) {
+func NewIntegrationsServers(in []*models.IntegrationsServerResourceInfo) ([]*IntegrationsServer, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}
 
-	srvs := make([]IntegrationsServer, 0, len(in))
+	srvs := make([]*IntegrationsServer, 0, len(in))
 	for _, model := range in {
 		if util.IsCurrentIntegrationsServerPlanEmpty(model) || isIntegrationsServerResourceStopped(model) {
 			continue
@@ -50,7 +50,7 @@ func NewIntegrationsServers(in []*models.IntegrationsServerResourceInfo) ([]Inte
 		if err != nil {
 			return nil, err
 		}
-		srvs = append(srvs, *srv)
+		srvs = append(srvs, srv)
 	}
 
 	return srvs, nil

@@ -35,12 +35,12 @@ type Apm struct {
 	Config                    ApmConfig    `tfsdk:"config"`
 }
 
-func NewApms(in []*models.ApmResourceInfo) ([]Apm, error) {
+func NewApms(in []*models.ApmResourceInfo) ([]*Apm, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}
 
-	apms := make([]Apm, 0, len(in))
+	apms := make([]*Apm, 0, len(in))
 	for _, model := range in {
 		if util.IsCurrentApmPlanEmpty(model) || isApmResourceStopped(model) {
 			continue
@@ -49,7 +49,7 @@ func NewApms(in []*models.ApmResourceInfo) ([]Apm, error) {
 		if err != nil {
 			return nil, err
 		}
-		apms = append(apms, *apm)
+		apms = append(apms, apm)
 	}
 	return apms, nil
 }

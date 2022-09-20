@@ -28,29 +28,29 @@ import (
 )
 
 type Elasticsearch struct {
-	Autoscale      types.String                  `tfsdk:"autoscale"`
-	RefId          types.String                  `tfsdk:"ref_id"`
-	ResourceId     types.String                  `tfsdk:"resource_id"`
-	Region         types.String                  `tfsdk:"region"`
-	CloudID        types.String                  `tfsdk:"cloud_id"`
-	HttpEndpoint   types.String                  `tfsdk:"http_endpoint"`
-	HttpsEndpoint  types.String                  `tfsdk:"https_endpoint"`
-	Topology       []ElasticsearchTopology       `tfsdk:"topology"`
-	Config         []ElasticsearchConfig         `tfsdk:"config"`
-	RemoteCluster  []ElasticsearchRemoteCluster  `tfsdk:"remote_cluster"`
-	SnapshotSource []ElasticsearchSnapshotSource `tfsdk:"snapshot_source"`
-	Extension      []ElasticsearchExtension      `tfsdk:"extension"`
-	TrustAccount   []ElasticsearchTrustAccount   `tfsdk:"trust_account"`
-	TrustExternal  []ElasticsearchTrustExternal  `tfsdk:"trust_external"`
-	Strategy       []ElasticsearchStrategy       `tfsdk:"strategy"`
+	Autoscale      types.String                   `tfsdk:"autoscale"`
+	RefId          types.String                   `tfsdk:"ref_id"`
+	ResourceId     types.String                   `tfsdk:"resource_id"`
+	Region         types.String                   `tfsdk:"region"`
+	CloudID        types.String                   `tfsdk:"cloud_id"`
+	HttpEndpoint   types.String                   `tfsdk:"http_endpoint"`
+	HttpsEndpoint  types.String                   `tfsdk:"https_endpoint"`
+	Topology       []*ElasticsearchTopology       `tfsdk:"topology"`
+	Config         []*ElasticsearchConfig         `tfsdk:"config"`
+	RemoteCluster  []*ElasticsearchRemoteCluster  `tfsdk:"remote_cluster"`
+	SnapshotSource []*ElasticsearchSnapshotSource `tfsdk:"snapshot_source"`
+	Extension      []*ElasticsearchExtension      `tfsdk:"extension"`
+	TrustAccount   []*ElasticsearchTrustAccount   `tfsdk:"trust_account"`
+	TrustExternal  []*ElasticsearchTrustExternal  `tfsdk:"trust_external"`
+	Strategy       []*ElasticsearchStrategy       `tfsdk:"strategy"`
 }
 
-func NewElasticsearches(in []*models.ElasticsearchResourceInfo, remotes *models.RemoteResources) ([]Elasticsearch, error) {
+func NewElasticsearches(in []*models.ElasticsearchResourceInfo, remotes *models.RemoteResources) ([]*Elasticsearch, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}
 
-	ess := make([]Elasticsearch, 0, len(in))
+	ess := make([]*Elasticsearch, 0, len(in))
 
 	for _, model := range in {
 		if util.IsCurrentEsPlanEmpty(model) || isEsResourceStopped(model) {
@@ -61,7 +61,7 @@ func NewElasticsearches(in []*models.ElasticsearchResourceInfo, remotes *models.
 		if es, err = NewElasticsearch(model, remotes); err != nil {
 			return nil, err
 		}
-		ess = append(ess, *es)
+		ess = append(ess, es)
 	}
 
 	return ess, nil

@@ -26,14 +26,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func NewElasticsearchTopologyAutoscalings(in *models.ElasticsearchClusterTopologyElement) ([]ElasticsearchTopologyAutoscaling, error) {
+func NewElasticsearchTopologyAutoscalings(in *models.ElasticsearchClusterTopologyElement) ([]*ElasticsearchTopologyAutoscaling, error) {
 	auto, err := NewElasticsearchTopologyAutoscaling(in)
 	if err != nil {
 		return nil, err
 	}
 
 	if *auto != (ElasticsearchTopologyAutoscaling{}) {
-		return []ElasticsearchTopologyAutoscaling{*auto}, nil
+		return []*ElasticsearchTopologyAutoscaling{auto}, nil
 	}
 
 	return nil, nil

@@ -31,16 +31,16 @@ type Kibana struct {
 	Region                    types.String `tfsdk:"region"`
 	HttpEndpoint              types.String `tfsdk:"http_endpoint"`
 	HttpsEndpoint             types.String `tfsdk:"https_endpoint"`
-	Topology                  []Topology   `tfsdk:"topology"`
+	Topology                  []*Topology  `tfsdk:"topology"`
 	Config                    KibanaConfig `tfsdk:"config"`
 }
 
-func NewKibanas(in []*models.KibanaResourceInfo) ([]Kibana, error) {
+func NewKibanas(in []*models.KibanaResourceInfo) ([]*Kibana, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}
 
-	kibanas := make([]Kibana, 0, len(in))
+	kibanas := make([]*Kibana, 0, len(in))
 	for _, model := range in {
 		if util.IsCurrentKibanaPlanEmpty(model) || isKibanaResourceStopped(model) {
 			continue
@@ -50,7 +50,7 @@ func NewKibanas(in []*models.KibanaResourceInfo) ([]Kibana, error) {
 		if err != nil {
 			return nil, err
 		}
-		kibanas = append(kibanas, *kibana)
+		kibanas = append(kibanas, kibana)
 	}
 	return kibanas, nil
 }

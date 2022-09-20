@@ -45,12 +45,12 @@ func NewKibanaTopology(in *models.KibanaClusterTopologyElement) (*Topology, erro
 	return &top, nil
 }
 
-func NewKibanaTopologies(in []*models.KibanaClusterTopologyElement) ([]Topology, error) {
+func NewKibanaTopologies(in []*models.KibanaClusterTopologyElement) ([]*Topology, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}
 
-	tops := make([]Topology, 0, len(in))
+	tops := make([]*Topology, 0, len(in))
 	for _, model := range in {
 		if model.Size == nil || model.Size.Value == nil || *model.Size.Value == 0 {
 			continue
@@ -61,7 +61,7 @@ func NewKibanaTopologies(in []*models.KibanaClusterTopologyElement) ([]Topology,
 			return nil, err
 		}
 
-		tops = append(tops, *top)
+		tops = append(tops, top)
 	}
 
 	return tops, nil

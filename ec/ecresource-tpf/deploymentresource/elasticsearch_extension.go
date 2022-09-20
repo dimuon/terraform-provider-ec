@@ -22,12 +22,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func NewElasticsearchExtensions(in *models.ElasticsearchConfiguration) ([]ElasticsearchExtension, error) {
+func NewElasticsearchExtensions(in *models.ElasticsearchConfiguration) ([]*ElasticsearchExtension, error) {
 	if len(in.UserBundles) == 0 && len(in.UserPlugins) == 0 {
 		return nil, nil
 	}
 
-	exts := make([]ElasticsearchExtension, 0, len(in.UserBundles)+len(in.UserPlugins))
+	exts := make([]*ElasticsearchExtension, 0, len(in.UserBundles)+len(in.UserPlugins))
 
 	for _, model := range in.UserBundles {
 		ext, err := NewElasticsearchExtensionFromUserBundle(model)
@@ -35,7 +35,7 @@ func NewElasticsearchExtensions(in *models.ElasticsearchConfiguration) ([]Elasti
 		if err != nil {
 			return nil, err
 		}
-		exts = append(exts, *ext)
+		exts = append(exts, ext)
 	}
 
 	for _, model := range in.UserPlugins {
@@ -43,7 +43,7 @@ func NewElasticsearchExtensions(in *models.ElasticsearchConfiguration) ([]Elasti
 		if err != nil {
 			return nil, err
 		}
-		exts = append(exts, *ext)
+		exts = append(exts, ext)
 	}
 
 	return exts, nil

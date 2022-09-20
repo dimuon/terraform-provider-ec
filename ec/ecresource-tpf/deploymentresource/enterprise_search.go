@@ -35,12 +35,12 @@ type EnterpriseSearch struct {
 	Config                    EnterpriseSearchConfig     `tfsdk:"config"`
 }
 
-func NewEnterpriseSearches(in []*models.EnterpriseSearchResourceInfo) ([]EnterpriseSearch, error) {
+func NewEnterpriseSearches(in []*models.EnterpriseSearchResourceInfo) ([]*EnterpriseSearch, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}
 
-	esss := make([]EnterpriseSearch, 0, len(in))
+	esss := make([]*EnterpriseSearch, 0, len(in))
 	for _, model := range in {
 		if util.IsCurrentEssPlanEmpty(model) || isEssResourceStopped(model) {
 			continue
@@ -50,7 +50,7 @@ func NewEnterpriseSearches(in []*models.EnterpriseSearchResourceInfo) ([]Enterpr
 		if err != nil {
 			return nil, err
 		}
-		esss = append(esss, *ess)
+		esss = append(esss, ess)
 	}
 
 	return esss, nil

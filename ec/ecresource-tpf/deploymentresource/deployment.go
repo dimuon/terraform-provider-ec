@@ -26,24 +26,24 @@ import (
 )
 
 type Deployment struct {
-	Id                    types.String         `tfsdk:"id"`
-	Alias                 types.String         `tfsdk:"alias"`
-	Version               types.String         `tfsdk:"version"`
-	Region                types.String         `tfsdk:"region"`
-	DeploymentTemplateId  types.String         `tfsdk:"deployment_template_id"`
-	Name                  types.String         `tfsdk:"name"`
-	RequestId             types.String         `tfsdk:"request_id"`
-	ElasticsearchUsername types.String         `tfsdk:"elasticsearch_username"`
-	ElasticsearchPassword types.String         `tfsdk:"elasticsearch_password"`
-	ApmSecretToken        types.String         `tfsdk:"apm_secret_token"`
-	TrafficFilter         []string             `tfsdk:"traffic_filter"`
-	Tags                  map[string]string    `tfsdk:"tags"`
-	Elasticsearch         []Elasticsearch      `tfsdk:"elasticsearch"`
-	Kibana                []Kibana             `tfsdk:"kibana"`
-	Apm                   []Apm                `tfsdk:"apm"`
-	IntegrationsServer    []IntegrationsServer `tfsdk:"integrations_server"`
-	EnterpriseSearch      []EnterpriseSearch   `tfsdk:"enterprise_search"`
-	Observability         []Observability      `tfsdk:"observability"`
+	Id                    types.String          `tfsdk:"id"`
+	Alias                 types.String          `tfsdk:"alias"`
+	Version               types.String          `tfsdk:"version"`
+	Region                types.String          `tfsdk:"region"`
+	DeploymentTemplateId  types.String          `tfsdk:"deployment_template_id"`
+	Name                  types.String          `tfsdk:"name"`
+	RequestId             types.String          `tfsdk:"request_id"`
+	ElasticsearchUsername types.String          `tfsdk:"elasticsearch_username"`
+	ElasticsearchPassword types.String          `tfsdk:"elasticsearch_password"`
+	ApmSecretToken        types.String          `tfsdk:"apm_secret_token"`
+	TrafficFilter         []string              `tfsdk:"traffic_filter"`
+	Tags                  map[string]string     `tfsdk:"tags"`
+	Elasticsearch         []*Elasticsearch      `tfsdk:"elasticsearch"`
+	Kibana                []*Kibana             `tfsdk:"kibana"`
+	Apm                   []*Apm                `tfsdk:"apm"`
+	IntegrationsServer    []*IntegrationsServer `tfsdk:"integrations_server"`
+	EnterpriseSearch      []*EnterpriseSearch   `tfsdk:"enterprise_search"`
+	Observability         []*Observability      `tfsdk:"observability"`
 }
 
 func missingField(field string) error {
@@ -116,6 +116,13 @@ func NewDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteReso
 		return nil, err
 	}
 
+	if dep.TrafficFilter, err = NewTrafficFilters(res.Settings); err != nil {
+		return nil, err
+	}
+
+	if dep.Observability, err = NewObservability(res.Settings); err != nil {
+		return nil, err
+	}
 	return &dep, nil
 }
 
@@ -128,9 +135,12 @@ type ElasticsearchStrategy struct {
 	Type types.String `tfsdk:"type"`
 }
 
-type Observability struct {
-	DeploymentId types.String `tfsdk:"deployment_id"`
-	RefId        types.String `tfsdk:"ref_id"`
-	Logs         types.Bool   `tfsdk:"logs"`
-	Metrics      types.Bool   `tfsdk:"metrics"`
+func NewTrafficFilters(in *models.DeploymentSettings) ([]string, error) {
+	if in == nil || in.TrafficFilterSettings == nil || len(in.TrafficFilterSettings.Rulesets) == 0 {
+		return nil, nil
+	}
+
+	var rules []string
+
+	return append(rules, in.TrafficFilterSettings.Rulesets...), nil
 }

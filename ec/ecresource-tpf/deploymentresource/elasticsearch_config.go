@@ -26,14 +26,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func NewElasticsearchConfigs(in *models.ElasticsearchConfiguration) ([]ElasticsearchConfig, error) {
+func NewElasticsearchConfigs(in *models.ElasticsearchConfiguration) ([]*ElasticsearchConfig, error) {
 	cfg, err := NewElasticsearchConfig(in)
 	if err != nil {
 		return nil, err
 	}
 
 	if !cfg.isEmpty() {
-		return []ElasticsearchConfig{*cfg}, nil
+		return []*ElasticsearchConfig{cfg}, nil
 	}
 
 	return nil, nil
