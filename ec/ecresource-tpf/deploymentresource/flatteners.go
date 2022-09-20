@@ -156,7 +156,7 @@ func getLowestVersion(res *models.DeploymentResources) (string, error) {
 	if version.String() != replaceVersion {
 		return version.String(), nil
 	}
-	return "", errors.New("Unable to determine the lowest version for any the deployment components")
+	return "", errors.New("unable to determine the lowest version for any the deployment components")
 }
 
 func swapLowerVersion(version *semver.Version, comp string) error {
