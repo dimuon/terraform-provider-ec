@@ -34,25 +34,30 @@ func NewObservability(in *models.DeploymentSettings) ([]*Observability, error) {
 		return nil, nil
 	}
 
-	var obs Observability
+	obs := Observability{
+		DeploymentId: types.String{Null: true},
+		RefId:        types.String{Null: true},
+		Logs:         types.Bool{Null: true},
+		Metrics:      types.Bool{Null: true},
+	}
 
 	// We are only accepting a single deployment ID and refID for both logs and metrics.
 	// If either of them is not nil the deployment ID and refID will be filled.
 	if in.Observability.Metrics != nil {
 		if in.Observability.Metrics.Destination.DeploymentID != nil {
-			obs.DeploymentId.Value = *in.Observability.Metrics.Destination.DeploymentID
+			obs.DeploymentId = types.String{Value: *in.Observability.Metrics.Destination.DeploymentID}
 		}
 
-		obs.RefId.Value = in.Observability.Metrics.Destination.RefID
-		obs.Metrics.Value = true
+		obs.RefId = types.String{Value: in.Observability.Metrics.Destination.RefID}
+		obs.Metrics = types.Bool{Value: true}
 	}
 
 	if in.Observability.Logging != nil {
 		if in.Observability.Logging.Destination.DeploymentID != nil {
-			obs.DeploymentId.Value = *in.Observability.Logging.Destination.DeploymentID
+			obs.DeploymentId = types.String{Value: *in.Observability.Logging.Destination.DeploymentID}
 		}
-		obs.RefId.Value = in.Observability.Logging.Destination.RefID
-		obs.Logs.Value = true
+		obs.RefId = types.String{Value: in.Observability.Logging.Destination.RefID}
+		obs.Logs = types.Bool{Value: true}
 	}
 
 	if obs == (Observability{}) {
