@@ -32,8 +32,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 )
 
-func (r deploymentResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	if !providerReady(r.provider, &resp.Diagnostics) {
+func (r Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	if !r.ready(&resp.Diagnostics) {
 		return
 	}
 
@@ -46,7 +46,7 @@ func (r deploymentResource) Read(ctx context.Context, req resource.ReadRequest, 
 		return
 	}
 
-	client := r.provider.GetClient()
+	client := r.client
 
 	var newState *Deployment
 	var err error

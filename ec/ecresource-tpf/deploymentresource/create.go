@@ -20,61 +20,57 @@ package deploymentresource
 import (
 	"context"
 
-	"github.com/elastic/cloud-sdk-go/pkg/api"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 )
 
-// CreateResource will createResource a new deployment from the specified settings.
-func Create(ctx context.Context, client *api.API, cfg, plan *Deployment) (resp *Deployment, errors []error) {
-	// reqID := deploymentapi.RequestID("")
+func (r Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	if !r.ready(&resp.Diagnostics) {
+		return
+	}
 
-	// req, err := createResourceToModel(client, cfg, plan)
+	var cfg Deployment
+	diags := req.Config.Get(ctx, &cfg)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var plan Deployment
+	diags = req.Plan.Get(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// // deploymentResource, errors := Create(ctx, r.provider.GetClient(), &cfg, &plan)
+
+	// if len(errors) > 0 {
+	// 	for _, err := range errors {
+	// 		resp.Diagnostics.AddError(
+	// 			"Cannot create deployment resource",
+	// 			err.Error(),
+	// 		)
+	// 	}
+	// 	return
+	// }
+
+	// If applicable, this is a great opportunity to initialize any necessary
+	// provider client data and make a call using it.
+	// example, err := d.provider.client.CreateExample(...)
 	// if err != nil {
-	// 	return nil, []error{err}
+	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create example, got error: %s", err))
+	//     return
 	// }
 
-	// res, err := deploymentapi.Create(deploymentapi.CreateParams{
-	// 	API:       client,
-	// 	RequestID: reqID,
-	// 	Request:   req,
-	// 	Overrides: &deploymentapi.PayloadOverrides{
-	// 		Name:    plan.Name.Value,
-	// 		Version: plan.Version.Value,
-	// 		Region:  plan.Region.Value,
-	// 	},
-	// })
+	// For the purposes of this example code, hardcoding a response value to
+	// save into the Terraform state.
+	// data.Id = types.String{Value: "example-id"}
 
-	// if err != nil {
-	// 	merr := multierror.NewPrefixed("failed creating deployment", err)
-	// 	return nil, []error{merr.Append(newCreationError(reqID))}
-	// }
+	// write logs using the tflog package
+	// see https://pkg.go.dev/github.com/hashicorp/terraform-plugin-log/tflog
+	// for more information
+	// tflog.Trace(ctx, "created a resource")
 
-	// if err := WaitForPlanCompletion(client, *res.ID); err != nil {
-	// 	merr := multierror.NewPrefixed("failed tracking create progress", err)
-	// 	return nil, []error{merr.Append(newCreationError(reqID))}
-	// }
-
-	// d.SetId(*res.ID)
-
-	// if err := handleRemoteClusters(d, client); err != nil {
-	// 	errors = append(errors, err)
-	// }
-
-	/* 	if errs := readResource(ctx, d, meta); errs != nil {
-	   		errors = append(errors, errs...)
-	   	}
-
-	   	if err := parseCredentials(d, res.Resources); err != nil {
-	   		errors = append(errors, err)
-	   	}
-
-	   	return errors
-	*/
-	return nil, nil
+	// diags = resp.State.Set(ctx, &deploymentResource)
+	// resp.Diagnostics.Append(diags...)
 }
-
-/* func newCreationError(reqID string) error {
-	return fmt.Errorf(
-		`set "request_id" to "%s" to recreate the deployment resources`, reqID,
-	)
-}
-*/

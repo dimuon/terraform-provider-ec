@@ -79,7 +79,7 @@ func LegacyProvider() *schema.Provider {
 		Schema:               newSchema(),
 		DataSourcesMap:       map[string]*schema.Resource{},
 		ResourcesMap: map[string]*schema.Resource{
-			"ec_deployment": deploymentresource.Resource(),
+			"ec_deployment":           deploymentresource.Resource(),
 			"ec_deployment_extension": extensionresource.Resource(),
 		},
 	}
@@ -170,9 +170,9 @@ func (p *Provider) DataSources(ctx context.Context) []func() datasource.DataSour
 
 func (p *Provider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		func() resp.Resources()[]
 		func() resource.Resource { return &elasticsearchkeystoreresource.Resource{} },
 		func() resource.Resource { return &extensionresource.Resource{} },
+		func() resource.Resource { return &deploymentresource.Resource{} },
 		func() resource.Resource { return &trafficfilterresource.Resource{} },
 		func() resource.Resource { return &trafficfilterassocresource.Resource{} },
 	}
@@ -381,19 +381,4 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	p.client = client
 	res.DataSourceData = client
 	res.ResourceData = client
-}
-
-func (p *Provider) GetResources(_ context.Context) (map[string]provider.ResourceType, diag.Diagnostics) {
-	return map[string]provider.ResourceType{
-		"ec_deployment_traffic_filter_association": trafficfilterassocresource.ResourceType{},
-		"ec_deployment": deploymentresource.DeploymentResourceType{},
-	}, nil
-}
-
-func (p *Provider) GetDataSources(context.Context) (map[string]provider.DataSourceType, diag.Diagnostics) {
-	return map[string]provider.DataSourceType{
-		"ec_stack":       stackdatasource.DataSourceType{},
-		"ec_deployment":  deploymentdatasource.DataSourceType{},
-		"ec_deployments": deploymentsdatasource.DataSourceType{},
-	}, nil
 }

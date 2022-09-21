@@ -21,24 +21,19 @@ import (
 	"context"
 	"strings"
 
+	"github.com/elastic/cloud-sdk-go/pkg/api"
 	"github.com/elastic/terraform-provider-ec/ec/internal"
 	"github.com/elastic/terraform-provider-ec/ec/internal/planmodifier"
 	"github.com/elastic/terraform-provider-ec/ec/internal/validators"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	tpfprovider "github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
-var _ tpfprovider.ResourceType = DeploymentResourceType{}
-var _ resource.Resource = deploymentResource{}
-
-// var _ resource.ResourceWithImportState = deploymentResource{}
-
-type DeploymentResourceType struct{}
+// var _ tpfprovider.ResourceType = DeploymentResourceType{}
+var _ resource.Resource = Resource{}
 
 // These constants are only used to determine whether or not a dedicated
 // tier of masters or ingest (coordinating) nodes are set.
@@ -57,7 +52,29 @@ var strategiesList = []string{
 	autodetect, growAndShrink, rollingGrowAndShrink, rollingAll,
 }
 
-func (t DeploymentResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
+type Resource struct {
+	client *api.API
+}
+
+func (r *Resource) ready(dg *diag.Diagnostics) bool {
+	if r.client == nil {
+		dg.AddError(
+			"Unconfigured API Client",
+			"Expected configured API client. Please report this issue to the provider developers.",
+		)
+
+		return false
+	}
+	return true
+}
+
+func (r *Resource) Configure(ctx context.Context, request resource.ConfigureRequest, response *resource.ConfigureResponse) {
+	client, diags := internal.ConvertProviderData(request.ProviderData)
+	response.Diagnostics.Append(diags...)
+	r.client = client
+}
+
+func (t *Resource) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Version: 1,
 		// This description is used by the documentation generator and the language server.
@@ -662,120 +679,8 @@ func (t DeploymentResourceType) GetSchema(ctx context.Context) (tfsdk.Schema, di
 	}, nil
 }
 
-func (t DeploymentResourceType) NewResource(ctx context.Context, in tpfprovider.Provider) (resource.Resource, diag.Diagnostics) {
-	p, diags := internal.ConvertProviderType(in)
-
-	return &deploymentResource{
-		provider: p,
-	}, diags
-}
-
-type deploymentResource struct {
-	provider internal.Provider
-}
-
-func providerReady(p internal.Provider, dg *diag.Diagnostics) bool {
-	if p.GetClient() == nil {
-		dg.AddError(
-			"Provider not configured",
-			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
-		)
-		return false
-	}
-	return true
-}
-
-func (r deploymentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	if !providerReady(r.provider, &resp.Diagnostics) {
-		return
-	}
-
-	var cfg Deployment
-	diags := req.Config.Get(ctx, &cfg)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	var plan Deployment
-	diags = req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	deploymentResource, errors := Create(ctx, r.provider.GetClient(), &cfg, &plan)
-
-	if len(errors) > 0 {
-		for _, err := range errors {
-			resp.Diagnostics.AddError(
-				"Cannot create deployment resource",
-				err.Error(),
-			)
-		}
-		return
-	}
-
-	// If applicable, this is a great opportunity to initialize any necessary
-	// provider client data and make a call using it.
-	// example, err := d.provider.client.CreateExample(...)
-	// if err != nil {
-	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create example, got error: %s", err))
-	//     return
-	// }
-
-	// For the purposes of this example code, hardcoding a response value to
-	// save into the Terraform state.
-	// data.Id = types.String{Value: "example-id"}
-
-	// write logs using the tflog package
-	// see https://pkg.go.dev/github.com/hashicorp/terraform-plugin-log/tflog
-	// for more information
-	tflog.Trace(ctx, "created a resource")
-
-	diags = resp.State.Set(ctx, &deploymentResource)
-	resp.Diagnostics.Append(diags...)
-}
-
-func (r deploymentResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data Deployment
-
-	diags := req.Plan.Get(ctx, &data)
-	resp.Diagnostics.Append(diags...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// If applicable, this is a great opportunity to initialize any necessary
-	// provider client data and make a call using it.
-	// example, err := d.provider.client.UpdateExample(...)
-	// if err != nil {
-	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update example, got error: %s", err))
-	//     return
-	// }
-
-	diags = resp.State.Set(ctx, &data)
-	resp.Diagnostics.Append(diags...)
-}
-
-func (r deploymentResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var data Deployment
-
-	diags := req.State.Get(ctx, &data)
-	resp.Diagnostics.Append(diags...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// If applicable, this is a great opportunity to initialize any necessary
-	// provider client data and make a call using it.
-	// example, err := d.provider.client.DeleteExample(...)
-	// if err != nil {
-	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete example, got error: %s", err))
-	//     return
-	// }
+func (r *Resource) Metadata(ctx context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
+	response.TypeName = request.ProviderTypeName + "_deployment"
 }
 
 // func (r deploymentResource) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
