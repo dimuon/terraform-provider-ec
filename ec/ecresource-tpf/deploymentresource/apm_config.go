@@ -20,6 +20,7 @@ package deploymentresource
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -34,7 +35,9 @@ type ApmConfig struct {
 	UserSettingsOverrideYaml types.String `tfsdk:"user_settings_override_yaml"`
 }
 
-func NewApmConfig(in *models.ApmConfiguration) (*ApmConfig, error) {
+type ApmConfigs []*ApmConfig
+
+func NewApmConfigs(in *models.ApmConfiguration) (ApmConfigs, error) {
 	var cfg ApmConfig
 
 	if in == nil {
@@ -65,5 +68,46 @@ func NewApmConfig(in *models.ApmConfiguration) (*ApmConfig, error) {
 		}
 	}
 
-	return &cfg, nil
+	if cfg != (ApmConfig{}) {
+		return []*ApmConfig{&cfg}, nil
+	}
+
+	return nil, nil
+}
+
+func (cfgs ApmConfigs) Payload(model *models.ApmConfiguration) error {
+	for _, cfg := range cfgs {
+		if !cfg.DebugEnabled.IsNull() {
+			if model.SystemSettings == nil {
+				model.SystemSettings = &models.ApmSystemSettings{}
+			}
+			model.SystemSettings.DebugEnabled = &cfg.DebugEnabled.Value
+		}
+
+		if cfg.UserSettingsJson.Value != "" {
+			if err := json.Unmarshal([]byte(cfg.UserSettingsJson.Value), &model.UserSettingsJSON); err != nil {
+				return fmt.Errorf("failed expanding apm user_settings_json: %w", err)
+			}
+		}
+
+		if cfg.UserSettingsOverrideJson.Value != "" {
+			if err := json.Unmarshal([]byte(cfg.UserSettingsOverrideJson.Value), &model.UserSettingsOverrideJSON); err != nil {
+				return fmt.Errorf("failed expanding apm user_settings_override_json: %w", err)
+			}
+		}
+
+		if !cfg.UserSettingsYaml.IsNull() {
+			model.UserSettingsYaml = cfg.UserSettingsYaml.Value
+		}
+
+		if !cfg.UserSettingsOverrideYaml.IsNull() {
+			model.UserSettingsOverrideYaml = cfg.UserSettingsOverrideYaml.Value
+		}
+
+		if !cfg.DockerImage.IsNull() {
+			model.DockerImage = cfg.DockerImage.Value
+		}
+	}
+
+	return nil
 }

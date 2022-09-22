@@ -21,9 +21,10 @@ import (
 	"strconv"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
+	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/elastic/terraform-provider-ec/ec/internal/flatteners"
+	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
 )
 
@@ -102,7 +103,7 @@ func NewElasticsearch(in *models.ElasticsearchResourceInfo, remotes *models.Remo
 		es.CloudID.Value = meta.CloudID
 	}
 
-	es.HttpEndpoint.Value, es.HttpsEndpoint.Value = flatteners.FlattenEndpoints(in.Info.Metadata)
+	es.HttpEndpoint.Value, es.HttpsEndpoint.Value = converters.ExtractEndpoints(in.Info.Metadata)
 
 	es.Config, err = NewElasticsearchConfigs(plan.Elasticsearch)
 	if err != nil {
@@ -130,4 +131,40 @@ func NewElasticsearch(in *models.ElasticsearchResourceInfo, remotes *models.Remo
 	}
 
 	return &es, nil
+}
+
+func enrichElasticsearchTemplate(tpl *models.ElasticsearchPayload, dt, version string, useNodeRoles bool) *models.ElasticsearchPayload {
+	if tpl.Plan.DeploymentTemplate == nil {
+		tpl.Plan.DeploymentTemplate = &models.DeploymentTemplateReference{}
+	}
+
+	if tpl.Plan.DeploymentTemplate.ID == nil || *tpl.Plan.DeploymentTemplate.ID == "" {
+		tpl.Plan.DeploymentTemplate.ID = ec.String(dt)
+	}
+
+	if tpl.Plan.Elasticsearch.Version == "" {
+		tpl.Plan.Elasticsearch.Version = version
+	}
+
+	for _, topology := range tpl.Plan.ClusterTopology {
+		if useNodeRoles {
+			topology.NodeType = nil
+			continue
+		}
+		topology.NodeRoles = nil
+	}
+
+	return tpl
+}
+
+func esResource(res *models.DeploymentTemplateInfoV2) *models.ElasticsearchPayload {
+	if len(res.DeploymentTemplate.Resources.Elasticsearch) == 0 {
+		return &models.ElasticsearchPayload{
+			Plan: &models.ElasticsearchClusterPlan{
+				Elasticsearch: &models.ElasticsearchConfiguration{},
+			},
+			Settings: &models.ElasticsearchClusterSettings{},
+		}
+	}
+	return res.DeploymentTemplate.Resources.Elasticsearch[0]
 }

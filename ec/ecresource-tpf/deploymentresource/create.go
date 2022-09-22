@@ -28,8 +28,8 @@ func (r Resource) Create(ctx context.Context, req resource.CreateRequest, resp *
 		return
 	}
 
-	var cfg Deployment
-	diags := req.Config.Get(ctx, &cfg)
+	var config Deployment
+	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -41,6 +41,9 @@ func (r Resource) Create(ctx context.Context, req resource.CreateRequest, resp *
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	//
+	// model, err := plan.ToModel(plan.Id.Value)
 
 	// // deploymentResource, errors := Create(ctx, r.provider.GetClient(), &cfg, &plan)
 
@@ -74,3 +77,52 @@ func (r Resource) Create(ctx context.Context, req resource.CreateRequest, resp *
 	// diags = resp.State.Set(ctx, &deploymentResource)
 	// resp.Diagnostics.Append(diags...)
 }
+
+// func create(ctx context.Context, client *api.API, plan Deployment, config Deployment) (*Deployment, error) {
+// 	reqID := deploymentapi.RequestID(plan.RequestId.Value)
+
+// 	req, err := plan.Model(d, client)
+// 	if err != nil {
+// 		return diag.FromErr(err)
+// 	}
+
+// 	res, err := deploymentapi.Create(deploymentapi.CreateParams{
+// 		API:       client,
+// 		RequestID: reqID,
+// 		Request:   req,
+// 		Overrides: &deploymentapi.PayloadOverrides{
+// 			Name:    d.Get("name").(string),
+// 			Version: d.Get("version").(string),
+// 			Region:  d.Get("region").(string),
+// 		},
+// 	})
+// 	if err != nil {
+// 		merr := multierror.NewPrefixed("failed creating deployment", err)
+// 		return diag.FromErr(merr.Append(newCreationError(reqID)))
+// 	}
+
+// 	if err := WaitForPlanCompletion(client, *res.ID); err != nil {
+// 		merr := multierror.NewPrefixed("failed tracking create progress", err)
+// 		return diag.FromErr(merr.Append(newCreationError(reqID)))
+// 	}
+
+// 	d.SetId(*res.ID)
+
+// 	// Since before the deployment has been read, there's no real state
+// 	// persisted, it'd better to handle each of the errors by appending
+// 	// it to the `diag.Diagnostics` since it has support for it.
+// 	var diags diag.Diagnostics
+// 	if err := handleRemoteClusters(d, client); err != nil {
+// 		diags = append(diags, diag.FromErr(err)...)
+// 	}
+
+// 	if diag := readResource(ctx, d, meta); diag != nil {
+// 		diags = append(diags, diags...)
+// 	}
+
+// 	if err := parseCredentials(d, res.Resources); err != nil {
+// 		diags = append(diags, diag.FromErr(err)...)
+// 	}
+
+// 	return diags
+// }

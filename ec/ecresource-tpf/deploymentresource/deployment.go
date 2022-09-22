@@ -20,31 +20,39 @@ package deploymentresource
 import (
 	"fmt"
 
+	"github.com/blang/semver"
+	"github.com/elastic/cloud-sdk-go/pkg/api"
+	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi/deptemplateapi"
 	"github.com/elastic/cloud-sdk-go/pkg/models"
-	"github.com/elastic/terraform-provider-ec/ec/internal/flatteners"
+	"github.com/elastic/cloud-sdk-go/pkg/multierror"
+	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 type Deployment struct {
-	Id                    types.String          `tfsdk:"id"`
-	Alias                 types.String          `tfsdk:"alias"`
-	Version               types.String          `tfsdk:"version"`
-	Region                types.String          `tfsdk:"region"`
-	DeploymentTemplateId  types.String          `tfsdk:"deployment_template_id"`
-	Name                  types.String          `tfsdk:"name"`
-	RequestId             types.String          `tfsdk:"request_id"`
-	ElasticsearchUsername types.String          `tfsdk:"elasticsearch_username"`
-	ElasticsearchPassword types.String          `tfsdk:"elasticsearch_password"`
-	ApmSecretToken        types.String          `tfsdk:"apm_secret_token"`
-	TrafficFilter         []string              `tfsdk:"traffic_filter"`
-	Tags                  types.Map             `tfsdk:"tags"`
-	Elasticsearch         []*Elasticsearch      `tfsdk:"elasticsearch"`
-	Kibana                []*Kibana             `tfsdk:"kibana"`
-	Apm                   []*Apm                `tfsdk:"apm"`
-	IntegrationsServer    []*IntegrationsServer `tfsdk:"integrations_server"`
-	EnterpriseSearch      []*EnterpriseSearch   `tfsdk:"enterprise_search"`
-	Observability         []*Observability      `tfsdk:"observability"`
+	Id                    types.String        `tfsdk:"id"`
+	Alias                 types.String        `tfsdk:"alias"`
+	Version               types.String        `tfsdk:"version"`
+	Region                types.String        `tfsdk:"region"`
+	DeploymentTemplateId  types.String        `tfsdk:"deployment_template_id"`
+	Name                  types.String        `tfsdk:"name"`
+	RequestId             types.String        `tfsdk:"request_id"`
+	ElasticsearchUsername types.String        `tfsdk:"elasticsearch_username"`
+	ElasticsearchPassword types.String        `tfsdk:"elasticsearch_password"`
+	ApmSecretToken        types.String        `tfsdk:"apm_secret_token"`
+	TrafficFilter         []string            `tfsdk:"traffic_filter"`
+	Tags                  map[string]string   `tfsdk:"tags"`
+	Elasticsearch         []*Elasticsearch    `tfsdk:"elasticsearch"`
+	Kibana                Kibanas             `tfsdk:"kibana"`
+	Apm                   Apms                `tfsdk:"apm"`
+	IntegrationsServer    IntegrationsServers `tfsdk:"integrations_server"`
+	EnterpriseSearch      EnterpriseSearches  `tfsdk:"enterprise_search"`
+	Observability         Observabilities     `tfsdk:"observability"`
 }
+
+var (
+	dataTiersVersion = semver.MustParse("7.10.0")
+)
 
 func missingField(field string) error {
 	return fmt.Errorf("server response doesn't contain deployment '%s'", field)
@@ -65,7 +73,7 @@ func NewDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteReso
 	}
 	dep.Name.Value = *res.Name
 
-	dep.Tags = flatteners.FlattenTags(res.Metadata.Tags)
+	dep.Tags = converters.TagsToMap(res.Metadata.Tags)
 
 	if res.Resources == nil {
 		return nil, nil
@@ -126,13 +134,84 @@ func NewDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteReso
 	return &dep, nil
 }
 
-type ElasticsearchSnapshotSource struct {
-	SourceElasticsearchClusterId types.String `tfsdk:"source_elasticsearch_cluster_id"`
-	SnapshotName                 types.String `tfsdk:"snapshot_name"`
-}
+func (d *Deployment) Model(client *api.API) (*models.DeploymentCreateRequest, error) {
+	var result = models.DeploymentCreateRequest{
+		Name:      d.Name.Value,
+		Alias:     d.Alias.Value,
+		Resources: &models.DeploymentCreateResources{},
+		Settings:  &models.DeploymentCreateSettings{},
+		Metadata:  &models.DeploymentCreateMetadata{},
+	}
 
-type ElasticsearchStrategy struct {
-	Type types.String `tfsdk:"type"`
+	dtID := d.DeploymentTemplateId.Value
+	// version := d.Version.Value
+
+	template, err := deptemplateapi.Get(deptemplateapi.GetParams{
+		API:                        client,
+		TemplateID:                 dtID,
+		Region:                     d.Region.Value,
+		HideInstanceConfigurations: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// useNodeRoles, err := compatibleWithNodeRoles(version)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	merr := multierror.NewPrefixed("invalid configuration")
+
+	// esRes, err := d.Elasticsearch.Model(
+	// 	enrichElasticsearchTemplate(
+	// 		esResource(template), dtID, version, useNodeRoles,
+	// 	),
+	// )
+	// if err != nil {
+	// 	merr = merr.Append(err)
+	// }
+	// result.Resources.Elasticsearch = append(result.Resources.Elasticsearch, esRes...)
+
+	kibanaRes, err := d.Kibana.Payload(template)
+	if err != nil {
+		merr = merr.Append(err)
+	}
+	result.Resources.Kibana = append(result.Resources.Kibana, kibanaRes...)
+
+	apmRes, err := d.Apm.Payload(template)
+	if err != nil {
+		merr = merr.Append(err)
+	}
+	result.Resources.Apm = append(result.Resources.Apm, apmRes...)
+
+	integrationsServerRes, err := d.IntegrationsServer.Payload(template)
+	if err != nil {
+		merr = merr.Append(err)
+	}
+	result.Resources.IntegrationsServer = append(result.Resources.IntegrationsServer, integrationsServerRes...)
+
+	enterpriseSearchRes, err := d.EnterpriseSearch.Payload(template)
+	if err != nil {
+		merr = merr.Append(err)
+	}
+	result.Resources.EnterpriseSearch = append(result.Resources.EnterpriseSearch, enterpriseSearchRes...)
+
+	if err := merr.ErrorOrNil(); err != nil {
+		return nil, err
+	}
+
+	trafficFilterToModel(d.TrafficFilter, &result)
+
+	observability, err := d.Observability.Model(client)
+	if err != nil {
+		return nil, err
+	}
+	result.Settings.Observability = observability
+
+	result.Metadata.Tags = converters.MapToTags(d.Tags)
+
+	return &result, nil
 }
 
 func NewTrafficFilters(in *models.DeploymentSettings) ([]string, error) {
@@ -143,4 +222,47 @@ func NewTrafficFilters(in *models.DeploymentSettings) ([]string, error) {
 	var rules []string
 
 	return append(rules, in.TrafficFilterSettings.Rulesets...), nil
+}
+
+type ElasticsearchSnapshotSource struct {
+	SourceElasticsearchClusterId types.String `tfsdk:"source_elasticsearch_cluster_id"`
+	SnapshotName                 types.String `tfsdk:"snapshot_name"`
+}
+
+type ElasticsearchStrategy struct {
+	Type types.String `tfsdk:"type"`
+}
+
+func compatibleWithNodeRoles(version string) (bool, error) {
+	deploymentVersion, err := semver.Parse(version)
+	if err != nil {
+		return false, fmt.Errorf("failed to parse Elasticsearch version: %w", err)
+	}
+
+	return deploymentVersion.GE(dataTiersVersion), nil
+}
+
+// trafficFilterToModel expands the flattened "traffic_filter" settings to
+// a DeploymentCreateRequest.
+func trafficFilterToModel(set []string, req *models.DeploymentCreateRequest) {
+	if set == nil || req == nil {
+		return
+	}
+
+	if len(set) == 0 {
+		return
+	}
+
+	if req.Settings == nil {
+		req.Settings = &models.DeploymentCreateSettings{}
+	}
+
+	if req.Settings.TrafficFilterSettings == nil {
+		req.Settings.TrafficFilterSettings = &models.TrafficFilterSettings{}
+	}
+
+	req.Settings.TrafficFilterSettings.Rulesets = append(
+		req.Settings.TrafficFilterSettings.Rulesets,
+		set...,
+	)
 }

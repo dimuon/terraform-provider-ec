@@ -20,6 +20,7 @@ package deploymentresource
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -34,7 +35,7 @@ type IntegrationsServerConfig struct {
 	UserSettingsOverrideYaml types.String `tfsdk:"user_settings_override_yaml"`
 }
 
-func NewIntegrationsServerConfig(in *models.IntegrationsServerConfiguration) (*IntegrationsServerConfig, error) {
+func NewIntegrationsServerConfig(in *models.IntegrationsServerConfiguration) ([]*IntegrationsServerConfig, error) {
 	var cfg IntegrationsServerConfig
 
 	if in == nil {
@@ -65,5 +66,49 @@ func NewIntegrationsServerConfig(in *models.IntegrationsServerConfiguration) (*I
 		}
 	}
 
-	return &cfg, nil
+	if cfg != (IntegrationsServerConfig{}) {
+		return []*IntegrationsServerConfig{&cfg}, nil
+	}
+
+	return nil, nil
+}
+
+type IntegrationsServerConfigs []*IntegrationsServerConfig
+
+func (cfgs IntegrationsServerConfigs) Payload(res *models.IntegrationsServerConfiguration) error {
+	for _, cfg := range cfgs {
+
+		if !cfg.DebugEnabled.IsNull() {
+			if res.SystemSettings == nil {
+				res.SystemSettings = &models.IntegrationsServerSystemSettings{}
+			}
+			res.SystemSettings.DebugEnabled = &cfg.DebugEnabled.Value
+		}
+
+		if cfg.UserSettingsJson.Value != "" {
+			if err := json.Unmarshal([]byte(cfg.UserSettingsJson.Value), &res.UserSettingsJSON); err != nil {
+				return fmt.Errorf("failed expanding IntegrationsServer user_settings_json: %w", err)
+			}
+		}
+
+		if cfg.UserSettingsOverrideJson.Value != "" {
+			if err := json.Unmarshal([]byte(cfg.UserSettingsOverrideJson.Value), &res.UserSettingsOverrideJSON); err != nil {
+				return fmt.Errorf("failed expanding IntegrationsServer user_settings_override_json: %w", err)
+			}
+		}
+
+		if !cfg.UserSettingsYaml.IsNull() {
+			res.UserSettingsYaml = cfg.UserSettingsYaml.Value
+		}
+
+		if !cfg.UserSettingsOverrideYaml.IsNull() {
+			res.UserSettingsOverrideYaml = cfg.UserSettingsOverrideYaml.Value
+		}
+
+		if !cfg.DockerImage.IsNull() {
+			res.DockerImage = cfg.DockerImage.Value
+		}
+	}
+
+	return nil
 }

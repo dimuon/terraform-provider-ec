@@ -18,7 +18,11 @@
 package deploymentresource
 
 import (
+	"fmt"
+
 	"github.com/elastic/cloud-sdk-go/pkg/models"
+	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
+	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
 )
 
@@ -37,12 +41,12 @@ func NewIntegrationsServerTopology(in *models.IntegrationsServerTopologyElement)
 	return &top, nil
 }
 
-func NewIntegrationsServerTopologies(in []*models.IntegrationsServerTopologyElement) ([]Topology, error) {
+func NewIntegrationsServerTopologies(in []*models.IntegrationsServerTopologyElement) (IntegrationsServerTopologies, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}
 
-	tops := make([]Topology, 0, len(in))
+	tops := make(IntegrationsServerTopologies, 0, len(in))
 	for _, model := range in {
 		if model.Size == nil || model.Size.Value == nil || *model.Size.Value == 0 {
 			continue
@@ -53,8 +57,80 @@ func NewIntegrationsServerTopologies(in []*models.IntegrationsServerTopologyElem
 			return nil, err
 		}
 
-		tops = append(tops, *top)
+		tops = append(tops, top)
 	}
 
 	return tops, nil
+}
+
+type IntegrationsServerTopologies []*Topology
+
+func (tops IntegrationsServerTopologies) Payload(planModels []*models.IntegrationsServerTopologyElement) ([]*models.IntegrationsServerTopologyElement, error) {
+	if len(tops) == 0 {
+		return defaultIntegrationsServerTopology(planModels), nil
+	}
+
+	planModels = defaultIntegrationsServerTopology(planModels)
+
+	res := make([]*models.IntegrationsServerTopologyElement, 0, len(tops))
+
+	for i, top := range tops {
+		icID := top.InstanceConfigurationId.Value
+
+		// When a topology element is set but no instance_configuration_id
+		// is set, then obtain the instance_configuration_id from the topology
+		// element.
+		if icID == "" && i < len(planModels) {
+			icID = planModels[i].InstanceConfigurationID
+		}
+
+		size, err := converters.ParseTopologySize(top.Size, top.SizeResource)
+		if err != nil {
+			return nil, err
+		}
+
+		elem, err := matchIntegrationsServerTopology(icID, planModels)
+		if err != nil {
+			return nil, err
+		}
+		if size != nil {
+			elem.Size = size
+		}
+
+		if top.ZoneCount.Value > 0 {
+			elem.ZoneCount = int32(top.ZoneCount.Value)
+		}
+
+		res = append(res, elem)
+	}
+
+	return res, nil
+}
+
+// defaultIntegrationsServerTopology iterates over all the templated topology elements and
+// sets the size to the default when the template size is smaller than the
+// deployment template default, the same is done on the ZoneCount.
+func defaultIntegrationsServerTopology(topology []*models.IntegrationsServerTopologyElement) []*models.IntegrationsServerTopologyElement {
+	for _, t := range topology {
+		if *t.Size.Value < minimumIntegrationsServerSize {
+			t.Size.Value = ec.Int32(minimumIntegrationsServerSize)
+		}
+		if t.ZoneCount < minimumZoneCount {
+			t.ZoneCount = minimumZoneCount
+		}
+	}
+
+	return topology
+}
+
+func matchIntegrationsServerTopology(id string, topologies []*models.IntegrationsServerTopologyElement) (*models.IntegrationsServerTopologyElement, error) {
+	for _, t := range topologies {
+		if t.InstanceConfigurationID == id {
+			return t, nil
+		}
+	}
+	return nil, fmt.Errorf(
+		`IntegrationsServer topology: invalid instance_configuration_id: "%s" doesn't match any of the deployment template instance configurations`,
+		id,
+	)
 }

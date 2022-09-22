@@ -18,41 +18,23 @@
 package deploymentresource
 
 import (
+	"errors"
+
 	"github.com/elastic/cloud-sdk-go/pkg/models"
-	"github.com/elastic/terraform-provider-ec/ec/internal/flatteners"
+	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 type Kibana struct {
-	ElasticsearchClusterRefId types.String `tfsdk:"elasticsearch_cluster_ref_id"`
-	RefId                     types.String `tfsdk:"ref_id"`
-	ResourceId                types.String `tfsdk:"resource_id"`
-	Region                    types.String `tfsdk:"region"`
-	HttpEndpoint              types.String `tfsdk:"http_endpoint"`
-	HttpsEndpoint             types.String `tfsdk:"https_endpoint"`
-	Topology                  []*Topology  `tfsdk:"topology"`
-	Config                    KibanaConfig `tfsdk:"config"`
-}
-
-func NewKibanas(in []*models.KibanaResourceInfo) ([]*Kibana, error) {
-	if len(in) == 0 {
-		return nil, nil
-	}
-
-	kibanas := make([]*Kibana, 0, len(in))
-	for _, model := range in {
-		if util.IsCurrentKibanaPlanEmpty(model) || isKibanaResourceStopped(model) {
-			continue
-		}
-
-		kibana, err := NewKibana(model)
-		if err != nil {
-			return nil, err
-		}
-		kibanas = append(kibanas, kibana)
-	}
-	return kibanas, nil
+	ElasticsearchClusterRefId types.String     `tfsdk:"elasticsearch_cluster_ref_id"`
+	RefId                     types.String     `tfsdk:"ref_id"`
+	ResourceId                types.String     `tfsdk:"resource_id"`
+	Region                    types.String     `tfsdk:"region"`
+	HttpEndpoint              types.String     `tfsdk:"http_endpoint"`
+	HttpsEndpoint             types.String     `tfsdk:"https_endpoint"`
+	Topology                  KibanaTopologies `tfsdk:"topology"`
+	Config                    KibanaConfigs    `tfsdk:"config"`
 }
 
 func NewKibana(in *models.KibanaResourceInfo) (*Kibana, error) {
@@ -81,13 +63,94 @@ func NewKibana(in *models.KibanaResourceInfo) (*Kibana, error) {
 		kibana.ElasticsearchClusterRefId = types.String{Value: *in.ElasticsearchClusterRefID}
 	}
 
-	kibana.HttpEndpoint.Value, kibana.HttpsEndpoint.Value = flatteners.FlattenEndpoints(in.Info.Metadata)
+	kibana.HttpEndpoint.Value, kibana.HttpsEndpoint.Value = converters.ExtractEndpoints(in.Info.Metadata)
 
-	cfg, err := NewKibanaConfig(plan.Kibana)
+	cfg, err := NewKibanaConfigs(plan.Kibana)
 	if err != nil {
 		return nil, err
 	}
-	kibana.Config = *cfg
+	kibana.Config = cfg
 
 	return &kibana, nil
+}
+
+func (kibana Kibana) Payload(payload models.KibanaPayload) (*models.KibanaPayload, error) {
+	if !kibana.ElasticsearchClusterRefId.IsNull() {
+		payload.ElasticsearchClusterRefID = &kibana.ElasticsearchClusterRefId.Value
+	}
+
+	if !kibana.RefId.IsNull() {
+		payload.RefID = &kibana.RefId.Value
+	}
+
+	if kibana.Region.Value != "" {
+		payload.Region = &kibana.Region.Value
+	}
+
+	if err := kibana.Config.Payload(payload.Plan.Kibana); err != nil {
+		return nil, err
+	}
+
+	topology, err := kibana.Topology.Payload(payload.Plan.ClusterTopology)
+	if err != nil {
+		return nil, err
+	}
+	payload.Plan.ClusterTopology = topology
+
+	return &payload, nil
+}
+
+type Kibanas []*Kibana
+
+func NewKibanas(in []*models.KibanaResourceInfo) (Kibanas, error) {
+	if len(in) == 0 {
+		return nil, nil
+	}
+
+	kibanas := make([]*Kibana, 0, len(in))
+	for _, model := range in {
+		if util.IsCurrentKibanaPlanEmpty(model) || isKibanaResourceStopped(model) {
+			continue
+		}
+
+		kibana, err := NewKibana(model)
+		if err != nil {
+			return nil, err
+		}
+		kibanas = append(kibanas, kibana)
+	}
+	return kibanas, nil
+}
+
+func (kibanas Kibanas) Payload(template *models.DeploymentTemplateInfoV2) ([]*models.KibanaPayload, error) {
+	if len(kibanas) == 0 {
+		return nil, nil
+	}
+
+	templatePlayload := kibanaResource(template)
+
+	if templatePlayload == nil {
+		return nil, errors.New("kibana specified but deployment template is not configured for it. Use a different template if you wish to add kibana")
+	}
+
+	payloads := make([]*models.KibanaPayload, 0, len(kibanas))
+
+	for _, kibana := range kibanas {
+		payload, err := kibana.Payload(*templatePlayload)
+		if err != nil {
+			return nil, err
+		}
+		payloads = append(payloads, payload)
+	}
+
+	return payloads, nil
+}
+
+// kibanaResource returns the KibanaPayload from a deployment
+// template or an empty version of the payload.
+func kibanaResource(res *models.DeploymentTemplateInfoV2) *models.KibanaPayload {
+	if len(res.DeploymentTemplate.Resources.Kibana) == 0 {
+		return nil
+	}
+	return res.DeploymentTemplate.Resources.Kibana[0]
 }

@@ -18,7 +18,13 @@
 package deploymentresource
 
 import (
+	"fmt"
+
+	"github.com/elastic/cloud-sdk-go/pkg/api"
+	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi"
 	"github.com/elastic/cloud-sdk-go/pkg/models"
+	"github.com/elastic/cloud-sdk-go/pkg/util"
+	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -65,4 +71,59 @@ func NewObservability(in *models.DeploymentSettings) ([]*Observability, error) {
 	}
 
 	return []*Observability{&obs}, nil
+}
+
+type Observabilities []*Observability
+
+func (obs Observabilities) Model(client *api.API) (*models.DeploymentObservabilitySettings, error) {
+	if len(obs) == 0 {
+		return nil, nil
+	}
+
+	var req models.DeploymentObservabilitySettings
+
+	for _, obs := range obs {
+		if obs.DeploymentId.Value == "" {
+			return nil, nil
+		}
+
+		refID := obs.RefId.Value
+
+		if obs.DeploymentId.Value != "self" && refID == "" {
+			// Since ms-77, the refID is optional.
+			// To not break ECE users with older versions, we still pre-calculate the refID here
+			params := deploymentapi.PopulateRefIDParams{
+				Kind:         util.Elasticsearch,
+				API:          client,
+				DeploymentID: obs.DeploymentId.Value,
+				RefID:        ec.String(""),
+			}
+
+			if err := deploymentapi.PopulateRefID(params); err != nil {
+				return nil, fmt.Errorf("observability ref_id auto discovery: %w", err)
+			}
+
+			refID = *params.RefID
+		}
+
+		if obs.Logs.Value {
+			req.Logging = &models.DeploymentLoggingSettings{
+				Destination: &models.ObservabilityAbsoluteDeployment{
+					DeploymentID: ec.String(obs.DeploymentId.Value),
+					RefID:        refID,
+				},
+			}
+		}
+
+		if obs.Metrics.Value {
+			req.Metrics = &models.DeploymentMetricsSettings{
+				Destination: &models.ObservabilityAbsoluteDeployment{
+					DeploymentID: ec.String(obs.DeploymentId.Value),
+					RefID:        refID,
+				},
+			}
+		}
+	}
+
+	return &req, nil
 }

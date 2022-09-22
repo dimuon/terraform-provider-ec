@@ -18,7 +18,11 @@
 package deploymentresource
 
 import (
+	"fmt"
+
 	"github.com/elastic/cloud-sdk-go/pkg/models"
+	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
+	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -45,7 +49,9 @@ func NewKibanaTopology(in *models.KibanaClusterTopologyElement) (*Topology, erro
 	return &top, nil
 }
 
-func NewKibanaTopologies(in []*models.KibanaClusterTopologyElement) ([]*Topology, error) {
+type KibanaTopologies []*Topology
+
+func NewKibanaTopologies(in []*models.KibanaClusterTopologyElement) (KibanaTopologies, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}
@@ -65,4 +71,74 @@ func NewKibanaTopologies(in []*models.KibanaClusterTopologyElement) ([]*Topology
 	}
 
 	return tops, nil
+}
+
+func (tops KibanaTopologies) Payload(planModels []*models.KibanaClusterTopologyElement) ([]*models.KibanaClusterTopologyElement, error) {
+	if len(tops) == 0 {
+		return defaultKibanaTopology(planModels), nil
+	}
+
+	planModels = defaultKibanaTopology(planModels)
+
+	var payloads = make([]*models.KibanaClusterTopologyElement, 0, len(tops))
+
+	for i, topology := range tops {
+		icID := topology.InstanceConfigurationId.Value
+
+		// When a topology element is set but no instance_configuration_id
+		// is set, then obtain the instance_configuration_id from the topology
+		// element.
+		if icID == "" && i < len(planModels) {
+			icID = planModels[i].InstanceConfigurationID
+		}
+
+		size, err := converters.ParseTopologySize(topology.Size, topology.SizeResource)
+		if err != nil {
+			return nil, err
+		}
+
+		elem, err := matchKibanaTopology(icID, planModels)
+		if err != nil {
+			return nil, err
+		}
+		if size != nil {
+			elem.Size = size
+		}
+
+		if topology.ZoneCount.Value > 0 {
+			elem.ZoneCount = int32(topology.ZoneCount.Value)
+		}
+
+		payloads = append(payloads, elem)
+	}
+
+	return payloads, nil
+}
+
+// defaultApmTopology iterates over all the templated topology elements and
+// sets the size to the default when the template size is greater than the
+// local terraform default, the same is done on the ZoneCount.
+func defaultKibanaTopology(topology []*models.KibanaClusterTopologyElement) []*models.KibanaClusterTopologyElement {
+	for _, t := range topology {
+		if *t.Size.Value > minimumKibanaSize {
+			t.Size.Value = ec.Int32(minimumKibanaSize)
+		}
+		if t.ZoneCount > minimumZoneCount {
+			t.ZoneCount = minimumZoneCount
+		}
+	}
+
+	return topology
+}
+
+func matchKibanaTopology(id string, topologies []*models.KibanaClusterTopologyElement) (*models.KibanaClusterTopologyElement, error) {
+	for _, t := range topologies {
+		if t.InstanceConfigurationID == id {
+			return t, nil
+		}
+	}
+	return nil, fmt.Errorf(
+		`kibana topology: invalid instance_configuration_id: "%s" doesn't match any of the deployment template instance configurations`,
+		id,
+	)
 }
