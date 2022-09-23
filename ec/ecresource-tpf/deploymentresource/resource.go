@@ -34,7 +34,7 @@ import (
 
 // Ensure provider defined types fully satisfy framework interfaces
 // var _ tpfprovider.ResourceType = DeploymentResourceType{}
-var _ resource.Resource = Resource{}
+var _ resource.Resource = &Resource{}
 
 // These constants are only used to determine whether or not a dedicated
 // tier of masters or ingest (coordinating) nodes are set.

@@ -33,8 +33,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/elastic/cloud-sdk-go/pkg/api"
-	"github.com/elastic/terraform-provider-ec/ec/ecresource/elasticsearchkeystoreresource"
-
 	"github.com/elastic/terraform-provider-ec/ec/ecdatasource/deploymentdatasource"
 	"github.com/elastic/terraform-provider-ec/ec/ecdatasource/deploymentsdatasource"
 	"github.com/elastic/terraform-provider-ec/ec/ecdatasource/stackdatasource"
