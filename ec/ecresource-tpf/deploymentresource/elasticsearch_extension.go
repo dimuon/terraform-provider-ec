@@ -22,6 +22,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+type ElasticsearchExtensions []*ElasticsearchExtension
+
 func NewElasticsearchExtensions(in *models.ElasticsearchConfiguration) ([]*ElasticsearchExtension, error) {
 	if len(in.UserBundles) == 0 && len(in.UserPlugins) == 0 {
 		return nil, nil
@@ -47,6 +49,30 @@ func NewElasticsearchExtensions(in *models.ElasticsearchConfiguration) ([]*Elast
 	}
 
 	return exts, nil
+}
+
+func (extensions ElasticsearchExtensions) Payload(es *models.ElasticsearchConfiguration) {
+	for _, extension := range extensions {
+		version := extension.Version.Value
+		url := extension.Url.Value
+		name := extension.Name.Value
+
+		if extension.Type.Value == "bundle" {
+			es.UserBundles = append(es.UserBundles, &models.ElasticsearchUserBundle{
+				Name:                 &name,
+				ElasticsearchVersion: &version,
+				URL:                  &url,
+			})
+		}
+
+		if extension.Type.Value == "plugin" {
+			es.UserPlugins = append(es.UserPlugins, &models.ElasticsearchUserPlugin{
+				Name:                 &name,
+				ElasticsearchVersion: &version,
+				URL:                  &url,
+			})
+		}
+	}
 }
 
 type ElasticsearchExtension struct {

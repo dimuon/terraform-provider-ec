@@ -20,13 +20,16 @@ package deploymentresource
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"reflect"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func NewElasticsearchConfigs(in *models.ElasticsearchConfiguration) ([]*ElasticsearchConfig, error) {
+type ElasticsearchConfigs []*ElasticsearchConfig
+
+func NewElasticsearchConfigs(in *models.ElasticsearchConfiguration) (ElasticsearchConfigs, error) {
 	cfg, err := NewElasticsearchConfig(in)
 	if err != nil {
 		return nil, err
@@ -37,6 +40,52 @@ func NewElasticsearchConfigs(in *models.ElasticsearchConfiguration) ([]*Elastics
 	}
 
 	return nil, nil
+}
+
+func (cfgs ElasticsearchConfigs) Payload(esCfg *models.ElasticsearchConfiguration) (*models.ElasticsearchConfiguration, error) {
+	if len(cfgs) == 0 {
+		return nil, nil
+	}
+
+	if esCfg == nil {
+		esCfg = &models.ElasticsearchConfiguration{}
+	}
+
+	for _, cfg := range cfgs {
+		if cfg.UserSettingsJson.Value != "" {
+			if err := json.Unmarshal([]byte(cfg.UserSettingsJson.Value), &esCfg.UserSettingsJSON); err != nil {
+				return nil, fmt.Errorf(
+					"failed expanding elasticsearch user_settings_json: %w", err,
+				)
+			}
+		}
+
+		if cfg.UserSettingsOverrideJson.Value != "" {
+			if err := json.Unmarshal([]byte(cfg.UserSettingsOverrideJson.Value), &esCfg.UserSettingsOverrideJSON); err != nil {
+				return nil, fmt.Errorf(
+					"failed expanding elasticsearch user_settings_override_json: %w", err,
+				)
+			}
+		}
+
+		if !cfg.UserSettingsYaml.IsNull() {
+			esCfg.UserSettingsYaml = cfg.UserSettingsYaml.Value
+		}
+
+		if !cfg.UserSettingsOverrideYaml.IsNull() {
+			esCfg.UserSettingsOverrideYaml = cfg.UserSettingsOverrideYaml.Value
+		}
+
+		if len(cfg.Plugins) > 0 {
+			esCfg.EnabledBuiltInPlugins = cfg.Plugins
+		}
+
+		if !cfg.DockerImage.IsNull() {
+			esCfg.DockerImage = cfg.DockerImage.Value
+		}
+	}
+
+	return esCfg, nil
 }
 
 type ElasticsearchConfig struct {

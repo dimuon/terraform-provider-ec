@@ -19,8 +19,13 @@ package deploymentresource
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi"
+	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi/esremoteclustersapi"
+	"github.com/elastic/cloud-sdk-go/pkg/multierror"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 func (r Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -42,87 +47,66 @@ func (r Resource) Create(ctx context.Context, req resource.CreateRequest, resp *
 		return
 	}
 
-	//
-	// model, err := plan.ToModel(plan.Id.Value)
+	payload, err := plan.Payload(r.client)
+	if err != nil {
+		resp.Diagnostics.AddError("cannot create request", err.Error())
+		return
+	}
 
-	// // deploymentResource, errors := Create(ctx, r.provider.GetClient(), &cfg, &plan)
+	reqID := deploymentapi.RequestID(plan.RequestId.Value)
 
-	// if len(errors) > 0 {
-	// 	for _, err := range errors {
-	// 		resp.Diagnostics.AddError(
-	// 			"Cannot create deployment resource",
-	// 			err.Error(),
-	// 		)
-	// 	}
-	// 	return
-	// }
+	res, err := deploymentapi.Create(deploymentapi.CreateParams{
+		API:       r.client,
+		RequestID: reqID,
+		Request:   payload,
+		Overrides: &deploymentapi.PayloadOverrides{
+			Name:    plan.Name.Value,
+			Version: plan.Version.Value,
+			Region:  plan.Region.Value,
+		},
+	})
 
-	// If applicable, this is a great opportunity to initialize any necessary
-	// provider client data and make a call using it.
-	// example, err := d.provider.client.CreateExample(...)
-	// if err != nil {
-	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create example, got error: %s", err))
-	//     return
-	// }
+	if err != nil {
+		merr := multierror.NewPrefixed("", err)
+		merr.Append(newCreationError(reqID))
+		resp.Diagnostics.AddError("failed creating deployment", merr.Error())
+		return
+	}
 
-	// For the purposes of this example code, hardcoding a response value to
-	// save into the Terraform state.
-	// data.Id = types.String{Value: "example-id"}
+	if err := WaitForPlanCompletion(r.client, *res.ID); err != nil {
+		merr := multierror.NewPrefixed("", err)
+		merr.Append(newCreationError(reqID))
+		resp.Diagnostics.AddError("failed tracking create progress", merr.Error())
+		return
+	}
 
-	// write logs using the tflog package
-	// see https://pkg.go.dev/github.com/hashicorp/terraform-plugin-log/tflog
-	// for more information
-	// tflog.Trace(ctx, "created a resource")
+	tflog.Trace(ctx, "created a resource")
 
-	// diags = resp.State.Set(ctx, &deploymentResource)
-	// resp.Diagnostics.Append(diags...)
+	remoteClustersPayload := plan.Elasticsearch[0].RemoteCluster.Payload()
+
+	if err := esremoteclustersapi.Update(esremoteclustersapi.UpdateParams{
+		API:             r.client,
+		DeploymentID:    *res.ID,
+		RefID:           plan.Elasticsearch[0].RefId.Value,
+		RemoteResources: remoteClustersPayload,
+	}); err != nil {
+		resp.Diagnostics.AddError("failed updating remote cluster", err.Error())
+	}
+
+	deployment, err := r.read(ctx, plan)
+	if err != nil {
+		resp.Diagnostics.AddError("Read error", err.Error())
+	}
+
+	if err := deployment.ParseCredentials(res.Resources); err != nil {
+		resp.Diagnostics.AddError("failed parse credentials", err.Error())
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, deployment)...)
 }
 
-// func create(ctx context.Context, client *api.API, plan Deployment, config Deployment) (*Deployment, error) {
-// 	reqID := deploymentapi.RequestID(plan.RequestId.Value)
-
-// 	req, err := plan.Model(d, client)
-// 	if err != nil {
-// 		return diag.FromErr(err)
-// 	}
-
-// 	res, err := deploymentapi.Create(deploymentapi.CreateParams{
-// 		API:       client,
-// 		RequestID: reqID,
-// 		Request:   req,
-// 		Overrides: &deploymentapi.PayloadOverrides{
-// 			Name:    d.Get("name").(string),
-// 			Version: d.Get("version").(string),
-// 			Region:  d.Get("region").(string),
-// 		},
-// 	})
-// 	if err != nil {
-// 		merr := multierror.NewPrefixed("failed creating deployment", err)
-// 		return diag.FromErr(merr.Append(newCreationError(reqID)))
-// 	}
-
-// 	if err := WaitForPlanCompletion(client, *res.ID); err != nil {
-// 		merr := multierror.NewPrefixed("failed tracking create progress", err)
-// 		return diag.FromErr(merr.Append(newCreationError(reqID)))
-// 	}
-
-// 	d.SetId(*res.ID)
-
-// 	// Since before the deployment has been read, there's no real state
-// 	// persisted, it'd better to handle each of the errors by appending
-// 	// it to the `diag.Diagnostics` since it has support for it.
-// 	var diags diag.Diagnostics
-// 	if err := handleRemoteClusters(d, client); err != nil {
-// 		diags = append(diags, diag.FromErr(err)...)
-// 	}
-
-// 	if diag := readResource(ctx, d, meta); diag != nil {
-// 		diags = append(diags, diags...)
-// 	}
-
-// 	if err := parseCredentials(d, res.Resources); err != nil {
-// 		diags = append(diags, diag.FromErr(err)...)
-// 	}
-
-// 	return diags
-// }
+func newCreationError(reqID string) error {
+	return fmt.Errorf(
+		`set "request_id" to "%s" to recreate the deployment resources`, reqID,
+	)
+}

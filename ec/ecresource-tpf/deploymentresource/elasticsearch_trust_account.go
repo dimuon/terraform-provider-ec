@@ -22,7 +22,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func NewElasticsearchTrustAccounts(in *models.ElasticsearchClusterTrustSettings) ([]*ElasticsearchTrustAccount, error) {
+type ElasticsearchTrustAccounts []*ElasticsearchTrustAccount
+
+func NewElasticsearchTrustAccounts(in *models.ElasticsearchClusterTrustSettings) (ElasticsearchTrustAccounts, error) {
 	if in == nil || len(in.Accounts) == 0 {
 		return nil, nil
 	}
@@ -38,6 +40,37 @@ func NewElasticsearchTrustAccounts(in *models.ElasticsearchClusterTrustSettings)
 	}
 
 	return accs, nil
+}
+
+func (accounts ElasticsearchTrustAccounts) Payload(model *models.ElasticsearchClusterSettings) *models.ElasticsearchClusterSettings {
+	payloads := make([]*models.AccountTrustRelationship, 0, len(accounts))
+
+	for _, account := range accounts {
+		id := account.AccountId.Value
+		all := account.TrustAll.Value
+
+		payloads = append(payloads, &models.AccountTrustRelationship{
+			AccountID:      &id,
+			TrustAll:       &all,
+			TrustAllowlist: account.TrustAllowlist,
+		})
+	}
+
+	if len(payloads) == 0 {
+		return nil
+	}
+
+	if model == nil {
+		model = &models.ElasticsearchClusterSettings{}
+	}
+
+	if model.Trust == nil {
+		model.Trust = &models.ElasticsearchClusterTrustSettings{}
+	}
+
+	model.Trust.Accounts = append(model.Trust.Accounts, payloads...)
+
+	return model
 }
 
 type ElasticsearchTrustAccount struct {

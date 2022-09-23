@@ -22,7 +22,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/elastic/cloud-sdk-go/pkg/api"
 	"github.com/elastic/cloud-sdk-go/pkg/api/apierror"
 	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi"
 	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi/deputil"
@@ -46,13 +45,11 @@ func (r Resource) Read(ctx context.Context, req resource.ReadRequest, resp *reso
 		return
 	}
 
-	client := r.client
-
 	var newState *Deployment
 	var err error
 
-	if newState, err = read(ctx, client, &curState); err != nil {
-		resp.Diagnostics.AddError("Client Error", err.Error())
+	if newState, err = r.read(ctx, curState); err != nil {
+		resp.Diagnostics.AddError("Read error", err.Error())
 	}
 
 	if newState == nil && err == nil {
@@ -66,9 +63,9 @@ func (r Resource) Read(ctx context.Context, req resource.ReadRequest, resp *reso
 	resp.Diagnostics.Append(diags...)
 }
 
-func read(ctx context.Context, client *api.API, state *Deployment) (*Deployment, error) {
+func (r Resource) read(ctx context.Context, state Deployment) (*Deployment, error) {
 	res, err := deploymentapi.Get(deploymentapi.GetParams{
-		API: client, DeploymentID: state.Id.Value,
+		API: r.client, DeploymentID: state.Id.Value,
 		QueryParams: deputil.QueryParams{
 			ShowSettings:     true,
 			ShowPlans:        true,
@@ -88,7 +85,7 @@ func read(ctx context.Context, client *api.API, state *Deployment) (*Deployment,
 	}
 
 	remotes, err := esremoteclustersapi.Get(esremoteclustersapi.GetParams{
-		API: client, DeploymentID: state.Id.Value,
+		API: r.client, DeploymentID: state.Id.Value,
 		RefID: state.Elasticsearch[0].RefId.Value,
 	})
 	if err != nil {

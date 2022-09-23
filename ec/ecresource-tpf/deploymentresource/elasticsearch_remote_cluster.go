@@ -22,6 +22,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+type ElasticsearchRemoteClusters []*ElasticsearchRemoteCluster
+
 func NewElasticsearchRemoteClusters(in []*models.RemoteResourceRef) ([]*ElasticsearchRemoteCluster, error) {
 	if len(in) == 0 {
 		return nil, nil
@@ -37,6 +39,34 @@ func NewElasticsearchRemoteClusters(in []*models.RemoteResourceRef) ([]*Elastics
 	}
 
 	return rems, nil
+}
+
+func (clusters ElasticsearchRemoteClusters) Payload() *models.RemoteResources {
+	payload := models.RemoteResources{Resources: []*models.RemoteResourceRef{}}
+
+	for _, cluster := range clusters {
+		var resourceRef models.RemoteResourceRef
+
+		if !cluster.DeploymentId.IsNull() {
+			resourceRef.DeploymentID = &cluster.DeploymentId.Value
+		}
+
+		if !cluster.RefId.IsNull() {
+			resourceRef.ElasticsearchRefID = &cluster.RefId.Value
+		}
+
+		if !cluster.Alias.IsNull() {
+			resourceRef.Alias = &cluster.Alias.Value
+		}
+
+		if !cluster.SkipUnavailable.IsNull() {
+			resourceRef.SkipUnavailable = &cluster.SkipUnavailable.Value
+		}
+
+		payload.Resources = append(payload.Resources, &resourceRef)
+	}
+
+	return &payload
 }
 
 type ElasticsearchRemoteCluster struct {

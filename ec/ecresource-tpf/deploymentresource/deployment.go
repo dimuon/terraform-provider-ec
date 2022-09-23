@@ -42,7 +42,7 @@ type Deployment struct {
 	ApmSecretToken        types.String        `tfsdk:"apm_secret_token"`
 	TrafficFilter         []string            `tfsdk:"traffic_filter"`
 	Tags                  map[string]string   `tfsdk:"tags"`
-	Elasticsearch         []*Elasticsearch    `tfsdk:"elasticsearch"`
+	Elasticsearch         Elasticsearches     `tfsdk:"elasticsearch"`
 	Kibana                Kibanas             `tfsdk:"kibana"`
 	Apm                   Apms                `tfsdk:"apm"`
 	IntegrationsServer    IntegrationsServers `tfsdk:"integrations_server"`
@@ -134,7 +134,7 @@ func NewDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteReso
 	return &dep, nil
 }
 
-func (d *Deployment) Model(client *api.API) (*models.DeploymentCreateRequest, error) {
+func (d *Deployment) Payload(client *api.API) (*models.DeploymentCreateRequest, error) {
 	var result = models.DeploymentCreateRequest{
 		Name:      d.Name.Value,
 		Alias:     d.Alias.Value,
@@ -144,7 +144,7 @@ func (d *Deployment) Model(client *api.API) (*models.DeploymentCreateRequest, er
 	}
 
 	dtID := d.DeploymentTemplateId.Value
-	// version := d.Version.Value
+	version := d.Version.Value
 
 	template, err := deptemplateapi.Get(deptemplateapi.GetParams{
 		API:                        client,
@@ -156,22 +156,22 @@ func (d *Deployment) Model(client *api.API) (*models.DeploymentCreateRequest, er
 		return nil, err
 	}
 
-	// useNodeRoles, err := compatibleWithNodeRoles(version)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	useNodeRoles, err := compatibleWithNodeRoles(version)
+	if err != nil {
+		return nil, err
+	}
 
 	merr := multierror.NewPrefixed("invalid configuration")
 
-	// esRes, err := d.Elasticsearch.Model(
-	// 	enrichElasticsearchTemplate(
-	// 		esResource(template), dtID, version, useNodeRoles,
-	// 	),
-	// )
-	// if err != nil {
-	// 	merr = merr.Append(err)
-	// }
-	// result.Resources.Elasticsearch = append(result.Resources.Elasticsearch, esRes...)
+	esRes, err := d.Elasticsearch.Payload(template, dtID, version, useNodeRoles)
+	// enrichElasticsearchTemplate(
+	// 	esResource(template), dtID, version, useNodeRoles,
+	// ),
+
+	if err != nil {
+		merr = merr.Append(err)
+	}
+	result.Resources.Elasticsearch = append(result.Resources.Elasticsearch, esRes...)
 
 	kibanaRes, err := d.Kibana.Payload(template)
 	if err != nil {
@@ -214,6 +214,32 @@ func (d *Deployment) Model(client *api.API) (*models.DeploymentCreateRequest, er
 	return &result, nil
 }
 
+// parseCredentials parses the Create or Update response Resources populating
+// credential settings in the Terraform state if the keys are found, currently
+// populates the following credentials in plain text:
+// * Elasticsearch username and Password
+func (dep *Deployment) ParseCredentials(resources []*models.DeploymentResource) error {
+
+	for _, res := range resources {
+
+		if creds := res.Credentials; creds != nil {
+			if creds.Username != nil && *creds.Username != "" {
+				dep.ElasticsearchUsername.Value = *creds.Username
+			}
+
+			if creds.Password != nil && *creds.Password != "" {
+				dep.ElasticsearchPassword.Value = *creds.Password
+			}
+		}
+
+		if res.SecretToken != "" {
+			dep.ApmSecretToken.Value = res.SecretToken
+		}
+	}
+
+	return nil
+}
+
 func NewTrafficFilters(in *models.DeploymentSettings) ([]string, error) {
 	if in == nil || in.TrafficFilterSettings == nil || len(in.TrafficFilterSettings.Rulesets) == 0 {
 		return nil, nil
@@ -222,15 +248,6 @@ func NewTrafficFilters(in *models.DeploymentSettings) ([]string, error) {
 	var rules []string
 
 	return append(rules, in.TrafficFilterSettings.Rulesets...), nil
-}
-
-type ElasticsearchSnapshotSource struct {
-	SourceElasticsearchClusterId types.String `tfsdk:"source_elasticsearch_cluster_id"`
-	SnapshotName                 types.String `tfsdk:"snapshot_name"`
-}
-
-type ElasticsearchStrategy struct {
-	Type types.String `tfsdk:"type"`
 }
 
 func compatibleWithNodeRoles(version string) (bool, error) {

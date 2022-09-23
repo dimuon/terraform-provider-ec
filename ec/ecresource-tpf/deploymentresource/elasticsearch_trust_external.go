@@ -19,11 +19,12 @@ package deploymentresource
 
 import (
 	"github.com/elastic/cloud-sdk-go/pkg/models"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type ElasticsearchTrustExternals []ElasticsearchTrustExternal
+type ElasticsearchTrustExternals []*ElasticsearchTrustExternal
 
-func NewElasticsearchTrustExternals(in *models.ElasticsearchClusterTrustSettings) ([]*ElasticsearchTrustExternal, error) {
+func NewElasticsearchTrustExternals(in *models.ElasticsearchClusterTrustSettings) (ElasticsearchTrustExternals, error) {
 	if in == nil || len(in.External) == 0 {
 		return nil, nil
 	}
@@ -40,19 +41,50 @@ func NewElasticsearchTrustExternals(in *models.ElasticsearchClusterTrustSettings
 	return exts, nil
 }
 
+func (externals ElasticsearchTrustExternals) Payload(model *models.ElasticsearchClusterSettings) *models.ElasticsearchClusterSettings {
+	payloads := make([]*models.ExternalTrustRelationship, 0, len(externals))
+
+	for _, external := range externals {
+		id := external.RelationshipId.Value
+		all := external.TrustAll.Value
+
+		payloads = append(payloads, &models.ExternalTrustRelationship{
+			TrustRelationshipID: &id,
+			TrustAll:            &all,
+			TrustAllowlist:      external.TrustAllowlist,
+		})
+	}
+
+	if len(payloads) == 0 {
+		return nil
+	}
+
+	if model == nil {
+		model = &models.ElasticsearchClusterSettings{}
+	}
+
+	if model.Trust == nil {
+		model.Trust = &models.ElasticsearchClusterTrustSettings{}
+	}
+
+	model.Trust.External = append(model.Trust.External, payloads...)
+
+	return model
+}
+
 type ElasticsearchTrustExternal struct {
-	RelationshipId string   `tfsdk:"relationship_id"`
-	TrustAll       bool     `tfsdk:"trust_all"`
-	TrustAllowlist []string `tfsdk:"trust_allowlist"`
+	RelationshipId types.String `tfsdk:"relationship_id"`
+	TrustAll       types.Bool   `tfsdk:"trust_all"`
+	TrustAllowlist []string     `tfsdk:"trust_allowlist"`
 }
 
 func NewElasticsearchTrustExternal(in *models.ExternalTrustRelationship) (*ElasticsearchTrustExternal, error) {
 	var ext ElasticsearchTrustExternal
 	if in.TrustRelationshipID != nil {
-		ext.RelationshipId = *in.TrustRelationshipID
+		ext.RelationshipId.Value = *in.TrustRelationshipID
 	}
 	if in.TrustAll != nil {
-		ext.TrustAll = *in.TrustAll
+		ext.TrustAll.Value = *in.TrustAll
 	}
 	if in.TrustAllowlist != nil {
 		ext.TrustAllowlist = make([]string, 0, len(in.TrustAllowlist))

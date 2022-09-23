@@ -20,13 +20,18 @@ package deploymentresource
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 
+	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi/deploymentsize"
 	"github.com/elastic/cloud-sdk-go/pkg/models"
+	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func NewElasticsearchTopologyAutoscalings(in *models.ElasticsearchClusterTopologyElement) ([]*ElasticsearchTopologyAutoscaling, error) {
+type ElasticsearchTopologyAutoscalings []*ElasticsearchTopologyAutoscaling
+
+func NewElasticsearchTopologyAutoscalings(in *models.ElasticsearchClusterTopologyElement) (ElasticsearchTopologyAutoscalings, error) {
 	auto, err := NewElasticsearchTopologyAutoscaling(in)
 	if err != nil {
 		return nil, err
@@ -37,6 +42,54 @@ func NewElasticsearchTopologyAutoscalings(in *models.ElasticsearchClusterTopolog
 	}
 
 	return nil, nil
+}
+
+func (autos ElasticsearchTopologyAutoscalings) Payload(topologyID string, elem *models.ElasticsearchClusterTopologyElement) error {
+	if len(autos) == 0 {
+		return nil
+	}
+
+	// it should be only one element if any
+	autoscale := autos[0]
+
+	if elem.AutoscalingMax == nil {
+		elem.AutoscalingMax = new(models.TopologySize)
+	}
+
+	if elem.AutoscalingMin == nil {
+		elem.AutoscalingMin = new(models.TopologySize)
+	}
+
+	err := autoscale.ExpandAutoscalingDimension(elem.AutoscalingMax, autoscale.MaxSize, autoscale.MaxSizeResource)
+	if err != nil {
+		return err
+	}
+
+	err = autoscale.ExpandAutoscalingDimension(elem.AutoscalingMin, autoscale.MinSize, autoscale.MinSizeResource)
+	if err != nil {
+		return err
+	}
+
+	// Ensure that if the Min and Max are empty, they're nil.
+	if reflect.DeepEqual(elem.AutoscalingMin, new(models.TopologySize)) {
+		elem.AutoscalingMin = nil
+	}
+	if reflect.DeepEqual(elem.AutoscalingMax, new(models.TopologySize)) {
+		elem.AutoscalingMax = nil
+	}
+
+	if autoscale.PolicyOverrideJson.Value != "" {
+		if err := json.Unmarshal([]byte(autoscale.PolicyOverrideJson.Value),
+			&elem.AutoscalingPolicyOverrideJSON,
+		); err != nil {
+			return fmt.Errorf(
+				"elasticsearch topology %s: unable to load policy_override_json: %w",
+				topologyID, err,
+			)
+		}
+	}
+
+	return nil
 }
 
 type ElasticsearchTopologyAutoscaling struct {
@@ -72,4 +125,29 @@ func NewElasticsearchTopologyAutoscaling(topology *models.ElasticsearchClusterTo
 	}
 
 	return &a, nil
+}
+
+// expandAutoscalingDimension centralises processing of %_size and %_size_resource attributes
+// Due to limitations in the Terraform SDK, it's not possible to specify a Default on a Computed schema member
+// to work around this limitation, this function will default the %_size_resource attribute to `memory`.
+// Without this default, setting autoscaling limits on tiers which do not have those limits in the deployment
+// template leads to an API error due to the empty resource field on the TopologySize model.
+func (autoscale ElasticsearchTopologyAutoscaling) ExpandAutoscalingDimension(model *models.TopologySize, size, sizeResource types.String) error {
+	if size.Value != "" {
+		val, err := deploymentsize.ParseGb(size.Value)
+		if err != nil {
+			return err
+		}
+		model.Value = &val
+
+		if model.Resource == nil {
+			model.Resource = ec.String("memory")
+		}
+	}
+
+	if sizeResource.Value != "" {
+		model.Resource = &sizeResource.Value
+	}
+
+	return nil
 }

@@ -25,6 +25,7 @@ import (
 	"github.com/elastic/terraform-provider-ec/ec/internal"
 	"github.com/elastic/terraform-provider-ec/ec/internal/planmodifier"
 	"github.com/elastic/terraform-provider-ec/ec/internal/validators"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -858,6 +859,7 @@ func elasticsearchBlock() tfsdk.Block {
 								Computed:    true,
 							},
 						}),
+						Validators: []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
 					},
 					"config": {
 						Description: `Computed read-only configuration to avoid unsetting plan settings from 'topology.elasticsearch'`,
