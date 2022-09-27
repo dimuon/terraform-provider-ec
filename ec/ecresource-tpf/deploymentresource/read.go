@@ -52,7 +52,7 @@ func (r Resource) Read(ctx context.Context, req resource.ReadRequest, resp *reso
 		resp.Diagnostics.AddError("Read error", err.Error())
 	}
 
-	if newState == nil && err == nil {
+	if newState == nil {
 		resp.State.RemoveResource(ctx)
 	}
 
@@ -75,7 +75,7 @@ func (r Resource) read(ctx context.Context, id string, state Deployment) (*Deplo
 	})
 	if err != nil {
 		if deploymentNotFound(err) {
-			return nil, nil
+			return nil, err
 		}
 		return nil, fmt.Errorf("failed reading deployment - %w", err)
 	}
