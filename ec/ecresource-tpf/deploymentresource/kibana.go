@@ -41,15 +41,15 @@ func NewKibana(in *models.KibanaResourceInfo) (*Kibana, error) {
 	var kibana Kibana
 
 	if in.RefID != nil {
-		kibana.RefId.Value = *in.RefID
+		kibana.RefId = types.String{Value: *in.RefID}
 	}
 
 	if in.Info.ClusterID != nil {
-		kibana.ResourceId.Value = *in.Info.ClusterID
+		kibana.ResourceId = types.String{Value: *in.Info.ClusterID}
 	}
 
 	if in.Region != nil {
-		kibana.Region.Value = *in.Region
+		kibana.Region = types.String{Value: *in.Region}
 	}
 
 	plan := in.Info.PlanInfo.Current.Plan
@@ -63,7 +63,7 @@ func NewKibana(in *models.KibanaResourceInfo) (*Kibana, error) {
 		kibana.ElasticsearchClusterRefId = types.String{Value: *in.ElasticsearchClusterRefID}
 	}
 
-	kibana.HttpEndpoint.Value, kibana.HttpsEndpoint.Value = converters.ExtractEndpoints(in.Info.Metadata)
+	kibana.HttpEndpoint, kibana.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
 
 	cfg, err := NewKibanaConfigs(plan.Kibana)
 	if err != nil {

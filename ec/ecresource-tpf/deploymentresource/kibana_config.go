@@ -43,23 +43,23 @@ func NewKibanaConfigs(in *models.KibanaConfiguration) (KibanaConfigs, error) {
 		return nil, nil
 	}
 
-	cfg.UserSettingsYaml.Value = in.UserSettingsYaml
+	cfg.UserSettingsYaml = types.String{Value: in.UserSettingsYaml}
 
-	cfg.UserSettingsOverrideYaml.Value = in.UserSettingsOverrideYaml
+	cfg.UserSettingsOverrideYaml = types.String{Value: in.UserSettingsOverrideYaml}
 
 	if o := in.UserSettingsJSON; o != nil {
 		if b, _ := json.Marshal(o); len(b) > 0 && !bytes.Equal([]byte("{}"), b) {
-			cfg.UserSettingsJson.Value = string(b)
+			cfg.UserSettingsJson = types.String{Value: string(b)}
 		}
 	}
 
 	if o := in.UserSettingsOverrideJSON; o != nil {
 		if b, _ := json.Marshal(o); len(b) > 0 && !bytes.Equal([]byte("{}"), b) {
-			cfg.UserSettingsOverrideJson.Value = string(b)
+			cfg.UserSettingsOverrideJson = types.String{Value: string(b)}
 		}
 	}
 
-	cfg.DockerImage.Value = in.DockerImage
+	cfg.DockerImage = types.String{Value: in.DockerImage}
 
 	if cfg != (KibanaConfig{}) {
 		return []*KibanaConfig{&cfg}, nil

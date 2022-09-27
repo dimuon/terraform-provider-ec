@@ -24,19 +24,20 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 func NewIntegrationsServerTopology(in *models.IntegrationsServerTopologyElement) (*Topology, error) {
 	var top Topology
 
-	top.InstanceConfigurationId.Value = in.InstanceConfigurationID
+	top.InstanceConfigurationId = types.String{Value: in.InstanceConfigurationID}
 
 	if in.Size != nil {
-		top.Size.Value = util.MemoryToState(*in.Size.Value)
-		top.SizeResource.Value = *in.Size.Resource
+		top.Size = types.String{Value: util.MemoryToState(*in.Size.Value)}
+		top.SizeResource = types.String{Value: *in.Size.Resource}
 	}
 
-	top.ZoneCount.Value = int64(in.ZoneCount)
+	top.ZoneCount = types.Int64{Value: int64(in.ZoneCount)}
 
 	return &top, nil
 }

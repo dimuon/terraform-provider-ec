@@ -48,7 +48,7 @@ func (r Resource) Read(ctx context.Context, req resource.ReadRequest, resp *reso
 	var newState *Deployment
 	var err error
 
-	if newState, err = r.read(ctx, curState); err != nil {
+	if newState, err = r.read(ctx, curState.Id.Value, curState); err != nil {
 		resp.Diagnostics.AddError("Read error", err.Error())
 	}
 
@@ -63,9 +63,9 @@ func (r Resource) Read(ctx context.Context, req resource.ReadRequest, resp *reso
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r Resource) read(ctx context.Context, state Deployment) (*Deployment, error) {
+func (r Resource) read(ctx context.Context, id string, state Deployment) (*Deployment, error) {
 	res, err := deploymentapi.Get(deploymentapi.GetParams{
-		API: r.client, DeploymentID: state.Id.Value,
+		API: r.client, DeploymentID: id,
 		QueryParams: deputil.QueryParams{
 			ShowSettings:     true,
 			ShowPlans:        true,
@@ -85,7 +85,7 @@ func (r Resource) read(ctx context.Context, state Deployment) (*Deployment, erro
 	}
 
 	remotes, err := esremoteclustersapi.Get(esremoteclustersapi.GetParams{
-		API: r.client, DeploymentID: state.Id.Value,
+		API: r.client, DeploymentID: id,
 		RefID: state.Elasticsearch[0].RefId.Value,
 	})
 	if err != nil {

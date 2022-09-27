@@ -19,73 +19,85 @@ package deploymentresource
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
-	"fmt"
 	"reflect"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type ElasticsearchConfigs []*ElasticsearchConfig
+type ElasticsearchConfigs types.List
 
-func NewElasticsearchConfigs(in *models.ElasticsearchConfiguration) (ElasticsearchConfigs, error) {
-	cfg, err := NewElasticsearchConfig(in)
-	if err != nil {
-		return nil, err
+func (configs ElasticsearchConfigs) Read(ctx context.Context, in *models.ElasticsearchConfiguration) diag.Diagnostics {
+	var config ElasticsearchConfig
+
+	diags := config.Read(in)
+
+	if diags.HasError() {
+		return diags
 	}
 
-	if !cfg.isEmpty() {
-		return []*ElasticsearchConfig{cfg}, nil
+	if config.isEmpty() {
+		return nil
 	}
 
-	return nil, nil
+	return tfsdk.ValueFrom(ctx, []*ElasticsearchConfig{&config}, elasticsearchTopology().FrameworkType(), configs)
 }
 
-func (cfgs ElasticsearchConfigs) Payload(esCfg *models.ElasticsearchConfiguration) (*models.ElasticsearchConfiguration, error) {
-	if len(cfgs) == 0 {
-		return nil, nil
+func (configs ElasticsearchConfigs) Payload(ctx context.Context, model *models.ElasticsearchConfiguration) (*models.ElasticsearchConfiguration, diag.Diagnostics) {
+	if len(configs.Elems) == 0 {
+		return model, nil
 	}
 
-	if esCfg == nil {
-		esCfg = &models.ElasticsearchConfiguration{}
+	if model == nil {
+		model = &models.ElasticsearchConfiguration{}
 	}
 
-	for _, cfg := range cfgs {
-		if cfg.UserSettingsJson.Value != "" {
-			if err := json.Unmarshal([]byte(cfg.UserSettingsJson.Value), &esCfg.UserSettingsJSON); err != nil {
-				return nil, fmt.Errorf(
-					"failed expanding elasticsearch user_settings_json: %w", err,
-				)
+	for _, elem := range configs.Elems {
+		var config ElasticsearchConfig
+
+		diags := tfsdk.ValueAs(ctx, elem, &config)
+
+		if diags.HasError() {
+			return nil, diags
+		}
+
+		if config.UserSettingsJson.Value != "" {
+
+			if err := json.Unmarshal([]byte(config.UserSettingsJson.Value), &model.UserSettingsJSON); err != nil {
+				diags.AddError("failed expanding elasticsearch user_settings_json", err.Error())
+				return nil, diags
 			}
 		}
 
-		if cfg.UserSettingsOverrideJson.Value != "" {
-			if err := json.Unmarshal([]byte(cfg.UserSettingsOverrideJson.Value), &esCfg.UserSettingsOverrideJSON); err != nil {
-				return nil, fmt.Errorf(
-					"failed expanding elasticsearch user_settings_override_json: %w", err,
-				)
+		if config.UserSettingsOverrideJson.Value != "" {
+			if err := json.Unmarshal([]byte(config.UserSettingsOverrideJson.Value), &model.UserSettingsOverrideJSON); err != nil {
+				diags.AddError("failed expanding elasticsearch user_settings_override_json", err.Error())
+				return nil, diags
 			}
 		}
 
-		if !cfg.UserSettingsYaml.IsNull() {
-			esCfg.UserSettingsYaml = cfg.UserSettingsYaml.Value
+		if !config.UserSettingsYaml.IsNull() {
+			model.UserSettingsYaml = config.UserSettingsYaml.Value
 		}
 
-		if !cfg.UserSettingsOverrideYaml.IsNull() {
-			esCfg.UserSettingsOverrideYaml = cfg.UserSettingsOverrideYaml.Value
+		if !config.UserSettingsOverrideYaml.IsNull() {
+			model.UserSettingsOverrideYaml = config.UserSettingsOverrideYaml.Value
 		}
 
-		if len(cfg.Plugins) > 0 {
-			esCfg.EnabledBuiltInPlugins = cfg.Plugins
+		if len(config.Plugins) > 0 {
+			model.EnabledBuiltInPlugins = config.Plugins
 		}
 
-		if !cfg.DockerImage.IsNull() {
-			esCfg.DockerImage = cfg.DockerImage.Value
+		if !config.DockerImage.IsNull() {
+			model.DockerImage = config.DockerImage.Value
 		}
 	}
 
-	return esCfg, nil
+	return model, nil
 }
 
 type ElasticsearchConfig struct {
@@ -101,40 +113,38 @@ func (c *ElasticsearchConfig) isEmpty() bool {
 	return reflect.ValueOf(*c).IsZero()
 }
 
-func NewElasticsearchConfig(in *models.ElasticsearchConfiguration) (*ElasticsearchConfig, error) {
-	var cfg ElasticsearchConfig
-
+func (config *ElasticsearchConfig) Read(in *models.ElasticsearchConfiguration) diag.Diagnostics {
 	if in == nil {
-		return nil, nil
+		return nil
 	}
 
 	if len(in.EnabledBuiltInPlugins) > 0 {
-		cfg.Plugins = append(cfg.Plugins, in.EnabledBuiltInPlugins...)
+		config.Plugins = append(config.Plugins, in.EnabledBuiltInPlugins...)
 	}
 
 	if in.UserSettingsYaml != "" {
-		cfg.UserSettingsYaml.Value = in.UserSettingsYaml
+		config.UserSettingsYaml = types.String{Value: in.UserSettingsYaml}
 	}
 
 	if in.UserSettingsOverrideYaml != "" {
-		cfg.UserSettingsOverrideYaml.Value = in.UserSettingsOverrideYaml
+		config.UserSettingsOverrideYaml = types.String{Value: in.UserSettingsOverrideYaml}
 	}
 
 	if o := in.UserSettingsJSON; o != nil {
 		if b, _ := json.Marshal(o); len(b) > 0 && !bytes.Equal([]byte("{}"), b) {
-			cfg.UserSettingsJson.Value = string(b)
+			config.UserSettingsJson = types.String{Value: string(b)}
 		}
 	}
 
 	if o := in.UserSettingsOverrideJSON; o != nil {
 		if b, _ := json.Marshal(o); len(b) > 0 && !bytes.Equal([]byte("{}"), b) {
-			cfg.UserSettingsOverrideJson.Value = string(b)
+			config.UserSettingsOverrideJson = types.String{Value: string(b)}
 		}
 	}
 
 	if in.DockerImage != "" {
-		cfg.DockerImage.Value = in.DockerImage
+		config.DockerImage = types.String{Value: in.DockerImage}
 	}
 
-	return &cfg, nil
+	return nil
 }

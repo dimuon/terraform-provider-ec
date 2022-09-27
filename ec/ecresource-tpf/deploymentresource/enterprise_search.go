@@ -41,15 +41,15 @@ func NewEnterpriseSearch(in *models.EnterpriseSearchResourceInfo) (*EnterpriseSe
 	var ess EnterpriseSearch
 
 	if in.RefID != nil {
-		ess.RefId.Value = *in.RefID
+		ess.RefId = types.String{Value: *in.RefID}
 	}
 
 	if in.Info.ID != nil {
-		ess.ResourceId.Value = *in.Info.ID
+		ess.ResourceId = types.String{Value: *in.Info.ID}
 	}
 
 	if in.Region != nil {
-		ess.Region.Value = *in.Region
+		ess.Region = types.String{Value: *in.Region}
 	}
 
 	plan := in.Info.PlanInfo.Current.Plan
@@ -59,10 +59,10 @@ func NewEnterpriseSearch(in *models.EnterpriseSearchResourceInfo) (*EnterpriseSe
 	}
 
 	if in.ElasticsearchClusterRefID != nil {
-		ess.ElasticsearchClusterRefId.Value = *in.ElasticsearchClusterRefID
+		ess.ElasticsearchClusterRefId = types.String{Value: *in.ElasticsearchClusterRefID}
 	}
 
-	ess.HttpEndpoint.Value, ess.HttpsEndpoint.Value = converters.ExtractEndpoints(in.Info.Metadata)
+	ess.HttpEndpoint, ess.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
 
 	cfg, err := NewEnterpriseSearchConfig(plan.EnterpriseSearch)
 	if err != nil {

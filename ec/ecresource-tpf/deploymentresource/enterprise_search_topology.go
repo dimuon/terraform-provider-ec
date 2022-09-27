@@ -49,28 +49,28 @@ type EnterpriseSearchTopology struct {
 func NewEnterpriseSearchTopology(in *models.EnterpriseSearchTopologyElement) (*EnterpriseSearchTopology, error) {
 	var top EnterpriseSearchTopology
 
-	top.InstanceConfigurationId.Value = in.InstanceConfigurationID
+	top.InstanceConfigurationId = types.String{Value: in.InstanceConfigurationID}
 
 	if in.Size != nil {
-		top.Size.Value = util.MemoryToState(*in.Size.Value)
-		top.SizeResource.Value = *in.Size.Resource
+		top.Size = types.String{Value: util.MemoryToState(*in.Size.Value)}
+		top.SizeResource = types.String{Value: *in.Size.Resource}
 	}
 
 	if nt := in.NodeType; nt != nil {
 		if nt.Appserver != nil {
-			top.NodeTypeAppserver.Value = *nt.Appserver
+			top.NodeTypeAppserver = types.Bool{Value: *nt.Appserver}
 		}
 
 		if nt.Connector != nil {
-			top.NodeTypeConnector.Value = *nt.Connector
+			top.NodeTypeConnector = types.Bool{Value: *nt.Connector}
 		}
 
 		if nt.Worker != nil {
-			top.NodeTypeWorker.Value = *nt.Worker
+			top.NodeTypeWorker = types.Bool{Value: *nt.Worker}
 		}
 	}
 
-	top.ZoneCount.Value = int64(in.ZoneCount)
+	top.ZoneCount = types.Int64{Value: int64(in.ZoneCount)}
 
 	return &top, nil
 }

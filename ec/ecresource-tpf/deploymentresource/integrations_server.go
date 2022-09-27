@@ -62,15 +62,15 @@ func NewIntegrationsServer(in *models.IntegrationsServerResourceInfo) (*Integrat
 	var srv IntegrationsServer
 
 	if in.RefID != nil {
-		srv.RefId.Value = *in.RefID
+		srv.RefId = types.String{Value: *in.RefID}
 	}
 
 	if in.Info.ID != nil {
-		srv.ResourceId.Value = *in.Info.ID
+		srv.ResourceId = types.String{Value: *in.Info.ID}
 	}
 
 	if in.Region != nil {
-		srv.Region.Value = *in.Region
+		srv.Region = types.String{Value: *in.Region}
 	}
 
 	plan := in.Info.PlanInfo.Current.Plan
@@ -80,10 +80,10 @@ func NewIntegrationsServer(in *models.IntegrationsServerResourceInfo) (*Integrat
 	}
 
 	if in.ElasticsearchClusterRefID != nil {
-		srv.ElasticsearchClusterRefId.Value = *in.ElasticsearchClusterRefID
+		srv.ElasticsearchClusterRefId = types.String{Value: *in.ElasticsearchClusterRefID}
 	}
 
-	srv.HttpEndpoint.Value, srv.HttpsEndpoint.Value = converters.ExtractEndpoints(in.Info.Metadata)
+	srv.HttpEndpoint, srv.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
 
 	cfg, err := NewIntegrationsServerConfig(plan.IntegrationsServer)
 	if err != nil {

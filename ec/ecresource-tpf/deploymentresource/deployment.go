@@ -64,14 +64,14 @@ func NewDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteReso
 	if res.ID == nil {
 		return nil, missingField("ID")
 	}
-	dep.Id.Value = *res.ID
+	dep.Id = types.String{Value: *res.ID}
 
-	dep.Alias.Value = res.Alias
+	dep.Alias = types.String{Value: res.Alias}
 
 	if res.Name == nil {
 		return nil, missingField("Name")
 	}
-	dep.Name.Value = *res.Name
+	dep.Name = types.String{Value: *res.Name}
 
 	dep.Tags = converters.TagsToMap(res.Metadata.Tags)
 
@@ -79,26 +79,27 @@ func NewDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteReso
 		return nil, nil
 	}
 
-	var err error
-
-	dep.DeploymentTemplateId.Value, err = getDeploymentTemplateID(res.Resources)
+	templateID, err := getDeploymentTemplateID(res.Resources)
 	if err != nil {
 		return nil, err
 	}
 
-	dep.Region.Value = getRegion(res.Resources)
+	dep.DeploymentTemplateId = types.String{Value: templateID}
+
+	dep.Region = types.String{Value: getRegion(res.Resources)}
 
 	// We're reconciling the version and storing the lowest version of any
 	// of the deployment resources. This ensures that if an upgrade fails,
 	// the state version will be lower than the desired version, making
 	// retries possible. Once more resource types are added, the function
 	// needs to be modified to check those as well.
-	dep.Version.Value, err = getLowestVersion(res.Resources)
+	version, err := getLowestVersion(res.Resources)
 	if err != nil {
 		// This code path is highly unlikely, but we're bubbling up the
 		// error in case one of the versions isn't parseable by semver.
 		return nil, fmt.Errorf("failed reading deployment: %w", err)
 	}
+	dep.Version = types.String{Value: version}
 
 	if dep.Elasticsearch, err = NewElasticsearches(res.Resources.Elasticsearch, remotes); err != nil {
 		return nil, err
@@ -224,16 +225,16 @@ func (dep *Deployment) ParseCredentials(resources []*models.DeploymentResource) 
 
 		if creds := res.Credentials; creds != nil {
 			if creds.Username != nil && *creds.Username != "" {
-				dep.ElasticsearchUsername.Value = *creds.Username
+				dep.ElasticsearchUsername = types.String{Value: *creds.Username}
 			}
 
 			if creds.Password != nil && *creds.Password != "" {
-				dep.ElasticsearchPassword.Value = *creds.Password
+				dep.ElasticsearchPassword = types.String{Value: *creds.Password}
 			}
 		}
 
 		if res.SecretToken != "" {
-			dep.ApmSecretToken.Value = res.SecretToken
+			dep.ApmSecretToken = types.String{Value: res.SecretToken}
 		}
 	}
 

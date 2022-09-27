@@ -41,15 +41,15 @@ func NewApm(in *models.ApmResourceInfo) (*Apm, error) {
 	var apm Apm
 
 	if in.RefID != nil {
-		apm.RefId.Value = *in.RefID
+		apm.RefId = types.String{Value: *in.RefID}
 	}
 
 	if in.Info.ID != nil {
-		apm.ResourceId.Value = *in.Info.ID
+		apm.ResourceId = types.String{Value: *in.Info.ID}
 	}
 
 	if in.Region != nil {
-		apm.Region.Value = *in.Region
+		apm.Region = types.String{Value: *in.Region}
 	}
 
 	plan := in.Info.PlanInfo.Current.Plan
@@ -61,10 +61,10 @@ func NewApm(in *models.ApmResourceInfo) (*Apm, error) {
 	}
 
 	if in.ElasticsearchClusterRefID != nil {
-		apm.ElasticsearchClusterRefId.Value = *in.ElasticsearchClusterRefID
+		apm.ElasticsearchClusterRefId = types.String{Value: *in.ElasticsearchClusterRefID}
 	}
 
-	apm.HttpEndpoint.Value, apm.HttpsEndpoint.Value = converters.ExtractEndpoints(in.Info.Metadata)
+	apm.HttpEndpoint, apm.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
 
 	cfgs, err := NewApmConfigs(plan.Apm)
 	if err != nil {

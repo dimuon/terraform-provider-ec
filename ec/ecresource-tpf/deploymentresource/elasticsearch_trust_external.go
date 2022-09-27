@@ -18,45 +18,56 @@
 package deploymentresource
 
 import (
+	"context"
+
 	"github.com/elastic/cloud-sdk-go/pkg/models"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type ElasticsearchTrustExternals []*ElasticsearchTrustExternal
+type ElasticsearchTrustExternals types.Set
 
-func NewElasticsearchTrustExternals(in *models.ElasticsearchClusterTrustSettings) (ElasticsearchTrustExternals, error) {
+func (externals ElasticsearchTrustExternals) Read(ctx context.Context, in *models.ElasticsearchClusterTrustSettings) diag.Diagnostics {
 	if in == nil || len(in.External) == 0 {
-		return nil, nil
+		return nil
 	}
 
-	exts := make([]*ElasticsearchTrustExternal, 0, len(in.External))
+	exts := make([]ElasticsearchTrustExternal, 0, len(in.External))
 	for _, model := range in.External {
-		ext, err := NewElasticsearchTrustExternal(model)
-		if err != nil {
-			return nil, err
+		var external ElasticsearchTrustExternal
+		if diags := external.Read(ctx, model); diags.HasError() {
+			return nil
 		}
-		exts = append(exts, ext)
+		exts = append(exts, external)
 	}
 
-	return exts, nil
+	return tfsdk.ValueFrom(ctx, exts, elasticsearchTrustExternal().FrameworkType(), externals)
 }
 
-func (externals ElasticsearchTrustExternals) Payload(model *models.ElasticsearchClusterSettings) *models.ElasticsearchClusterSettings {
-	payloads := make([]*models.ExternalTrustRelationship, 0, len(externals))
+func (externals ElasticsearchTrustExternals) Payload(ctx context.Context, model *models.ElasticsearchClusterSettings) (*models.ElasticsearchClusterSettings, diag.Diagnostics) {
+	payloads := make([]*models.ExternalTrustRelationship, 0, len(externals.Elems))
 
-	for _, external := range externals {
+	for _, elem := range externals.Elems {
+		var external ElasticsearchTrustExternal
+		if diags := tfsdk.ValueAs(ctx, elem, &external); diags.HasError() {
+			return nil, diags
+		}
 		id := external.RelationshipId.Value
 		all := external.TrustAll.Value
 
-		payloads = append(payloads, &models.ExternalTrustRelationship{
+		payload := &models.ExternalTrustRelationship{
 			TrustRelationshipID: &id,
 			TrustAll:            &all,
-			TrustAllowlist:      external.TrustAllowlist,
-		})
+		}
+		if diags := tfsdk.ValueAs(ctx, external.TrustAllowlist, payload.TrustAllowlist); diags.HasError() {
+			return nil, diags
+		}
+		payloads = append(payloads, payload)
 	}
 
 	if len(payloads) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	if model == nil {
@@ -69,26 +80,26 @@ func (externals ElasticsearchTrustExternals) Payload(model *models.Elasticsearch
 
 	model.Trust.External = append(model.Trust.External, payloads...)
 
-	return model
+	return model, nil
 }
 
 type ElasticsearchTrustExternal struct {
 	RelationshipId types.String `tfsdk:"relationship_id"`
 	TrustAll       types.Bool   `tfsdk:"trust_all"`
-	TrustAllowlist []string     `tfsdk:"trust_allowlist"`
+	TrustAllowlist types.Set    `tfsdk:"trust_allowlist"`
 }
 
-func NewElasticsearchTrustExternal(in *models.ExternalTrustRelationship) (*ElasticsearchTrustExternal, error) {
-	var ext ElasticsearchTrustExternal
+func (ext ElasticsearchTrustExternal) Read(ctx context.Context, in *models.ExternalTrustRelationship) diag.Diagnostics {
 	if in.TrustRelationshipID != nil {
-		ext.RelationshipId.Value = *in.TrustRelationshipID
+		ext.RelationshipId = types.String{Value: *in.TrustRelationshipID}
 	}
 	if in.TrustAll != nil {
-		ext.TrustAll.Value = *in.TrustAll
+		ext.TrustAll = types.Bool{Value: *in.TrustAll}
 	}
 	if in.TrustAllowlist != nil {
-		ext.TrustAllowlist = make([]string, 0, len(in.TrustAllowlist))
-		ext.TrustAllowlist = append(ext.TrustAllowlist, in.TrustAllowlist...)
+		if diags := tfsdk.ValueFrom(ctx, in.TrustAllowlist, types.ListType{ElemType: types.StringType}, ext.TrustAllowlist); diags.HasError() {
+			return diags
+		}
 	}
-	return &ext, nil
+	return nil
 }

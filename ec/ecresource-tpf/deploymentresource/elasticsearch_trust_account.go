@@ -18,46 +18,57 @@
 package deploymentresource
 
 import (
+	"context"
+
 	"github.com/elastic/cloud-sdk-go/pkg/models"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type ElasticsearchTrustAccounts []*ElasticsearchTrustAccount
+type ElasticsearchTrustAccounts types.Set
 
-func NewElasticsearchTrustAccounts(in *models.ElasticsearchClusterTrustSettings) (ElasticsearchTrustAccounts, error) {
-	if in == nil || len(in.Accounts) == 0 {
-		return nil, nil
+func (accounts ElasticsearchTrustAccounts) Read(ctx context.Context, in *models.ElasticsearchClusterTrustSettings) diag.Diagnostics {
+	if in == nil {
+		return nil
 	}
 
-	accs := make([]*ElasticsearchTrustAccount, 0, len(in.Accounts))
+	accs := make([]ElasticsearchTrustAccount, 0, len(in.Accounts))
 
 	for _, model := range in.Accounts {
-		acc, err := NewElasticsearchTrustAccount(model)
-		if err != nil {
-			return nil, err
+		var acc ElasticsearchTrustAccount
+		if diags := acc.Read(ctx, model); diags.HasError() {
+			return diags
 		}
 		accs = append(accs, acc)
 	}
 
-	return accs, nil
+	return tfsdk.ValueFrom(ctx, accs, elasticsearchTrustAccount().FrameworkType(), accounts)
 }
 
-func (accounts ElasticsearchTrustAccounts) Payload(model *models.ElasticsearchClusterSettings) *models.ElasticsearchClusterSettings {
-	payloads := make([]*models.AccountTrustRelationship, 0, len(accounts))
+func (accounts ElasticsearchTrustAccounts) Payload(ctx context.Context, model *models.ElasticsearchClusterSettings) (*models.ElasticsearchClusterSettings, diag.Diagnostics) {
+	payloads := make([]*models.AccountTrustRelationship, 0, len(accounts.Elems))
 
-	for _, account := range accounts {
+	for _, elem := range accounts.Elems {
+		var account ElasticsearchTrustAccount
+		if diags := tfsdk.ValueAs(ctx, elem, &account); diags.HasError() {
+			return nil, diags
+		}
 		id := account.AccountId.Value
 		all := account.TrustAll.Value
 
-		payloads = append(payloads, &models.AccountTrustRelationship{
-			AccountID:      &id,
-			TrustAll:       &all,
-			TrustAllowlist: account.TrustAllowlist,
-		})
+		payload := &models.AccountTrustRelationship{
+			AccountID: &id,
+			TrustAll:  &all,
+		}
+		payloads = append(payloads, payload)
+		if diags := tfsdk.ValueAs(ctx, account.TrustAllowlist, payload.TrustAllowlist); diags.HasError() {
+			return nil, diags
+		}
 	}
 
 	if len(payloads) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	if model == nil {
@@ -70,25 +81,26 @@ func (accounts ElasticsearchTrustAccounts) Payload(model *models.ElasticsearchCl
 
 	model.Trust.Accounts = append(model.Trust.Accounts, payloads...)
 
-	return model
+	return model, nil
 }
 
 type ElasticsearchTrustAccount struct {
 	AccountId      types.String `tfsdk:"account_id"`
 	TrustAll       types.Bool   `tfsdk:"trust_all"`
-	TrustAllowlist []string     `tfsdk:"trust_allowlist"`
+	TrustAllowlist types.List   `tfsdk:"trust_allowlist"`
 }
 
-func NewElasticsearchTrustAccount(in *models.AccountTrustRelationship) (*ElasticsearchTrustAccount, error) {
-	var acc ElasticsearchTrustAccount
+func (acc ElasticsearchTrustAccount) Read(ctx context.Context, in *models.AccountTrustRelationship) diag.Diagnostics {
 	if in.AccountID != nil {
-		acc.AccountId.Value = *in.AccountID
+		acc.AccountId = types.String{Value: *in.AccountID}
 	}
 	if in.TrustAll != nil {
-		acc.TrustAll.Value = *in.TrustAll
+		acc.TrustAll = types.Bool{Value: *in.TrustAll}
 	}
 	if in.TrustAllowlist != nil {
-		acc.TrustAllowlist = *&in.TrustAllowlist
+		if diags := tfsdk.ValueFrom(ctx, in.TrustAllowlist, types.ListType{ElemType: types.StringType}, acc.TrustAllowlist); diags.HasError() {
+			return diags
+		}
 	}
-	return &acc, nil
+	return nil
 }

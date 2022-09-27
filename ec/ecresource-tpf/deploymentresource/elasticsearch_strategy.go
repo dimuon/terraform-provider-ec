@@ -18,7 +18,11 @@
 package deploymentresource
 
 import (
+	"context"
+
 	"github.com/elastic/cloud-sdk-go/pkg/models"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -26,11 +30,11 @@ type ElasticsearchStrategy struct {
 	Type types.String `tfsdk:"type"`
 }
 
-type ElasticsearchStrategies []*ElasticsearchStrategy
+type ElasticsearchStrategies types.List
 
-func (strategies ElasticsearchStrategies) Payload(model *models.TransientElasticsearchPlanConfiguration) *models.TransientElasticsearchPlanConfiguration {
-	if len(strategies) == 0 {
-		return nil
+func (strategies ElasticsearchStrategies) Payload(ctx context.Context, model *models.TransientElasticsearchPlanConfiguration) (*models.TransientElasticsearchPlanConfiguration, diag.Diagnostics) {
+	if len(strategies.Elems) == 0 {
+		return nil, nil
 	}
 
 	if model == nil {
@@ -39,8 +43,11 @@ func (strategies ElasticsearchStrategies) Payload(model *models.TransientElastic
 		}
 	}
 
-	for _, strategy := range strategies {
-
+	for _, elem := range strategies.Elems {
+		var strategy ElasticsearchStrategy
+		if diags := tfsdk.ValueAs(ctx, elem, &strategy); diags.HasError() {
+			return nil, diags
+		}
 		switch strategy.Type.Value {
 		case autodetect:
 			model.Strategy.Autodetect = new(models.AutodetectStrategyConfig)
@@ -55,5 +62,5 @@ func (strategies ElasticsearchStrategies) Payload(model *models.TransientElastic
 		}
 	}
 
-	return model
+	return model, nil
 }

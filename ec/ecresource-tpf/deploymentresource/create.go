@@ -82,7 +82,11 @@ func (r Resource) Create(ctx context.Context, req resource.CreateRequest, resp *
 
 	tflog.Trace(ctx, "created a resource")
 
-	remoteClustersPayload := plan.Elasticsearch[0].RemoteCluster.Payload()
+	remoteClustersPayload, diags := ElasticsearchRemoteClusters(plan.Elasticsearch[0].RemoteCluster).Payload(ctx)
+	if diags.HasError() {
+		resp.Diagnostics.Append(diags...)
+		return
+	}
 
 	if err := esremoteclustersapi.Update(esremoteclustersapi.UpdateParams{
 		API:             r.client,
@@ -93,9 +97,15 @@ func (r Resource) Create(ctx context.Context, req resource.CreateRequest, resp *
 		resp.Diagnostics.AddError("failed updating remote cluster", err.Error())
 	}
 
-	deployment, err := r.read(ctx, plan)
+	deployment, err := r.read(ctx, *res.ID, plan)
+
 	if err != nil {
 		resp.Diagnostics.AddError("Read error", err.Error())
+	}
+
+	if deployment == nil {
+		resp.State.RemoveResource(ctx)
+		return
 	}
 
 	if err := deployment.ParseCredentials(res.Resources); err != nil {

@@ -18,55 +18,67 @@
 package deploymentresource
 
 import (
+	"context"
+
 	"github.com/elastic/cloud-sdk-go/pkg/models"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type ElasticsearchRemoteClusters []*ElasticsearchRemoteCluster
+type ElasticsearchRemoteClusters types.Set
 
-func NewElasticsearchRemoteClusters(in []*models.RemoteResourceRef) ([]*ElasticsearchRemoteCluster, error) {
+func (clusters ElasticsearchRemoteClusters) Read(ctx context.Context, in []*models.RemoteResourceRef) diag.Diagnostics {
 	if len(in) == 0 {
-		return nil, nil
+		return nil
 	}
 
-	rems := make([]*ElasticsearchRemoteCluster, 0, len(in))
+	rems := make([]ElasticsearchRemoteCluster, 0, len(in))
+
 	for _, model := range in {
-		remote, err := NewElasticsearchRemoteCluster(model)
-		if err != nil {
-			return nil, err
+		var cluster ElasticsearchRemoteCluster
+		diags := cluster.Read(ctx, model)
+		if diags.HasError() {
+			return diags
 		}
-		rems = append(rems, remote)
+		rems = append(rems, cluster)
 	}
 
-	return rems, nil
+	return tfsdk.ValueFrom(ctx, rems, elasticsearchRemoteCluster().Type(), clusters)
 }
 
-func (clusters ElasticsearchRemoteClusters) Payload() *models.RemoteResources {
-	payload := models.RemoteResources{Resources: []*models.RemoteResourceRef{}}
+func (clusters ElasticsearchRemoteClusters) Payload(ctx context.Context) (*models.RemoteResources, diag.Diagnostics) {
+	payloads := models.RemoteResources{Resources: []*models.RemoteResourceRef{}}
 
-	for _, cluster := range clusters {
-		var resourceRef models.RemoteResourceRef
+	for _, elem := range clusters.Elems {
+		var cluster ElasticsearchRemoteCluster
+		diags := tfsdk.ValueAs(ctx, elem, &cluster)
+
+		if diags.HasError() {
+			return nil, diags
+		}
+		var payload models.RemoteResourceRef
 
 		if !cluster.DeploymentId.IsNull() {
-			resourceRef.DeploymentID = &cluster.DeploymentId.Value
+			payload.DeploymentID = &cluster.DeploymentId.Value
 		}
 
 		if !cluster.RefId.IsNull() {
-			resourceRef.ElasticsearchRefID = &cluster.RefId.Value
+			payload.ElasticsearchRefID = &cluster.RefId.Value
 		}
 
 		if !cluster.Alias.IsNull() {
-			resourceRef.Alias = &cluster.Alias.Value
+			payload.Alias = &cluster.Alias.Value
 		}
 
 		if !cluster.SkipUnavailable.IsNull() {
-			resourceRef.SkipUnavailable = &cluster.SkipUnavailable.Value
+			payload.SkipUnavailable = &cluster.SkipUnavailable.Value
 		}
 
-		payload.Resources = append(payload.Resources, &resourceRef)
+		payloads.Resources = append(payloads.Resources, &payload)
 	}
 
-	return &payload
+	return &payloads, nil
 }
 
 type ElasticsearchRemoteCluster struct {
@@ -76,23 +88,22 @@ type ElasticsearchRemoteCluster struct {
 	SkipUnavailable types.Bool   `tfsdk:"skip_unavailable"`
 }
 
-func NewElasticsearchRemoteCluster(in *models.RemoteResourceRef) (*ElasticsearchRemoteCluster, error) {
-	var rem ElasticsearchRemoteCluster
+func (cluster *ElasticsearchRemoteCluster) Read(_ context.Context, in *models.RemoteResourceRef) diag.Diagnostics {
 	if in.DeploymentID != nil && *in.DeploymentID != "" {
-		rem.DeploymentId.Value = *in.DeploymentID
+		cluster.DeploymentId = types.String{Value: *in.DeploymentID}
 	}
 
 	if in.ElasticsearchRefID != nil && *in.ElasticsearchRefID != "" {
-		rem.RefId.Value = *in.ElasticsearchRefID
+		cluster.RefId = types.String{Value: *in.ElasticsearchRefID}
 	}
 
 	if in.Alias != nil && *in.Alias != "" {
-		rem.Alias.Value = *in.Alias
+		cluster.Alias = types.String{Value: *in.Alias}
 	}
 
 	if in.SkipUnavailable != nil {
-		rem.SkipUnavailable.Value = *in.SkipUnavailable
+		cluster.SkipUnavailable = types.Bool{Value: *in.SkipUnavailable}
 	}
 
-	return &rem, nil
+	return nil
 }

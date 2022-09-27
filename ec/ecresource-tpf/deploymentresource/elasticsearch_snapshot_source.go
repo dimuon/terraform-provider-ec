@@ -18,7 +18,11 @@
 package deploymentresource
 
 import (
+	"context"
+
 	"github.com/elastic/cloud-sdk-go/pkg/models"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -27,26 +31,31 @@ type ElasticsearchSnapshotSource struct {
 	SnapshotName                 types.String `tfsdk:"snapshot_name"`
 }
 
-type ElasticsearchSnapshotSources []*ElasticsearchSnapshotSource
+type ElasticsearchSnapshotSources types.List
 
-func (snapshots ElasticsearchSnapshotSources) Payload() *models.TransientElasticsearchPlanConfiguration {
-	if len(snapshots) == 0 {
-		return nil
+func (snapshots ElasticsearchSnapshotSources) Payload(ctx context.Context) (*models.TransientElasticsearchPlanConfiguration, diag.Diagnostics) {
+	if len(snapshots.Elems) == 0 {
+		return nil, nil
 	}
 
-	model := models.TransientElasticsearchPlanConfiguration{
+	payload := models.TransientElasticsearchPlanConfiguration{
 		RestoreSnapshot: &models.RestoreSnapshotConfiguration{},
 	}
 
-	for _, snapshot := range snapshots {
+	for _, elem := range snapshots.Elems {
+		var snapshot ElasticsearchSnapshotSource
+		if diags := tfsdk.ValueAs(ctx, elem, &snapshot); diags.HasError() {
+			return nil, diags
+		}
+
 		if !snapshot.SourceElasticsearchClusterId.IsNull() {
-			model.RestoreSnapshot.SourceClusterID = snapshot.SourceElasticsearchClusterId.Value
+			payload.RestoreSnapshot.SourceClusterID = snapshot.SourceElasticsearchClusterId.Value
 		}
 
 		if !snapshot.SnapshotName.IsNull() {
-			model.RestoreSnapshot.SnapshotName = &snapshot.SnapshotName.Value
+			payload.RestoreSnapshot.SnapshotName = &snapshot.SnapshotName.Value
 		}
 	}
 
-	return &model
+	return &payload, nil
 }
