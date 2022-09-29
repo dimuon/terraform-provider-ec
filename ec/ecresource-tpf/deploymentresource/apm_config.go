@@ -19,14 +19,16 @@ package deploymentresource
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type ApmConfig struct {
+type ApmConfigTF struct {
 	DockerImage              types.String `tfsdk:"docker_image"`
 	DebugEnabled             types.Bool   `tfsdk:"debug_enabled"`
 	UserSettingsJson         types.String `tfsdk:"user_settings_json"`
@@ -35,48 +37,59 @@ type ApmConfig struct {
 	UserSettingsOverrideYaml types.String `tfsdk:"user_settings_override_yaml"`
 }
 
-type ApmConfigs []*ApmConfig
+type ApmConfig struct {
+	DockerImage              string `tfsdk:"docker_image"`
+	DebugEnabled             bool   `tfsdk:"debug_enabled"`
+	UserSettingsJson         string `tfsdk:"user_settings_json"`
+	UserSettingsOverrideJson string `tfsdk:"user_settings_override_json"`
+	UserSettingsYaml         string `tfsdk:"user_settings_yaml"`
+	UserSettingsOverrideYaml string `tfsdk:"user_settings_override_yaml"`
+}
 
-func NewApmConfigs(in *models.ApmConfiguration) (ApmConfigs, error) {
+type ApmConfigsTF types.List
+
+type ApmConfigs []ApmConfig
+
+func ReadApmConfigs(in *models.ApmConfiguration) (ApmConfigs, error) {
 	var cfg ApmConfig
 
-	if in == nil {
-		return nil, nil
-	}
+	cfg.UserSettingsYaml = in.UserSettingsYaml
 
-	cfg.UserSettingsYaml = types.String{Value: in.UserSettingsYaml}
-
-	cfg.UserSettingsOverrideYaml = types.String{Value: in.UserSettingsOverrideYaml}
+	cfg.UserSettingsOverrideYaml = in.UserSettingsOverrideYaml
 
 	if o := in.UserSettingsJSON; o != nil {
 		if b, _ := json.Marshal(o); len(b) > 0 && !bytes.Equal([]byte("{}"), b) {
-			cfg.UserSettingsJson = types.String{Value: string(b)}
+			cfg.UserSettingsJson = string(b)
 		}
 	}
 
 	if o := in.UserSettingsOverrideJSON; o != nil {
 		if b, _ := json.Marshal(o); len(b) > 0 && !bytes.Equal([]byte("{}"), b) {
-			cfg.UserSettingsOverrideJson = types.String{Value: string(b)}
+			cfg.UserSettingsOverrideJson = string(b)
 		}
 	}
 
-	cfg.DockerImage = types.String{Value: in.DockerImage}
+	cfg.DockerImage = in.DockerImage
 
 	if in.SystemSettings != nil {
 		if in.SystemSettings.DebugEnabled != nil {
-			cfg.DebugEnabled = types.Bool{Value: *in.SystemSettings.DebugEnabled}
+			cfg.DebugEnabled = *in.SystemSettings.DebugEnabled
 		}
 	}
 
-	if cfg != (ApmConfig{}) {
-		return []*ApmConfig{&cfg}, nil
+	if cfg == (ApmConfig{}) {
+		return nil, nil
 	}
 
-	return nil, nil
+	return []ApmConfig{cfg}, nil
 }
 
-func (cfgs ApmConfigs) Payload(model *models.ApmConfiguration) error {
-	for _, cfg := range cfgs {
+func (cfgs ApmConfigsTF) Payload(ctx context.Context, model *models.ApmConfiguration) diag.Diagnostics {
+	for _, elem := range cfgs.Elems {
+		var cfg ApmConfigTF
+		if diags := tfsdk.ValueAs(ctx, elem, &cfg); diags.HasError() {
+			return diags
+		}
 		if !cfg.DebugEnabled.IsNull() {
 			if model.SystemSettings == nil {
 				model.SystemSettings = &models.ApmSystemSettings{}
@@ -84,15 +97,18 @@ func (cfgs ApmConfigs) Payload(model *models.ApmConfiguration) error {
 			model.SystemSettings.DebugEnabled = &cfg.DebugEnabled.Value
 		}
 
+		var diags diag.Diagnostics
 		if cfg.UserSettingsJson.Value != "" {
 			if err := json.Unmarshal([]byte(cfg.UserSettingsJson.Value), &model.UserSettingsJSON); err != nil {
-				return fmt.Errorf("failed expanding apm user_settings_json: %w", err)
+				diags.AddError("failed expanding apm user_settings_json", err.Error())
+				return diags
 			}
 		}
 
 		if cfg.UserSettingsOverrideJson.Value != "" {
 			if err := json.Unmarshal([]byte(cfg.UserSettingsOverrideJson.Value), &model.UserSettingsOverrideJSON); err != nil {
-				return fmt.Errorf("failed expanding apm user_settings_override_json: %w", err)
+				diags.AddError("failed expanding apm user_settings_override_json", err.Error())
+				return diags
 			}
 		}
 

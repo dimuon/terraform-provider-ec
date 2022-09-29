@@ -18,65 +18,80 @@
 package deploymentresource
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func NewApmTopology(in *models.ApmTopologyElement) (*Topology, error) {
-	var top Topology
+type ApmTopologyTF TopologyTF
 
-	top.InstanceConfigurationId = types.String{Value: in.InstanceConfigurationID}
+type ApmTopology struct {
+	InstanceConfigurationId string `tfsdk:"instance_configuration_id"`
+	Size                    string `tfsdk:"size"`
+	SizeResource            string `tfsdk:"size_resource"`
+	ZoneCount               int    `tfsdk:"zone_count"`
+}
+
+func ReadApmTopology(in *models.ApmTopologyElement) (*ApmTopology, error) {
+	var top ApmTopology
+
+	top.InstanceConfigurationId = in.InstanceConfigurationID
 
 	if in.Size != nil {
-		top.Size = types.String{Value: util.MemoryToState(*in.Size.Value)}
-		top.SizeResource = types.String{Value: *in.Size.Resource}
+		top.Size = util.MemoryToState(*in.Size.Value)
+		top.SizeResource = *in.Size.Resource
 	}
 
-	top.ZoneCount = types.Int64{Value: int64(in.ZoneCount)}
+	top.ZoneCount = int(in.ZoneCount)
 
 	return &top, nil
 }
 
-type ApmTopologies []*Topology
+type ApmTopologies []ApmTopology
 
-func NewApmTopologies(in []*models.ApmTopologyElement) (ApmTopologies, error) {
-	if len(in) == 0 {
-		return nil, nil
-	}
+func ReadApmTopologies(in []*models.ApmTopologyElement) (ApmTopologies, error) {
+	topologies := make([]ApmTopology, 0, len(in))
 
-	tops := make([]*Topology, 0, len(in))
 	for _, model := range in {
 		if model.Size == nil || model.Size.Value == nil || *model.Size.Value == 0 {
 			continue
 		}
 
-		top, err := NewApmTopology(model)
+		topology, err := ReadApmTopology(model)
 		if err != nil {
-			return nil, err
+			return nil, nil
 		}
 
-		tops = append(tops, top)
+		topologies = append(topologies, *topology)
 	}
 
-	return tops, nil
+	// return tfsdk.ValueFrom(ctx, tops, apmTopology().Type(), topologies)
+	return topologies, nil
 }
 
-func (tops ApmTopologies) Payload(planModels []*models.ApmTopologyElement) ([]*models.ApmTopologyElement, error) {
-	if len(tops) == 0 {
+type ApmTopologiesTF types.List
+
+func (tops ApmTopologiesTF) Payload(ctx context.Context, planModels []*models.ApmTopologyElement) ([]*models.ApmTopologyElement, diag.Diagnostics) {
+	if len(tops.Elems) == 0 {
 		return defaultApmTopology(planModels), nil
 	}
 
-	payloads := make([]*models.ApmTopologyElement, 0, len(tops))
+	payloads := make([]*models.ApmTopologyElement, 0, len(tops.Elems))
 
 	planModels = defaultApmTopology(planModels)
 
-	for i, topology := range tops {
-
+	for i, elem := range tops.Elems {
+		var topology ApmTopologyTF
+		if diags := tfsdk.ValueAs(ctx, elem, &topology); diags.HasError() {
+			return nil, diags
+		}
 		icID := topology.InstanceConfigurationId.Value
 
 		// When a topology element is set but no instance_configuration_id
@@ -87,27 +102,28 @@ func (tops ApmTopologies) Payload(planModels []*models.ApmTopologyElement) ([]*m
 		}
 
 		size, err := converters.ParseTopologySize(topology.Size, topology.SizeResource)
+
+		var diags diag.Diagnostics
 		if err != nil {
-			return nil, err
+			diags.AddError("size parsing error", err.Error())
+			return nil, diags
 		}
 
+		topologyElem, err := matchApmTopology(icID, planModels)
 		if err != nil {
-			return nil, err
+			diags.AddError("cannot match topology element", err.Error())
+			return nil, diags
 		}
 
-		elem, err := matchApmTopology(icID, planModels)
-		if err != nil {
-			return nil, err
-		}
 		if size != nil {
-			elem.Size = size
+			topologyElem.Size = size
 		}
 
 		if topology.ZoneCount.Value > 0 {
-			elem.ZoneCount = int32(topology.ZoneCount.Value)
+			topologyElem.ZoneCount = int32(topology.ZoneCount.Value)
 		}
 
-		payloads = append(payloads, elem)
+		payloads = append(payloads, topologyElem)
 	}
 
 	return payloads, nil

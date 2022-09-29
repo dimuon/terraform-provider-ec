@@ -63,7 +63,7 @@ func NewKibana(in *models.KibanaResourceInfo) (*Kibana, error) {
 		kibana.ElasticsearchClusterRefId = types.String{Value: *in.ElasticsearchClusterRefID}
 	}
 
-	kibana.HttpEndpoint, kibana.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
+	kibana.HttpEndpoint, kibana.HttpsEndpoint = converters.ExtractEndpointsTF(in.Info.Metadata)
 
 	cfg, err := NewKibanaConfigs(plan.Kibana)
 	if err != nil {

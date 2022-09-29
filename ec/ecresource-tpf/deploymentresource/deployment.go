@@ -18,6 +18,7 @@
 package deploymentresource
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/blang/semver"
@@ -44,7 +45,7 @@ type Deployment struct {
 	Tags                  map[string]string   `tfsdk:"tags"`
 	Elasticsearch         Elasticsearches     `tfsdk:"elasticsearch"`
 	Kibana                Kibanas             `tfsdk:"kibana"`
-	Apm                   Apms                `tfsdk:"apm"`
+	Apm                   types.List          `tfsdk:"apm"`
 	IntegrationsServer    IntegrationsServers `tfsdk:"integrations_server"`
 	EnterpriseSearch      EnterpriseSearches  `tfsdk:"enterprise_search"`
 	Observability         Observabilities     `tfsdk:"observability"`
@@ -59,6 +60,7 @@ func missingField(field string) error {
 }
 
 func NewDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteResources) (*Deployment, error) {
+	ctx := context.TODO()
 	var dep Deployment
 
 	if res.ID == nil {
@@ -109,8 +111,8 @@ func NewDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteReso
 		return nil, err
 	}
 
-	if dep.Apm, err = NewApms(res.Resources.Apm); err != nil {
-		return nil, err
+	if diags := readApms(ctx, res.Resources.Apm, &dep.Apm); diags.HasError() {
+		return nil, fmt.Errorf("diags: %v", diags)
 	}
 
 	if dep.IntegrationsServer, err = NewIntegrationsServers(res.Resources.IntegrationsServer); err != nil {
@@ -135,22 +137,23 @@ func NewDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteReso
 	return &dep, nil
 }
 
-func (d *Deployment) Payload(client *api.API) (*models.DeploymentCreateRequest, error) {
+func (dep *Deployment) Payload(client *api.API) (*models.DeploymentCreateRequest, error) {
+	ctx := context.TODO()
 	var result = models.DeploymentCreateRequest{
-		Name:      d.Name.Value,
-		Alias:     d.Alias.Value,
+		Name:      dep.Name.Value,
+		Alias:     dep.Alias.Value,
 		Resources: &models.DeploymentCreateResources{},
 		Settings:  &models.DeploymentCreateSettings{},
 		Metadata:  &models.DeploymentCreateMetadata{},
 	}
 
-	dtID := d.DeploymentTemplateId.Value
-	version := d.Version.Value
+	dtID := dep.DeploymentTemplateId.Value
+	version := dep.Version.Value
 
 	template, err := deptemplateapi.Get(deptemplateapi.GetParams{
 		API:                        client,
 		TemplateID:                 dtID,
-		Region:                     d.Region.Value,
+		Region:                     dep.Region.Value,
 		HideInstanceConfigurations: true,
 	})
 	if err != nil {
@@ -164,7 +167,7 @@ func (d *Deployment) Payload(client *api.API) (*models.DeploymentCreateRequest, 
 
 	merr := multierror.NewPrefixed("invalid configuration")
 
-	esRes, err := d.Elasticsearch.Payload(template, dtID, version, useNodeRoles)
+	esRes, err := dep.Elasticsearch.Payload(template, dtID, version, useNodeRoles)
 	// enrichElasticsearchTemplate(
 	// 	esResource(template), dtID, version, useNodeRoles,
 	// ),
@@ -174,25 +177,25 @@ func (d *Deployment) Payload(client *api.API) (*models.DeploymentCreateRequest, 
 	}
 	result.Resources.Elasticsearch = append(result.Resources.Elasticsearch, esRes...)
 
-	kibanaRes, err := d.Kibana.Payload(template)
+	kibanaRes, err := dep.Kibana.Payload(template)
 	if err != nil {
 		merr = merr.Append(err)
 	}
 	result.Resources.Kibana = append(result.Resources.Kibana, kibanaRes...)
 
-	apmRes, err := d.Apm.Payload(template)
-	if err != nil {
-		merr = merr.Append(err)
+	apms, diags := ApmPayload(ctx, template, dep.Apm)
+	if diags.HasError() {
+		merr = merr.Append(fmt.Errorf("diags: %v", diags))
 	}
-	result.Resources.Apm = append(result.Resources.Apm, apmRes...)
+	result.Resources.Apm = append(result.Resources.Apm, apms...)
 
-	integrationsServerRes, err := d.IntegrationsServer.Payload(template)
+	integrationsServerRes, err := dep.IntegrationsServer.Payload(template)
 	if err != nil {
 		merr = merr.Append(err)
 	}
 	result.Resources.IntegrationsServer = append(result.Resources.IntegrationsServer, integrationsServerRes...)
 
-	enterpriseSearchRes, err := d.EnterpriseSearch.Payload(template)
+	enterpriseSearchRes, err := dep.EnterpriseSearch.Payload(template)
 	if err != nil {
 		merr = merr.Append(err)
 	}
@@ -202,15 +205,15 @@ func (d *Deployment) Payload(client *api.API) (*models.DeploymentCreateRequest, 
 		return nil, err
 	}
 
-	trafficFilterToModel(d.TrafficFilter, &result)
+	trafficFilterToModel(dep.TrafficFilter, &result)
 
-	observability, err := d.Observability.Model(client)
+	observability, err := dep.Observability.Model(client)
 	if err != nil {
 		return nil, err
 	}
 	result.Settings.Observability = observability
 
-	result.Metadata.Tags = converters.MapToTags(d.Tags)
+	result.Metadata.Tags = converters.MapToTags(dep.Tags)
 
 	return &result, nil
 }

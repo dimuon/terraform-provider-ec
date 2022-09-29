@@ -83,7 +83,7 @@ func NewIntegrationsServer(in *models.IntegrationsServerResourceInfo) (*Integrat
 		srv.ElasticsearchClusterRefId = types.String{Value: *in.ElasticsearchClusterRefID}
 	}
 
-	srv.HttpEndpoint, srv.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
+	srv.HttpEndpoint, srv.HttpsEndpoint = converters.ExtractEndpointsTF(in.Info.Metadata)
 
 	cfg, err := NewIntegrationsServerConfig(plan.IntegrationsServer)
 	if err != nil {

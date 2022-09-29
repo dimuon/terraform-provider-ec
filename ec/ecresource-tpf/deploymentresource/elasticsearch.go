@@ -131,7 +131,7 @@ func NewElasticsearch(in *models.ElasticsearchResourceInfo, remotes *models.Remo
 		es.CloudID = types.String{Value: meta.CloudID}
 	}
 
-	es.HttpEndpoint, es.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
+	es.HttpEndpoint, es.HttpsEndpoint = converters.ExtractEndpointsTF(in.Info.Metadata)
 
 	if diags := ElasticsearchConfigs(es.Config).Read(ctx, plan.Elasticsearch); diags.HasError() {
 		return nil, err

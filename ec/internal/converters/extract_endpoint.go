@@ -27,7 +27,7 @@ import (
 // FlattenClusterEndpoint receives a ClusterMetadataInfo, parses the http and
 // https endpoints and returns a map with two keys: `http_endpoint` and
 // `https_endpoint`
-func ExtractEndpoints(metadata *models.ClusterMetadataInfo) (httpEndpoint, httpsEndpoint types.String) {
+func ExtractEndpointsTF(metadata *models.ClusterMetadataInfo) (httpEndpoint, httpsEndpoint types.String) {
 	if metadata == nil || metadata.Endpoint == "" || metadata.Ports == nil {
 		return
 	}
@@ -39,5 +39,25 @@ func ExtractEndpoints(metadata *models.ClusterMetadataInfo) (httpEndpoint, https
 	if metadata.Ports.HTTPS != nil {
 		httpsEndpoint = types.String{Value: fmt.Sprintf("https://%s:%d", metadata.Endpoint, *metadata.Ports.HTTPS)}
 	}
+
+	return
+}
+
+// FlattenClusterEndpoint receives a ClusterMetadataInfo, parses the http and
+// https endpoints and returns a map with two keys: `http_endpoint` and
+// `https_endpoint`
+func ExtractEndpoints(metadata *models.ClusterMetadataInfo) (httpEndpoint, httpsEndpoint string) {
+	if metadata == nil || metadata.Endpoint == "" || metadata.Ports == nil {
+		return
+	}
+
+	if metadata.Ports.HTTP != nil {
+		httpEndpoint = fmt.Sprintf("http://%s:%d", metadata.Endpoint, *metadata.Ports.HTTP)
+	}
+
+	if metadata.Ports.HTTPS != nil {
+		httpsEndpoint = fmt.Sprintf("https://%s:%d", metadata.Endpoint, *metadata.Ports.HTTPS)
+	}
+
 	return
 }

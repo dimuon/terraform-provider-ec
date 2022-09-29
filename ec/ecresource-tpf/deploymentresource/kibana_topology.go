@@ -27,15 +27,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type Topology struct {
+type TopologyTF struct {
 	InstanceConfigurationId types.String `tfsdk:"instance_configuration_id"`
 	Size                    types.String `tfsdk:"size"`
 	SizeResource            types.String `tfsdk:"size_resource"`
 	ZoneCount               types.Int64  `tfsdk:"zone_count"`
 }
 
-func NewKibanaTopology(in *models.KibanaClusterTopologyElement) (*Topology, error) {
-	var top Topology
+func NewKibanaTopology(in *models.KibanaClusterTopologyElement) (*TopologyTF, error) {
+	var top TopologyTF
 
 	top.InstanceConfigurationId = types.String{Value: in.InstanceConfigurationID}
 
@@ -49,14 +49,14 @@ func NewKibanaTopology(in *models.KibanaClusterTopologyElement) (*Topology, erro
 	return &top, nil
 }
 
-type KibanaTopologies []*Topology
+type KibanaTopologies []*TopologyTF
 
 func NewKibanaTopologies(in []*models.KibanaClusterTopologyElement) (KibanaTopologies, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}
 
-	tops := make([]*Topology, 0, len(in))
+	tops := make([]*TopologyTF, 0, len(in))
 	for _, model := range in {
 		if model.Size == nil || model.Size.Value == nil || *model.Size.Value == 0 {
 			continue

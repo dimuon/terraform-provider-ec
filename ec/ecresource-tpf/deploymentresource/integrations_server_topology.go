@@ -27,8 +27,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func NewIntegrationsServerTopology(in *models.IntegrationsServerTopologyElement) (*Topology, error) {
-	var top Topology
+func NewIntegrationsServerTopology(in *models.IntegrationsServerTopologyElement) (*TopologyTF, error) {
+	var top TopologyTF
 
 	top.InstanceConfigurationId = types.String{Value: in.InstanceConfigurationID}
 
@@ -64,7 +64,7 @@ func NewIntegrationsServerTopologies(in []*models.IntegrationsServerTopologyElem
 	return tops, nil
 }
 
-type IntegrationsServerTopologies []*Topology
+type IntegrationsServerTopologies []*TopologyTF
 
 func (tops IntegrationsServerTopologies) Payload(planModels []*models.IntegrationsServerTopologyElement) ([]*models.IntegrationsServerTopologyElement, error) {
 	if len(tops) == 0 {

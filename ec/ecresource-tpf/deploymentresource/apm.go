@@ -18,64 +18,79 @@
 package deploymentresource
 
 import (
-	"errors"
+	"context"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+type ApmTF struct {
+	ElasticsearchClusterRefId types.String `tfsdk:"elasticsearch_cluster_ref_id"`
+	RefId                     types.String `tfsdk:"ref_id"`
+	ResourceId                types.String `tfsdk:"resource_id"`
+	Region                    types.String `tfsdk:"region"`
+	HttpEndpoint              types.String `tfsdk:"http_endpoint"`
+	HttpsEndpoint             types.String `tfsdk:"https_endpoint"`
+	Topology                  types.List   `tfsdk:"topology"`
+	Config                    types.List   `tfsdk:"config"`
+}
+
 type Apm struct {
-	ElasticsearchClusterRefId types.String  `tfsdk:"elasticsearch_cluster_ref_id"`
-	RefId                     types.String  `tfsdk:"ref_id"`
-	ResourceId                types.String  `tfsdk:"resource_id"`
-	Region                    types.String  `tfsdk:"region"`
-	HttpEndpoint              types.String  `tfsdk:"http_endpoint"`
-	HttpsEndpoint             types.String  `tfsdk:"https_endpoint"`
+	ElasticsearchClusterRefId string        `tfsdk:"elasticsearch_cluster_ref_id"`
+	RefId                     string        `tfsdk:"ref_id"`
+	ResourceId                string        `tfsdk:"resource_id"`
+	Region                    string        `tfsdk:"region"`
+	HttpEndpoint              string        `tfsdk:"http_endpoint"`
+	HttpsEndpoint             string        `tfsdk:"https_endpoint"`
 	Topology                  ApmTopologies `tfsdk:"topology"`
 	Config                    ApmConfigs    `tfsdk:"config"`
 }
 
-func NewApm(in *models.ApmResourceInfo) (*Apm, error) {
+func ReadApm(in *models.ApmResourceInfo) (*Apm, error) {
 	var apm Apm
 
 	if in.RefID != nil {
-		apm.RefId = types.String{Value: *in.RefID}
+		apm.RefId = *in.RefID
 	}
 
 	if in.Info.ID != nil {
-		apm.ResourceId = types.String{Value: *in.Info.ID}
+		apm.ResourceId = *in.Info.ID
 	}
 
 	if in.Region != nil {
-		apm.Region = types.String{Value: *in.Region}
+		apm.Region = *in.Region
 	}
 
 	plan := in.Info.PlanInfo.Current.Plan
-	var err error
 
-	apm.Topology, err = NewApmTopologies(plan.ClusterTopology)
+	topologies, err := ReadApmTopologies(plan.ClusterTopology)
 	if err != nil {
 		return nil, err
 	}
 
+	apm.Topology = topologies
+
 	if in.ElasticsearchClusterRefID != nil {
-		apm.ElasticsearchClusterRefId = types.String{Value: *in.ElasticsearchClusterRefID}
+		apm.ElasticsearchClusterRefId = *in.ElasticsearchClusterRefID
 	}
 
 	apm.HttpEndpoint, apm.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
 
-	cfgs, err := NewApmConfigs(plan.Apm)
+	configs, err := ReadApmConfigs(plan.Apm)
 	if err != nil {
 		return nil, err
 	}
-	apm.Config = cfgs
+
+	apm.Config = configs
 
 	return &apm, nil
 }
 
-func (apm Apm) Payload(payload models.ApmPayload) (*models.ApmPayload, error) {
+func (apm ApmTF) Payload(ctx context.Context, payload models.ApmPayload) (*models.ApmPayload, diag.Diagnostics) {
 	if !apm.ElasticsearchClusterRefId.IsNull() {
 		payload.ElasticsearchClusterRefID = &apm.ElasticsearchClusterRefId.Value
 	}
@@ -88,56 +103,79 @@ func (apm Apm) Payload(payload models.ApmPayload) (*models.ApmPayload, error) {
 		payload.Region = &apm.Region.Value
 	}
 
-	if err := apm.Config.Payload(payload.Plan.Apm); err != nil {
-		return nil, err
+	if diags := ApmConfigsTF(apm.Config).Payload(ctx, payload.Plan.Apm); diags.HasError() {
+		return nil, diags
 	}
 
-	topology, err := apm.Topology.Payload(payload.Plan.ClusterTopology)
-	if err != nil {
-		return nil, err
+	topology, diags := ApmTopologiesTF(apm.Topology).Payload(ctx, payload.Plan.ClusterTopology)
+	if diags.HasError() {
+		return nil, diags
 	}
 	payload.Plan.ClusterTopology = topology
 
 	return &payload, nil
 }
 
-type Apms []*Apm
+type Apms []Apm
 
-func NewApms(in []*models.ApmResourceInfo) (Apms, error) {
-	if len(in) == 0 {
-		return nil, nil
-	}
+func ReadApms(in []*models.ApmResourceInfo) (Apms, error) {
+	apms := make([]Apm, 0, len(in))
 
-	apms := make([]*Apm, 0, len(in))
 	for _, model := range in {
 		if util.IsCurrentApmPlanEmpty(model) || isApmResourceStopped(model) {
 			continue
 		}
-		apm, err := NewApm(model)
+
+		apm, err := ReadApm(model)
 		if err != nil {
 			return nil, err
 		}
-		apms = append(apms, apm)
+
+		apms = append(apms, *apm)
 	}
+
 	return apms, nil
 }
 
-func (apms Apms) Payload(template *models.DeploymentTemplateInfoV2) ([]*models.ApmPayload, error) {
-	if len(apms) == 0 {
+func readApms(ctx context.Context, in []*models.ApmResourceInfo, apms *types.List) diag.Diagnostics {
+	apmSlice := make([]ApmTF, 0, len(in))
+
+	for _, model := range in {
+		if util.IsCurrentApmPlanEmpty(model) || isApmResourceStopped(model) {
+			continue
+		}
+		var apm ApmTF
+		// if diags := apm.Read(ctx, model); diags.HasError() {
+		// 	return diags
+		// }
+		apmSlice = append(apmSlice, apm)
+	}
+
+	return tfsdk.ValueFrom(ctx, apmSlice, apm().Type(), apms)
+}
+
+func ApmPayload(ctx context.Context, template *models.DeploymentTemplateInfoV2, apms types.List) ([]*models.ApmPayload, diag.Diagnostics) {
+	if len(apms.Elems) == 0 {
 		return nil, nil
 	}
 
 	templatePayload := apmResource(template)
 
+	var diags diag.Diagnostics
 	if templatePayload == nil {
-		return nil, errors.New("apm specified but deployment template is not configured for it. Use a different template if you wish to add apm")
+		diags.AddError("Apm reading error", "apm specified but deployment template is not configured for it. Use a different template if you wish to add apm")
+		return nil, diags
 	}
 
-	payloads := make([]*models.ApmPayload, 0, len(apms))
-	for _, apm := range apms {
-		payload, err := apm.Payload(*templatePayload)
-		if err != nil {
-			return nil, err
+	payloads := make([]*models.ApmPayload, 0, len(apms.Elems))
+	for _, elem := range apms.Elems {
+		var apm ApmTF
+		if diags := tfsdk.ValueAs(ctx, elem, &apm); diags.HasError() {
+			return nil, diags
+		}
+		payload, diags := apm.Payload(ctx, *templatePayload)
+		if diags.HasError() {
+			return nil, diags
 		}
 		payloads = append(payloads, payload)
 	}
@@ -148,7 +186,7 @@ func (apms Apms) Payload(template *models.DeploymentTemplateInfoV2) ([]*models.A
 // apmResource returns the ApmPayload from a deployment
 // template or an empty version of the payload.
 func apmResource(template *models.DeploymentTemplateInfoV2) *models.ApmPayload {
-	if len(template.DeploymentTemplate.Resources.Apm) == 0 {
+	if template == nil || len(template.DeploymentTemplate.Resources.Apm) == 0 {
 		return nil
 	}
 	return template.DeploymentTemplate.Resources.Apm[0]

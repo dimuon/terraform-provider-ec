@@ -62,7 +62,7 @@ func NewEnterpriseSearch(in *models.EnterpriseSearchResourceInfo) (*EnterpriseSe
 		ess.ElasticsearchClusterRefId = types.String{Value: *in.ElasticsearchClusterRefID}
 	}
 
-	ess.HttpEndpoint, ess.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
+	ess.HttpEndpoint, ess.HttpsEndpoint = converters.ExtractEndpointsTF(in.Info.Metadata)
 
 	cfg, err := NewEnterpriseSearchConfig(plan.EnterpriseSearch)
 	if err != nil {
