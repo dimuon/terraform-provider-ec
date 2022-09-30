@@ -25,6 +25,7 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi/esremoteclustersapi"
 	"github.com/elastic/cloud-sdk-go/pkg/multierror"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
@@ -33,23 +34,23 @@ func (r Resource) Create(ctx context.Context, req resource.CreateRequest, resp *
 		return
 	}
 
-	var config Deployment
+	var config DeploymentTF
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	var plan Deployment
+	var plan DeploymentTF
 	diags = req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	payload, err := plan.Payload(r.client)
-	if err != nil {
-		resp.Diagnostics.AddError("cannot create request", err.Error())
+	payload, diags := plan.Payload(ctx, r.client)
+	if diags.HasError() {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 
@@ -82,7 +83,13 @@ func (r Resource) Create(ctx context.Context, req resource.CreateRequest, resp *
 
 	tflog.Trace(ctx, "created a resource")
 
-	remoteClustersPayload, diags := ElasticsearchRemoteClusters(plan.Elasticsearch[0].RemoteCluster).Payload(ctx)
+	var es ElasticsearchTF
+	if diags := tfsdk.ValueAs(ctx, plan.Elasticsearch.Elems[0], &es); diags.HasError() {
+		resp.Diagnostics.Append(diags...)
+		return
+	}
+
+	remoteClustersPayload, diags := ElasticsearchRemoteClustersTF(es.RemoteCluster).Payload(ctx)
 	if diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return
@@ -91,16 +98,16 @@ func (r Resource) Create(ctx context.Context, req resource.CreateRequest, resp *
 	if err := esremoteclustersapi.Update(esremoteclustersapi.UpdateParams{
 		API:             r.client,
 		DeploymentID:    *res.ID,
-		RefID:           plan.Elasticsearch[0].RefId.Value,
+		RefID:           es.RefId.Value,
 		RemoteResources: remoteClustersPayload,
 	}); err != nil {
 		resp.Diagnostics.AddError("failed updating remote cluster", err.Error())
 	}
 
-	deployment, err := r.read(ctx, *res.ID, plan)
+	deployment, diags := r.read(ctx, *res.ID, plan)
 
-	if err != nil {
-		resp.Diagnostics.AddError("Read error", err.Error())
+	if diags.HasError() {
+		resp.Diagnostics.Append(diags...)
 	}
 
 	if deployment == nil {
@@ -108,7 +115,7 @@ func (r Resource) Create(ctx context.Context, req resource.CreateRequest, resp *
 		return
 	}
 
-	if err := deployment.ParseCredentials(res.Resources); err != nil {
+	if err := deployment.parseCredentials(res.Resources); err != nil {
 		resp.Diagnostics.AddError("failed parse credentials", err.Error())
 	}
 

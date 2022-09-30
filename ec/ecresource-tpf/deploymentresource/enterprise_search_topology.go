@@ -36,7 +36,7 @@ const (
 	minimumZoneCount = 1
 )
 
-type EnterpriseSearchTopology struct {
+type EnterpriseSearchTopologyTF struct {
 	InstanceConfigurationId types.String `tfsdk:"instance_configuration_id"`
 	Size                    types.String `tfsdk:"size"`
 	SizeResource            types.String `tfsdk:"size_resource"`
@@ -46,60 +46,72 @@ type EnterpriseSearchTopology struct {
 	NodeTypeWorker          types.Bool   `tfsdk:"node_type_worker"`
 }
 
-func NewEnterpriseSearchTopology(in *models.EnterpriseSearchTopologyElement) (*EnterpriseSearchTopology, error) {
-	var top EnterpriseSearchTopology
+type EnterpriseSearchTopologiesTF []*EnterpriseSearchTopologyTF
 
-	top.InstanceConfigurationId = types.String{Value: in.InstanceConfigurationID}
+type EnterpriseSearchTopology struct {
+	InstanceConfigurationId *string `tfsdk:"instance_configuration_id"`
+	Size                    *string `tfsdk:"size"`
+	SizeResource            *string `tfsdk:"size_resource"`
+	ZoneCount               int     `tfsdk:"zone_count"`
+	NodeTypeAppserver       *bool   `tfsdk:"node_type_appserver"`
+	NodeTypeConnector       *bool   `tfsdk:"node_type_connector"`
+	NodeTypeWorker          *bool   `tfsdk:"node_type_worker"`
+}
+
+type EnterpriseSearchTopologies []EnterpriseSearchTopology
+
+func readEnterpriseSearchTopology(in *models.EnterpriseSearchTopologyElement) (*EnterpriseSearchTopology, error) {
+	var topology EnterpriseSearchTopology
+
+	topology.InstanceConfigurationId = ec.String(in.InstanceConfigurationID)
 
 	if in.Size != nil {
-		top.Size = types.String{Value: util.MemoryToState(*in.Size.Value)}
-		top.SizeResource = types.String{Value: *in.Size.Resource}
+		topology.Size = ec.String(util.MemoryToState(*in.Size.Value))
+		topology.SizeResource = in.Size.Resource
 	}
 
 	if nt := in.NodeType; nt != nil {
 		if nt.Appserver != nil {
-			top.NodeTypeAppserver = types.Bool{Value: *nt.Appserver}
+			topology.NodeTypeAppserver = nt.Appserver
 		}
 
 		if nt.Connector != nil {
-			top.NodeTypeConnector = types.Bool{Value: *nt.Connector}
+			topology.NodeTypeConnector = nt.Connector
 		}
 
 		if nt.Worker != nil {
-			top.NodeTypeWorker = types.Bool{Value: *nt.Worker}
+			topology.NodeTypeWorker = nt.Worker
 		}
 	}
 
-	top.ZoneCount = types.Int64{Value: int64(in.ZoneCount)}
+	topology.ZoneCount = int(in.ZoneCount)
 
-	return &top, nil
+	return &topology, nil
 }
 
-type EnterpriseSearchTopologies []*EnterpriseSearchTopology
-
-func NewEnterpriseSearchTopologies(in []*models.EnterpriseSearchTopologyElement) ([]*EnterpriseSearchTopology, error) {
+func readEnterpriseSearchTopologies(in []*models.EnterpriseSearchTopologyElement) (EnterpriseSearchTopologies, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}
 
-	tops := make([]*EnterpriseSearchTopology, 0, len(in))
+	topologies := make(EnterpriseSearchTopologies, 0, len(in))
 	for _, model := range in {
 		if model.Size == nil || model.Size.Value == nil || *model.Size.Value == 0 {
 			continue
 		}
 
-		top, err := NewEnterpriseSearchTopology(model)
+		topology, err := readEnterpriseSearchTopology(model)
 		if err != nil {
 			return nil, err
 		}
 
-		tops = append(tops, top)
+		topologies = append(topologies, *topology)
 	}
 
-	return tops, nil
+	return topologies, nil
 }
 
-func (tops EnterpriseSearchTopologies) Payload(planModels []*models.EnterpriseSearchTopologyElement) ([]*models.EnterpriseSearchTopologyElement, error) {
+func (tops EnterpriseSearchTopologiesTF) Payload(planModels []*models.EnterpriseSearchTopologyElement) ([]*models.EnterpriseSearchTopologyElement, error) {
 	if len(tops) == 0 {
 		return defaultEssTopology(planModels), nil
 	}

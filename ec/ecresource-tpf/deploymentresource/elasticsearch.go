@@ -19,20 +19,20 @@ package deploymentresource
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
 )
 
-type Elasticsearch struct {
+type ElasticsearchTF struct {
 	Autoscale      types.String `tfsdk:"autoscale"`
 	RefId          types.String `tfsdk:"ref_id"`
 	ResourceId     types.String `tfsdk:"resource_id"`
@@ -50,45 +50,66 @@ type Elasticsearch struct {
 	Strategy       types.List   `tfsdk:"strategy"`
 }
 
-type Elasticsearches []*Elasticsearch
+type Elasticsearch struct {
+	Autoscale      *string                      `tfsdk:"autoscale"`
+	RefId          *string                      `tfsdk:"ref_id"`
+	ResourceId     *string                      `tfsdk:"resource_id"`
+	Region         *string                      `tfsdk:"region"`
+	CloudID        *string                      `tfsdk:"cloud_id"`
+	HttpEndpoint   *string                      `tfsdk:"http_endpoint"`
+	HttpsEndpoint  *string                      `tfsdk:"https_endpoint"`
+	Topology       ElasticsearchTopologies      `tfsdk:"topology"`
+	Config         ElasticsearchConfigs         `tfsdk:"config"`
+	RemoteCluster  ElasticsearchRemoteClusters  `tfsdk:"remote_cluster"`
+	SnapshotSource ElasticsearchSnapshotSources `tfsdk:"snapshot_source"`
+	Extension      ElasticsearchExtensions      `tfsdk:"extension"`
+	TrustAccount   ElasticsearchTrustAccounts   `tfsdk:"trust_account"`
+	TrustExternal  ElasticsearchTrustExternals  `tfsdk:"trust_external"`
+	Strategy       ElasticsearchStrategies      `tfsdk:"strategy"`
+}
 
-func NewElasticsearches(in []*models.ElasticsearchResourceInfo, remotes *models.RemoteResources) (Elasticsearches, error) {
+type ElasticsearchesTF []*ElasticsearchTF
+
+type Elasticsearches []Elasticsearch
+
+func readElasticsearches(in []*models.ElasticsearchResourceInfo, remotes *models.RemoteResources) (Elasticsearches, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}
 
-	ess := make([]*Elasticsearch, 0, len(in))
+	ess := make([]Elasticsearch, 0, len(in))
 
 	for _, model := range in {
 		if util.IsCurrentEsPlanEmpty(model) || isEsResourceStopped(model) {
 			continue
 		}
-		var es *Elasticsearch
-		var err error
-		if es, err = NewElasticsearch(model, remotes); err != nil {
+		es, err := readElasticsearch(model, remotes)
+		if err != nil {
 			return nil, err
 		}
-		ess = append(ess, es)
+		ess = append(ess, *es)
 	}
 
 	return ess, nil
 }
 
-func (ess Elasticsearches) Payload(template *models.DeploymentTemplateInfoV2, dtID, version string, useNodeRoles bool) ([]*models.ElasticsearchPayload, error) {
-	ctx := context.TODO()
-	if len(ess) == 0 {
+func elasticsearchPayload(ctx context.Context, template *models.DeploymentTemplateInfoV2, dtID, version string, useNodeRoles bool, ess *types.List) ([]*models.ElasticsearchPayload, diag.Diagnostics) {
+	if len(ess.Elems) == 0 {
 		return nil, nil
 	}
 
 	templatePayload := enrichElasticsearchTemplate(esResource(template), dtID, version, useNodeRoles)
 
-	payloads := make([]*models.ElasticsearchPayload, 0, len(ess))
+	payloads := make([]*models.ElasticsearchPayload, 0, len(ess.Elems))
 
-	for _, es := range ess {
-
+	for _, elem := range ess.Elems {
+		var es ElasticsearchTF
+		if diags := tfsdk.ValueAs(ctx, elem, &es); diags.HasError() {
+			return nil, diags
+		}
 		payload, diags := es.Payload(ctx, templatePayload)
 		if diags.HasError() {
-			return nil, fmt.Errorf("error: %v", diags)
+			return nil, diags
 		}
 		payloads = append(payloads, payload)
 	}
@@ -96,8 +117,7 @@ func (ess Elasticsearches) Payload(template *models.DeploymentTemplateInfoV2, dt
 	return payloads, nil
 }
 
-func NewElasticsearch(in *models.ElasticsearchResourceInfo, remotes *models.RemoteResources) (*Elasticsearch, error) {
-	ctx := context.TODO()
+func readElasticsearch(in *models.ElasticsearchResourceInfo, remotes *models.RemoteResources) (*Elasticsearch, error) {
 	var es Elasticsearch
 
 	if util.IsCurrentEsPlanEmpty(in) || isEsResourceStopped(in) {
@@ -105,58 +125,70 @@ func NewElasticsearch(in *models.ElasticsearchResourceInfo, remotes *models.Remo
 	}
 
 	if in.Info.ClusterID != nil && *in.Info.ClusterID != "" {
-		es.ResourceId = types.String{Value: *in.Info.ClusterID}
+		es.ResourceId = in.Info.ClusterID
 	}
 
 	if in.RefID != nil && *in.RefID != "" {
-		es.RefId = types.String{Value: *in.RefID}
+		es.RefId = in.RefID
 	}
 
 	if in.Region != nil {
-		es.Region = types.String{Value: *in.Region}
+		es.Region = in.Region
 	}
 
 	plan := in.Info.PlanInfo.Current.Plan
 	var err error
 
-	if diags := ElasticsearchTopologies(es.Topology).Read(ctx, plan.ClusterTopology, plan.AutoscalingEnabled != nil && *plan.AutoscalingEnabled); diags.HasError() {
-		return &es, err
+	topologies, err := readElasticsearchTopologies(plan.ClusterTopology, plan.AutoscalingEnabled != nil && *plan.AutoscalingEnabled)
+	if err != nil {
+		return nil, err
 	}
+	es.Topology = topologies
 
 	if plan.AutoscalingEnabled != nil {
-		es.Autoscale = types.String{Value: strconv.FormatBool(*plan.AutoscalingEnabled)}
+		es.Autoscale = ec.String(strconv.FormatBool(*plan.AutoscalingEnabled))
 	}
 
 	if meta := in.Info.Metadata; meta != nil && meta.CloudID != "" {
-		es.CloudID = types.String{Value: meta.CloudID}
+		es.CloudID = &meta.CloudID
 	}
 
-	es.HttpEndpoint, es.HttpsEndpoint = converters.ExtractEndpointsTF(in.Info.Metadata)
+	es.HttpEndpoint, es.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
 
-	if diags := ElasticsearchConfigs(es.Config).Read(ctx, plan.Elasticsearch); diags.HasError() {
+	configs, err := readElasticsearchConfigs(plan.Elasticsearch)
+	if err != nil {
 		return nil, err
 	}
+	es.Config = configs
 
-	if diags := ElasticsearchRemoteClusters(es.RemoteCluster).Read(ctx, remotes.Resources); diags.HasError() {
+	clusters, err := readElasticsearchRemoteClusters(remotes.Resources)
+	if err != nil {
 		return nil, err
 	}
+	es.RemoteCluster = clusters
 
-	if diags := ElasticsearchExtensions(es.Extension).Read(ctx, plan.Elasticsearch); diags.HasError() {
+	extensions, err := readElasticsearchExtensions(plan.Elasticsearch)
+	if err != nil {
 		return nil, err
 	}
+	es.Extension = extensions
 
-	if diags := ElasticsearchTrustAccounts(es.TrustAccount).Read(ctx, in.Info.Settings.Trust); diags.HasError() {
+	accounts, err := readElasticsearchTrustAccounts(in.Info.Settings.Trust)
+	if err != nil {
 		return nil, err
 	}
+	es.TrustAccount = accounts
 
-	if diags := ElasticsearchTrustExternals(es.TrustExternal).Read(ctx, in.Info.Settings.Trust); diags.HasError() {
+	externals, err := readElasticsearchTrustExternals(in.Info.Settings.Trust)
+	if err != nil {
 		return nil, err
 	}
+	es.TrustExternal = externals
 
 	return &es, nil
 }
 
-func (es *Elasticsearch) Payload(ctx context.Context, res *models.ElasticsearchPayload) (*models.ElasticsearchPayload, diag.Diagnostics) {
+func (es *ElasticsearchTF) Payload(ctx context.Context, res *models.ElasticsearchPayload) (*models.ElasticsearchPayload, diag.Diagnostics) {
 	if !es.RefId.IsNull() {
 		res.RefID = &es.RefId.Value
 	}
@@ -171,7 +203,7 @@ func (es *Elasticsearch) Payload(ctx context.Context, res *models.ElasticsearchP
 
 	var diags diag.Diagnostics
 
-	res.Plan.ClusterTopology, diags = ElasticsearchTopologies(es.Topology).Payload(ctx, res.Plan.ClusterTopology)
+	res.Plan.ClusterTopology, diags = ElasticsearchTopologiesTF(es.Topology).Payload(ctx, res.Plan.ClusterTopology)
 	if diags.HasError() {
 		return nil, diags
 	}
@@ -180,17 +212,17 @@ func (es *Elasticsearch) Payload(ctx context.Context, res *models.ElasticsearchP
 	// list when these are set as a dedicated tier as a topology element.
 	updateNodeRolesOnDedicatedTiers(res.Plan.ClusterTopology)
 
-	res.Plan.Elasticsearch, diags = ElasticsearchConfigs(es.Config).Payload(ctx, res.Plan.Elasticsearch)
+	res.Plan.Elasticsearch, diags = ElasticsearchConfigsTF(es.Config).Payload(ctx, res.Plan.Elasticsearch)
 	if diags.HasError() {
 		return nil, diags
 	}
 
-	res.Plan.Transient, diags = ElasticsearchSnapshotSources(es.SnapshotSource).Payload(ctx)
+	res.Plan.Transient, diags = ElasticsearchSnapshotSourcesTF(es.SnapshotSource).Payload(ctx)
 	if diags.HasError() {
 		return nil, diags
 	}
 
-	if diags := ElasticsearchExtensions(es.Extension).Payload(ctx, res.Plan.Elasticsearch); diags.HasError() {
+	if diags := ElasticsearchExtensionsTF(es.Extension).Payload(ctx, res.Plan.Elasticsearch); diags.HasError() {
 		return nil, diags
 	}
 
@@ -203,7 +235,7 @@ func (es *Elasticsearch) Payload(ctx context.Context, res *models.ElasticsearchP
 		res.Plan.AutoscalingEnabled = &autoscaleBool
 	}
 
-	settings, diags := ElasticsearchTrustAccounts(es.TrustAccount).Payload(ctx, res.Settings)
+	settings, diags := ElasticsearchTrustAccountsTF(es.TrustAccount).Payload(ctx, res.Settings)
 	if diags.HasError() {
 		return nil, diags
 	}
@@ -211,7 +243,7 @@ func (es *Elasticsearch) Payload(ctx context.Context, res *models.ElasticsearchP
 		res.Settings = settings
 	}
 
-	settings, diags = ElasticsearchTrustExternals(es.TrustExternal).Payload(ctx, res.Settings)
+	settings, diags = ElasticsearchTrustExternalsTF(es.TrustExternal).Payload(ctx, res.Settings)
 	if diags.HasError() {
 		return nil, diags
 	}
@@ -219,7 +251,7 @@ func (es *Elasticsearch) Payload(ctx context.Context, res *models.ElasticsearchP
 		res.Settings = settings
 	}
 
-	res.Plan.Transient, diags = ElasticsearchStrategies(es.Strategy).Payload(ctx, res.Plan.Transient)
+	res.Plan.Transient, diags = ElasticsearchStrategiesTF(es.Strategy).Payload(ctx, res.Plan.Transient)
 
 	if diags.HasError() {
 		return nil, diags

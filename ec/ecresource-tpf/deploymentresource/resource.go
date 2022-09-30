@@ -26,7 +26,6 @@ import (
 	"github.com/elastic/terraform-provider-ec/ec/internal/planmodifier"
 	"github.com/elastic/terraform-provider-ec/ec/internal/validators"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -123,6 +122,10 @@ func (t *Resource) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostic
 				Type:        types.StringType,
 				Description: "Optional request_id to set on the create operation, only use when previous create attempts return with an error and a request_id is returned as part of the error",
 				Optional:    true,
+				Computed:    true,
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
 			},
 			"elasticsearch_username": {
 				Type:        types.StringType,
@@ -705,9 +708,9 @@ func elasticsearchConfig() tfsdk.Block {
 	}
 }
 
-func elasticsearchConfigAttrTypes() map[string]attr.Type {
-	return elasticsearchConfig().Type().(types.ListType).ElemType.(types.ObjectType).AttrTypes
-}
+// func elasticsearchConfigAttrTypes() map[string]attr.Type {
+// 	return elasticsearchConfig().Type().(types.ListType).ElemType.(types.ObjectType).AttrTypes
+// }
 
 func elasticsearchTopology() tfsdk.Attribute {
 	return tfsdk.Attribute{
@@ -1008,6 +1011,9 @@ func elasticsearchTrustExternal() tfsdk.Attribute {
 		}),
 		Computed: true,
 		Optional: true,
+		PlanModifiers: tfsdk.AttributePlanModifiers{
+			resource.UseStateForUnknown(),
+		},
 	}
 }
 

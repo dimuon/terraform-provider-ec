@@ -25,15 +25,15 @@ import (
 	"strings"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
+	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type ElasticsearchTopology struct {
+type ElasticsearchTopologyTF struct {
 	Id                      types.String `tfsdk:"id"`
 	InstanceConfigurationId types.String `tfsdk:"instance_configuration_id"`
 	Size                    types.String `tfsdk:"size"`
@@ -48,11 +48,28 @@ type ElasticsearchTopology struct {
 	Config                  types.List   `tfsdk:"config"`
 }
 
-type ElasticsearchTopologies types.List
+type ElasticsearchTopologiesTF types.List
 
-func (topologies ElasticsearchTopologies) Read(ctx context.Context, in []*models.ElasticsearchClusterTopologyElement, autoscaling bool) diag.Diagnostics {
+type ElasticsearchTopology struct {
+	Id                      string                            `tfsdk:"id"`
+	InstanceConfigurationId *string                           `tfsdk:"instance_configuration_id"`
+	Size                    *string                           `tfsdk:"size"`
+	SizeResource            *string                           `tfsdk:"size_resource"`
+	ZoneCount               int                               `tfsdk:"zone_count"`
+	NodeTypeData            *string                           `tfsdk:"node_type_data"`
+	NodeTypeMaster          *string                           `tfsdk:"node_type_master"`
+	NodeTypeIngest          *string                           `tfsdk:"node_type_ingest"`
+	NodeTypeMl              *string                           `tfsdk:"node_type_ml"`
+	NodeRoles               []string                          `tfsdk:"node_roles"`
+	Autoscaling             ElasticsearchTopologyAutoscalings `tfsdk:"autoscaling"`
+	Config                  ElasticsearchConfigs              `tfsdk:"config"`
+}
+
+type ElasticsearchTopologies []ElasticsearchTopology
+
+func readElasticsearchTopologies(in []*models.ElasticsearchClusterTopologyElement, autoscaling bool) (ElasticsearchTopologies, error) {
 	if len(in) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	tops := make([]ElasticsearchTopology, 0, len(in))
@@ -61,29 +78,29 @@ func (topologies ElasticsearchTopologies) Read(ctx context.Context, in []*models
 		if !isPotentiallySizedTopology(model, autoscaling) {
 			continue
 		}
-		var top ElasticsearchTopology
-		diags := top.Read(ctx, model)
-		if diags.HasError() {
-			return diags
+
+		topology, err := readElasticsearchTopology(model)
+		if err != nil {
+			return nil, err
 		}
-		tops = append(tops, top)
+		tops = append(tops, *topology)
 	}
 
 	sort.SliceStable(tops, func(i, j int) bool {
 		a := (tops)[i]
 		b := (tops)[j]
-		return a.Id.Value < b.Id.Value
+		return a.Id < b.Id
 	})
 
-	return tfsdk.ValueFrom(ctx, tops, elasticsearchTopology().FrameworkType(), &topologies)
+	return tops, nil
 }
 
-func (tops ElasticsearchTopologies) Payload(ctx context.Context, planTopologies []*models.ElasticsearchClusterTopologyElement) ([]*models.ElasticsearchClusterTopologyElement, diag.Diagnostics) {
+func (tops ElasticsearchTopologiesTF) Payload(ctx context.Context, planTopologies []*models.ElasticsearchClusterTopologyElement) ([]*models.ElasticsearchClusterTopologyElement, diag.Diagnostics) {
 	payload := planTopologies
 
 	for _, elem := range tops.Elems {
 
-		var topology ElasticsearchTopology
+		var topology ElasticsearchTopologyTF
 
 		diags := tfsdk.ValueAs(ctx, elem, &topology)
 		if diags.HasError() {
@@ -124,9 +141,9 @@ func (tops ElasticsearchTopologies) Payload(ctx context.Context, planTopologies 
 			topologyElem.NodeType = nil
 		}
 
-		ElasticsearchTopologyAutoscalings(topology.Autoscaling).Payload(ctx, topologyID, topologyElem)
+		ElasticsearchTopologyAutoscalingsTF(topology.Autoscaling).Payload(ctx, topologyID, topologyElem)
 
-		topologyElem.Elasticsearch, diags = ElasticsearchConfigs(topology.Config).Payload(ctx, topologyElem.Elasticsearch)
+		topologyElem.Elasticsearch, diags = ElasticsearchConfigsTF(topology.Config).Payload(ctx, topologyElem.Elasticsearch)
 		if diags.HasError() {
 			return nil, diags
 		}
@@ -135,54 +152,55 @@ func (tops ElasticsearchTopologies) Payload(ctx context.Context, planTopologies 
 	return payload, nil
 }
 
-func (topology *ElasticsearchTopology) Read(ctx context.Context, model *models.ElasticsearchClusterTopologyElement) diag.Diagnostics {
-	topology.Id = types.String{Value: model.ID}
+func readElasticsearchTopology(model *models.ElasticsearchClusterTopologyElement) (*ElasticsearchTopology, error) {
+	var topology ElasticsearchTopology
+
+	topology.Id = model.ID
 
 	if model.InstanceConfigurationID != "" {
-		topology.InstanceConfigurationId = types.String{Value: model.InstanceConfigurationID}
+		topology.InstanceConfigurationId = &model.InstanceConfigurationID
 	}
 
 	if model.Size != nil {
-		topology.Size = types.String{Value: util.MemoryToState(*model.Size.Value)}
-		topology.SizeResource = types.String{Value: *model.Size.Resource}
+		topology.Size = ec.String(util.MemoryToState(*model.Size.Value))
+		topology.SizeResource = model.Size.Resource
 	}
 
-	topology.ZoneCount = types.Int64{Value: int64(model.ZoneCount)}
+	topology.ZoneCount = int(model.ZoneCount)
 
 	if nt := model.NodeType; nt != nil {
 		if nt.Data != nil {
-			topology.NodeTypeData = types.String{Value: strconv.FormatBool(*nt.Data)}
+			topology.NodeTypeData = ec.String(strconv.FormatBool(*nt.Data))
 		}
 
 		if nt.Ingest != nil {
-			topology.NodeTypeIngest = types.String{Value: strconv.FormatBool(*nt.Ingest)}
+			topology.NodeTypeIngest = ec.String(strconv.FormatBool(*nt.Ingest))
 		}
 
 		if nt.Master != nil {
-			topology.NodeTypeMaster = types.String{Value: strconv.FormatBool(*nt.Master)}
+			topology.NodeTypeMaster = ec.String(strconv.FormatBool(*nt.Master))
 		}
 
 		if nt.Ml != nil {
-			topology.NodeTypeMl = types.String{Value: strconv.FormatBool(*nt.Ml)}
+			topology.NodeTypeMl = ec.String(strconv.FormatBool(*nt.Ml))
 		}
 	}
 
-	if len(model.NodeRoles) > 0 {
-		topology.NodeRoles.Elems = make([]attr.Value, 0, len(model.NodeRoles))
-		for _, nd := range model.NodeRoles {
-			topology.NodeRoles.Elems = append(topology.NodeRoles.Elems, types.String{Value: nd})
-		}
-	}
+	topology.NodeRoles = model.NodeRoles
 
-	if diags := ElasticsearchTopologyAutoscalings(topology.Autoscaling).Read(ctx, model); diags.HasError() {
-		return diags
+	autoscaling, err := readElasticsearchTopologyAutoscalings(model)
+	if err != nil {
+		return nil, err
 	}
+	topology.Autoscaling = autoscaling
 
-	if diags := ElasticsearchConfigs(topology.Config).Read(ctx, model.Elasticsearch); diags.HasError() {
-		return diags
+	config, err := readElasticsearchConfigs(model.Elasticsearch)
+	if err != nil {
+		return nil, err
 	}
+	topology.Config = config
 
-	return nil
+	return &topology, nil
 }
 
 func isPotentiallySizedTopology(topology *models.ElasticsearchClusterTopologyElement, isAutoscaling bool) bool {
@@ -222,7 +240,7 @@ func topologyIDs(topologies []*models.ElasticsearchClusterTopologyElement) []str
 	return result
 }
 
-func (topology *ElasticsearchTopology) ParseLegacyNodeType(nodeType *models.ElasticsearchNodeType) error {
+func (topology *ElasticsearchTopologyTF) ParseLegacyNodeType(nodeType *models.ElasticsearchNodeType) error {
 	if nodeType == nil {
 		return nil
 	}

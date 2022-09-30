@@ -40,47 +40,39 @@ type ApmTF struct {
 }
 
 type Apm struct {
-	ElasticsearchClusterRefId string        `tfsdk:"elasticsearch_cluster_ref_id"`
-	RefId                     string        `tfsdk:"ref_id"`
-	ResourceId                string        `tfsdk:"resource_id"`
-	Region                    string        `tfsdk:"region"`
-	HttpEndpoint              string        `tfsdk:"http_endpoint"`
-	HttpsEndpoint             string        `tfsdk:"https_endpoint"`
-	Topology                  ApmTopologies `tfsdk:"topology"`
-	Config                    ApmConfigs    `tfsdk:"config"`
+	ElasticsearchClusterRefId *string    `tfsdk:"elasticsearch_cluster_ref_id"`
+	RefId                     *string    `tfsdk:"ref_id"`
+	ResourceId                *string    `tfsdk:"resource_id"`
+	Region                    *string    `tfsdk:"region"`
+	HttpEndpoint              *string    `tfsdk:"http_endpoint"`
+	HttpsEndpoint             *string    `tfsdk:"https_endpoint"`
+	Topology                  Topologies `tfsdk:"topology"`
+	Config                    ApmConfigs `tfsdk:"config"`
 }
 
 func ReadApm(in *models.ApmResourceInfo) (*Apm, error) {
 	var apm Apm
 
-	if in.RefID != nil {
-		apm.RefId = *in.RefID
-	}
+	apm.RefId = in.RefID
 
-	if in.Info.ID != nil {
-		apm.ResourceId = *in.Info.ID
-	}
+	apm.ResourceId = in.Info.ID
 
-	if in.Region != nil {
-		apm.Region = *in.Region
-	}
+	apm.Region = in.Region
 
 	plan := in.Info.PlanInfo.Current.Plan
 
-	topologies, err := ReadApmTopologies(plan.ClusterTopology)
+	topologies, err := readApmTopologies(plan.ClusterTopology)
 	if err != nil {
 		return nil, err
 	}
 
 	apm.Topology = topologies
 
-	if in.ElasticsearchClusterRefID != nil {
-		apm.ElasticsearchClusterRefId = *in.ElasticsearchClusterRefID
-	}
+	apm.ElasticsearchClusterRefId = in.ElasticsearchClusterRefID
 
 	apm.HttpEndpoint, apm.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
 
-	configs, err := ReadApmConfigs(plan.Apm)
+	configs, err := readApmConfigs(plan.Apm)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +110,7 @@ func (apm ApmTF) Payload(ctx context.Context, payload models.ApmPayload) (*model
 
 type Apms []Apm
 
-func ReadApms(in []*models.ApmResourceInfo) (Apms, error) {
+func readApms(in []*models.ApmResourceInfo) (Apms, error) {
 	apms := make([]Apm, 0, len(in))
 
 	for _, model := range in {
@@ -137,24 +129,7 @@ func ReadApms(in []*models.ApmResourceInfo) (Apms, error) {
 	return apms, nil
 }
 
-func readApms(ctx context.Context, in []*models.ApmResourceInfo, apms *types.List) diag.Diagnostics {
-	apmSlice := make([]ApmTF, 0, len(in))
-
-	for _, model := range in {
-		if util.IsCurrentApmPlanEmpty(model) || isApmResourceStopped(model) {
-			continue
-		}
-		var apm ApmTF
-		// if diags := apm.Read(ctx, model); diags.HasError() {
-		// 	return diags
-		// }
-		apmSlice = append(apmSlice, apm)
-	}
-
-	return tfsdk.ValueFrom(ctx, apmSlice, apm().Type(), apms)
-}
-
-func ApmPayload(ctx context.Context, template *models.DeploymentTemplateInfoV2, apms types.List) ([]*models.ApmPayload, diag.Diagnostics) {
+func apmsPayload(ctx context.Context, template *models.DeploymentTemplateInfoV2, apms *types.List) ([]*models.ApmPayload, diag.Diagnostics) {
 	if len(apms.Elems) == 0 {
 		return nil, nil
 	}

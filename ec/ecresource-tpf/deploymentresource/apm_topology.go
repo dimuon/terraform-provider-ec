@@ -30,23 +30,23 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type ApmTopologyTF TopologyTF
-
-type ApmTopology struct {
-	InstanceConfigurationId string `tfsdk:"instance_configuration_id"`
-	Size                    string `tfsdk:"size"`
-	SizeResource            string `tfsdk:"size_resource"`
-	ZoneCount               int    `tfsdk:"zone_count"`
+type Topology struct {
+	InstanceConfigurationId *string `tfsdk:"instance_configuration_id"`
+	Size                    *string `tfsdk:"size"`
+	SizeResource            *string `tfsdk:"size_resource"`
+	ZoneCount               int     `tfsdk:"zone_count"`
 }
 
-func ReadApmTopology(in *models.ApmTopologyElement) (*ApmTopology, error) {
-	var top ApmTopology
+func readApmTopology(in *models.ApmTopologyElement) (*Topology, error) {
+	var top Topology
 
-	top.InstanceConfigurationId = in.InstanceConfigurationID
+	if in.InstanceConfigurationID != "" {
+		top.InstanceConfigurationId = &in.InstanceConfigurationID
+	}
 
 	if in.Size != nil {
-		top.Size = util.MemoryToState(*in.Size.Value)
-		top.SizeResource = *in.Size.Resource
+		top.Size = ec.String(util.MemoryToState(*in.Size.Value))
+		top.SizeResource = ec.String(*in.Size.Resource)
 	}
 
 	top.ZoneCount = int(in.ZoneCount)
@@ -54,17 +54,17 @@ func ReadApmTopology(in *models.ApmTopologyElement) (*ApmTopology, error) {
 	return &top, nil
 }
 
-type ApmTopologies []ApmTopology
+type Topologies []Topology
 
-func ReadApmTopologies(in []*models.ApmTopologyElement) (ApmTopologies, error) {
-	topologies := make([]ApmTopology, 0, len(in))
+func readApmTopologies(in []*models.ApmTopologyElement) (Topologies, error) {
+	topologies := make([]Topology, 0, len(in))
 
 	for _, model := range in {
 		if model.Size == nil || model.Size.Value == nil || *model.Size.Value == 0 {
 			continue
 		}
 
-		topology, err := ReadApmTopology(model)
+		topology, err := readApmTopology(model)
 		if err != nil {
 			return nil, nil
 		}
@@ -88,7 +88,7 @@ func (tops ApmTopologiesTF) Payload(ctx context.Context, planModels []*models.Ap
 	planModels = defaultApmTopology(planModels)
 
 	for i, elem := range tops.Elems {
-		var topology ApmTopologyTF
+		var topology TopologyTF
 		if diags := tfsdk.ValueAs(ctx, elem, &topology); diags.HasError() {
 			return nil, diags
 		}

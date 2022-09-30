@@ -23,10 +23,11 @@ import (
 	"fmt"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
+	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type EnterpriseSearchConfig struct {
+type EnterpriseSearchConfigTF struct {
 	DockerImage              types.String `tfsdk:"docker_image"`
 	UserSettingsJson         types.String `tfsdk:"user_settings_json"`
 	UserSettingsOverrideJson types.String `tfsdk:"user_settings_override_json"`
@@ -34,41 +35,57 @@ type EnterpriseSearchConfig struct {
 	UserSettingsOverrideYaml types.String `tfsdk:"user_settings_override_yaml"`
 }
 
-func NewEnterpriseSearchConfig(in *models.EnterpriseSearchConfiguration) ([]*EnterpriseSearchConfig, error) {
+type EnterpriseSearchConfigsTF []*EnterpriseSearchConfigTF
+
+type EnterpriseSearchConfig struct {
+	DockerImage              *string `tfsdk:"docker_image"`
+	UserSettingsJson         *string `tfsdk:"user_settings_json"`
+	UserSettingsOverrideJson *string `tfsdk:"user_settings_override_json"`
+	UserSettingsYaml         *string `tfsdk:"user_settings_yaml"`
+	UserSettingsOverrideYaml *string `tfsdk:"user_settings_override_yaml"`
+}
+
+type EnterpriseSearchConfigs []EnterpriseSearchConfig
+
+func readEnterpriseSearchConfigs(in *models.EnterpriseSearchConfiguration) (EnterpriseSearchConfigs, error) {
 	var cfg EnterpriseSearchConfig
 
 	if in == nil {
 		return nil, nil
 	}
 
-	cfg.UserSettingsYaml = types.String{Value: in.UserSettingsYaml}
+	if in.UserSettingsYaml != "" {
+		cfg.UserSettingsYaml = &in.UserSettingsYaml
+	}
 
-	cfg.UserSettingsOverrideYaml = types.String{Value: in.UserSettingsOverrideYaml}
+	if in.UserSettingsOverrideYaml != "" {
+		cfg.UserSettingsOverrideYaml = &in.UserSettingsOverrideYaml
+	}
 
 	if o := in.UserSettingsJSON; o != nil {
 		if b, _ := json.Marshal(o); len(b) > 0 && !bytes.Equal([]byte("{}"), b) {
-			cfg.UserSettingsJson = types.String{Value: string(b)}
+			cfg.UserSettingsJson = ec.String(string(b))
 		}
 	}
 
 	if o := in.UserSettingsOverrideJSON; o != nil {
 		if b, _ := json.Marshal(o); len(b) > 0 && !bytes.Equal([]byte("{}"), b) {
-			cfg.UserSettingsOverrideJson = types.String{Value: string(b)}
+			cfg.UserSettingsOverrideJson = ec.String(string(b))
 		}
 	}
 
-	cfg.DockerImage = types.String{Value: in.DockerImage}
-
-	if cfg != (EnterpriseSearchConfig{}) {
-		return []*EnterpriseSearchConfig{&cfg}, nil
+	if in.DockerImage != "" {
+		cfg.DockerImage = &in.DockerImage
 	}
 
-	return nil, nil
+	if cfg == (EnterpriseSearchConfig{}) {
+		return nil, nil
+	}
+
+	return EnterpriseSearchConfigs{cfg}, nil
 }
 
-type EnterpriseSearchConfigs []*EnterpriseSearchConfig
-
-func (configs EnterpriseSearchConfigs) Payload(res *models.EnterpriseSearchConfiguration) error {
+func (configs EnterpriseSearchConfigsTF) Payload(res *models.EnterpriseSearchConfiguration) error {
 	for _, cfg := range configs {
 
 		if cfg.UserSettingsJson.Value != "" {

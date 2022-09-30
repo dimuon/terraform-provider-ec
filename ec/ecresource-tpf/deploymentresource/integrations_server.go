@@ -18,74 +18,82 @@
 package deploymentresource
 
 import (
-	"errors"
+	"context"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type IntegrationsServer struct {
-	ElasticsearchClusterRefId types.String                 `tfsdk:"elasticsearch_cluster_ref_id"`
-	RefId                     types.String                 `tfsdk:"ref_id"`
-	ResourceId                types.String                 `tfsdk:"resource_id"`
-	Region                    types.String                 `tfsdk:"region"`
-	HttpEndpoint              types.String                 `tfsdk:"http_endpoint"`
-	HttpsEndpoint             types.String                 `tfsdk:"https_endpoint"`
-	Topology                  IntegrationsServerTopologies `tfsdk:"topology"`
-	Config                    IntegrationsServerConfigs    `tfsdk:"config"`
+type IntegrationsServerTF struct {
+	ElasticsearchClusterRefId types.String `tfsdk:"elasticsearch_cluster_ref_id"`
+	RefId                     types.String `tfsdk:"ref_id"`
+	ResourceId                types.String `tfsdk:"resource_id"`
+	Region                    types.String `tfsdk:"region"`
+	HttpEndpoint              types.String `tfsdk:"http_endpoint"`
+	HttpsEndpoint             types.String `tfsdk:"https_endpoint"`
+	Topology                  types.List   `tfsdk:"topology"`
+	Config                    types.List   `tfsdk:"config"`
 }
 
-func NewIntegrationsServers(in []*models.IntegrationsServerResourceInfo) ([]*IntegrationsServer, error) {
+type IntegrationsServer struct {
+	ElasticsearchClusterRefId *string                   `tfsdk:"elasticsearch_cluster_ref_id"`
+	RefId                     *string                   `tfsdk:"ref_id"`
+	ResourceId                *string                   `tfsdk:"resource_id"`
+	Region                    *string                   `tfsdk:"region"`
+	HttpEndpoint              *string                   `tfsdk:"http_endpoint"`
+	HttpsEndpoint             *string                   `tfsdk:"https_endpoint"`
+	Topology                  Topologies                `tfsdk:"topology"`
+	Config                    IntegrationsServerConfigs `tfsdk:"config"`
+}
+
+type IntegrationsServers []IntegrationsServer
+
+func readIntegrationsServers(in []*models.IntegrationsServerResourceInfo) (IntegrationsServers, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}
 
-	srvs := make([]*IntegrationsServer, 0, len(in))
+	srvs := make(IntegrationsServers, 0, len(in))
 	for _, model := range in {
 		if util.IsCurrentIntegrationsServerPlanEmpty(model) || isIntegrationsServerResourceStopped(model) {
 			continue
 		}
 
-		srv, err := NewIntegrationsServer(model)
+		srv, err := readIntegrationsServer(model)
 		if err != nil {
 			return nil, err
 		}
-		srvs = append(srvs, srv)
+		srvs = append(srvs, *srv)
 	}
 
 	return srvs, nil
 }
 
-func NewIntegrationsServer(in *models.IntegrationsServerResourceInfo) (*IntegrationsServer, error) {
+func readIntegrationsServer(in *models.IntegrationsServerResourceInfo) (*IntegrationsServer, error) {
 	var srv IntegrationsServer
 
-	if in.RefID != nil {
-		srv.RefId = types.String{Value: *in.RefID}
-	}
+	srv.RefId = in.RefID
 
-	if in.Info.ID != nil {
-		srv.ResourceId = types.String{Value: *in.Info.ID}
-	}
+	srv.ResourceId = in.Info.ID
 
-	if in.Region != nil {
-		srv.Region = types.String{Value: *in.Region}
-	}
+	srv.Region = in.Region
 
 	plan := in.Info.PlanInfo.Current.Plan
+
 	var err error
-	if srv.Topology, err = NewIntegrationsServerTopologies(plan.ClusterTopology); err != nil {
+	if srv.Topology, err = readIntegrationsServerTopologies(plan.ClusterTopology); err != nil {
 		return nil, err
 	}
 
-	if in.ElasticsearchClusterRefID != nil {
-		srv.ElasticsearchClusterRefId = types.String{Value: *in.ElasticsearchClusterRefID}
-	}
+	srv.ElasticsearchClusterRefId = in.ElasticsearchClusterRefID
 
-	srv.HttpEndpoint, srv.HttpsEndpoint = converters.ExtractEndpointsTF(in.Info.Metadata)
+	srv.HttpEndpoint, srv.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
 
-	cfg, err := NewIntegrationsServerConfig(plan.IntegrationsServer)
+	cfg, err := readIntegrationsServerConfig(plan.IntegrationsServer)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +102,7 @@ func NewIntegrationsServer(in *models.IntegrationsServerResourceInfo) (*Integrat
 	return &srv, nil
 }
 
-func (srv IntegrationsServer) Payload(payload models.IntegrationsServerPayload) (*models.IntegrationsServerPayload, error) {
+func (srv IntegrationsServerTF) Payload(ctx context.Context, payload models.IntegrationsServerPayload) (*models.IntegrationsServerPayload, diag.Diagnostics) {
 	if !srv.ElasticsearchClusterRefId.IsNull() {
 		payload.ElasticsearchClusterRefID = &srv.ElasticsearchClusterRefId.Value
 	}
@@ -107,37 +115,42 @@ func (srv IntegrationsServer) Payload(payload models.IntegrationsServerPayload) 
 		payload.Region = &srv.Region.Value
 	}
 
-	if err := srv.Config.Payload(payload.Plan.IntegrationsServer); err != nil {
-		return nil, err
+	if diags := payloadIntegrationsServerConfig(ctx, payload.Plan.IntegrationsServer, &srv.Config); diags.HasError() {
+		return nil, diags
 	}
 
-	var err error
-	payload.Plan.ClusterTopology, err = srv.Topology.Payload(payload.Plan.ClusterTopology)
-	if err != nil {
-		return nil, err
+	var diags diag.Diagnostics
+	payload.Plan.ClusterTopology, diags = integrationsServerTopologyPayload(ctx, payload.Plan.ClusterTopology, &srv.Topology)
+	if diags.HasError() {
+		return nil, diags
 	}
 
 	return &payload, nil
 }
 
-type IntegrationsServers []*IntegrationsServer
-
-func (srvs IntegrationsServers) Payload(template *models.DeploymentTemplateInfoV2) ([]*models.IntegrationsServerPayload, error) {
-	if len(srvs) == 0 {
+func integrationsServerPayload(ctx context.Context, template *models.DeploymentTemplateInfoV2, srvs *types.List) ([]*models.IntegrationsServerPayload, diag.Diagnostics) {
+	if len(srvs.Elems) == 0 {
 		return nil, nil
 	}
 
 	templatePayload := integrationsServerResource(template)
 
+	var diags diag.Diagnostics
+
 	if templatePayload == nil {
-		return nil, errors.New("IntegrationsServer specified but deployment template is not configured for it. Use a different template if you wish to add IntegrationsServer")
+		diags.AddError("IntegrationsServer payload error", "IntegrationsServer specified but deployment template is not configured for it. Use a different template if you wish to add IntegrationsServer")
+		return nil, diags
 	}
 
-	payloads := make([]*models.IntegrationsServerPayload, 0, len(srvs))
-	for _, srv := range srvs {
-		payload, err := srv.Payload(*templatePayload)
-		if err != nil {
-			return nil, err
+	payloads := make([]*models.IntegrationsServerPayload, 0, len(srvs.Elems))
+	for _, elem := range srvs.Elems {
+		var srv IntegrationsServerTF
+		if diags := tfsdk.ValueAs(ctx, elem, &srv); diags.HasError() {
+			return nil, diags
+		}
+		payload, diags := srv.Payload(ctx, *templatePayload)
+		if diags.HasError() {
+			return nil, diags
 		}
 		payloads = append(payloads, payload)
 	}

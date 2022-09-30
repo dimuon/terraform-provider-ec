@@ -25,27 +25,50 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/api"
 	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi/deptemplateapi"
 	"github.com/elastic/cloud-sdk-go/pkg/models"
-	"github.com/elastic/cloud-sdk-go/pkg/multierror"
+	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+type DeploymentTF struct {
+	Id                    types.String `tfsdk:"id"`
+	Alias                 types.String `tfsdk:"alias"`
+	Version               types.String `tfsdk:"version"`
+	Region                types.String `tfsdk:"region"`
+	DeploymentTemplateId  types.String `tfsdk:"deployment_template_id"`
+	Name                  types.String `tfsdk:"name"`
+	RequestId             types.String `tfsdk:"request_id"`
+	ElasticsearchUsername types.String `tfsdk:"elasticsearch_username"`
+	ElasticsearchPassword types.String `tfsdk:"elasticsearch_password"`
+	ApmSecretToken        types.String `tfsdk:"apm_secret_token"`
+	TrafficFilter         types.Set    `tfsdk:"traffic_filter"`
+	Tags                  types.Map    `tfsdk:"tags"`
+	Elasticsearch         types.List   `tfsdk:"elasticsearch"`
+	Kibana                types.List   `tfsdk:"kibana"`
+	Apm                   types.List   `tfsdk:"apm"`
+	IntegrationsServer    types.List   `tfsdk:"integrations_server"`
+	EnterpriseSearch      types.List   `tfsdk:"enterprise_search"`
+	Observability         types.List   `tfsdk:"observability"`
+}
+
 type Deployment struct {
-	Id                    types.String        `tfsdk:"id"`
-	Alias                 types.String        `tfsdk:"alias"`
-	Version               types.String        `tfsdk:"version"`
-	Region                types.String        `tfsdk:"region"`
-	DeploymentTemplateId  types.String        `tfsdk:"deployment_template_id"`
-	Name                  types.String        `tfsdk:"name"`
-	RequestId             types.String        `tfsdk:"request_id"`
-	ElasticsearchUsername types.String        `tfsdk:"elasticsearch_username"`
-	ElasticsearchPassword types.String        `tfsdk:"elasticsearch_password"`
-	ApmSecretToken        types.String        `tfsdk:"apm_secret_token"`
+	Id                    string              `tfsdk:"id"`
+	Alias                 string              `tfsdk:"alias"`
+	Version               *string             `tfsdk:"version"`
+	Region                *string             `tfsdk:"region"`
+	DeploymentTemplateId  *string             `tfsdk:"deployment_template_id"`
+	Name                  string              `tfsdk:"name"`
+	RequestId             string              `tfsdk:"request_id"`
+	ElasticsearchUsername *string             `tfsdk:"elasticsearch_username"`
+	ElasticsearchPassword *string             `tfsdk:"elasticsearch_password"`
+	ApmSecretToken        *string             `tfsdk:"apm_secret_token"`
 	TrafficFilter         []string            `tfsdk:"traffic_filter"`
 	Tags                  map[string]string   `tfsdk:"tags"`
 	Elasticsearch         Elasticsearches     `tfsdk:"elasticsearch"`
 	Kibana                Kibanas             `tfsdk:"kibana"`
-	Apm                   types.List          `tfsdk:"apm"`
+	Apm                   Apms                `tfsdk:"apm"`
 	IntegrationsServer    IntegrationsServers `tfsdk:"integrations_server"`
 	EnterpriseSearch      EnterpriseSearches  `tfsdk:"enterprise_search"`
 	Observability         Observabilities     `tfsdk:"observability"`
@@ -59,21 +82,20 @@ func missingField(field string) error {
 	return fmt.Errorf("server response doesn't contain deployment '%s'", field)
 }
 
-func NewDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteResources) (*Deployment, error) {
-	ctx := context.TODO()
+func readDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteResources) (*Deployment, error) {
 	var dep Deployment
 
 	if res.ID == nil {
 		return nil, missingField("ID")
 	}
-	dep.Id = types.String{Value: *res.ID}
+	dep.Id = *res.ID
 
-	dep.Alias = types.String{Value: res.Alias}
+	dep.Alias = res.Alias
 
 	if res.Name == nil {
 		return nil, missingField("Name")
 	}
-	dep.Name = types.String{Value: *res.Name}
+	dep.Name = *res.Name
 
 	dep.Tags = converters.TagsToMap(res.Metadata.Tags)
 
@@ -86,9 +108,9 @@ func NewDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteReso
 		return nil, err
 	}
 
-	dep.DeploymentTemplateId = types.String{Value: templateID}
+	dep.DeploymentTemplateId = &templateID
 
-	dep.Region = types.String{Value: getRegion(res.Resources)}
+	dep.Region = ec.String(getRegion(res.Resources))
 
 	// We're reconciling the version and storing the lowest version of any
 	// of the deployment resources. This ensures that if an upgrade fails,
@@ -101,44 +123,44 @@ func NewDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteReso
 		// error in case one of the versions isn't parseable by semver.
 		return nil, fmt.Errorf("failed reading deployment: %w", err)
 	}
-	dep.Version = types.String{Value: version}
+	dep.Version = ec.String(version)
 
-	if dep.Elasticsearch, err = NewElasticsearches(res.Resources.Elasticsearch, remotes); err != nil {
+	if dep.Elasticsearch, err = readElasticsearches(res.Resources.Elasticsearch, remotes); err != nil {
 		return nil, err
 	}
 
-	if dep.Kibana, err = NewKibanas(res.Resources.Kibana); err != nil {
+	if dep.Kibana, err = readKibanas(res.Resources.Kibana); err != nil {
 		return nil, err
 	}
 
-	if diags := readApms(ctx, res.Resources.Apm, &dep.Apm); diags.HasError() {
-		return nil, fmt.Errorf("diags: %v", diags)
-	}
-
-	if dep.IntegrationsServer, err = NewIntegrationsServers(res.Resources.IntegrationsServer); err != nil {
+	if dep.Apm, err = readApms(res.Resources.Apm); err != nil {
 		return nil, err
 	}
 
-	if dep.EnterpriseSearch, err = NewEnterpriseSearches(res.Resources.EnterpriseSearch); err != nil {
+	if dep.IntegrationsServer, err = readIntegrationsServers(res.Resources.IntegrationsServer); err != nil {
 		return nil, err
 	}
 
-	if dep.EnterpriseSearch, err = NewEnterpriseSearches(res.Resources.EnterpriseSearch); err != nil {
+	if dep.EnterpriseSearch, err = readEnterpriseSearches(res.Resources.EnterpriseSearch); err != nil {
 		return nil, err
 	}
 
-	if dep.TrafficFilter, err = NewTrafficFilters(res.Settings); err != nil {
+	if dep.EnterpriseSearch, err = readEnterpriseSearches(res.Resources.EnterpriseSearch); err != nil {
 		return nil, err
 	}
 
-	if dep.Observability, err = NewObservability(res.Settings); err != nil {
+	if dep.TrafficFilter, err = readTrafficFilters(res.Settings); err != nil {
 		return nil, err
 	}
+
+	if dep.Observability, err = ReadObservability(res.Settings); err != nil {
+		return nil, err
+	}
+
 	return &dep, nil
 }
 
-func (dep *Deployment) Payload(client *api.API) (*models.DeploymentCreateRequest, error) {
-	ctx := context.TODO()
+func (dep *DeploymentTF) Payload(ctx context.Context, client *api.API) (*models.DeploymentCreateRequest, diag.Diagnostics) {
 	var result = models.DeploymentCreateRequest{
 		Name:      dep.Name.Value,
 		Alias:     dep.Alias.Value,
@@ -150,6 +172,8 @@ func (dep *Deployment) Payload(client *api.API) (*models.DeploymentCreateRequest
 	dtID := dep.DeploymentTemplateId.Value
 	version := dep.Version.Value
 
+	var diagsnostics diag.Diagnostics
+
 	template, err := deptemplateapi.Get(deptemplateapi.GetParams{
 		API:                        client,
 		TemplateID:                 dtID,
@@ -157,72 +181,70 @@ func (dep *Deployment) Payload(client *api.API) (*models.DeploymentCreateRequest
 		HideInstanceConfigurations: true,
 	})
 	if err != nil {
-		return nil, err
+		diagsnostics.AddError("Deployment template get error", err.Error())
+		return nil, diagsnostics
 	}
 
 	useNodeRoles, err := compatibleWithNodeRoles(version)
 	if err != nil {
-		return nil, err
+		diagsnostics.AddError("Deployment parse error", err.Error())
+		return nil, diagsnostics
 	}
 
-	merr := multierror.NewPrefixed("invalid configuration")
+	esRes, diags := elasticsearchPayload(ctx, template, dtID, version, useNodeRoles, &dep.Elasticsearch)
 
-	esRes, err := dep.Elasticsearch.Payload(template, dtID, version, useNodeRoles)
-	// enrichElasticsearchTemplate(
-	// 	esResource(template), dtID, version, useNodeRoles,
-	// ),
-
-	if err != nil {
-		merr = merr.Append(err)
+	if diags.HasError() {
+		diagsnostics.Append(diags...)
 	}
 	result.Resources.Elasticsearch = append(result.Resources.Elasticsearch, esRes...)
 
-	kibanaRes, err := dep.Kibana.Payload(template)
-	if err != nil {
-		merr = merr.Append(err)
+	kibanaRes, diags := kibanaPayload(ctx, template, &dep.Kibana)
+	if diags.HasError() {
+		diagsnostics.Append(diags...)
 	}
 	result.Resources.Kibana = append(result.Resources.Kibana, kibanaRes...)
 
-	apms, diags := ApmPayload(ctx, template, dep.Apm)
+	apms, diags := apmsPayload(ctx, template, &dep.Apm)
 	if diags.HasError() {
-		merr = merr.Append(fmt.Errorf("diags: %v", diags))
+		diagsnostics.Append(diags...)
 	}
 	result.Resources.Apm = append(result.Resources.Apm, apms...)
 
-	integrationsServerRes, err := dep.IntegrationsServer.Payload(template)
-	if err != nil {
-		merr = merr.Append(err)
+	integrationsServerRes, diags := integrationsServerPayload(ctx, template, &dep.IntegrationsServer)
+	if diags.HasError() {
+		diagsnostics.Append(diags...)
 	}
 	result.Resources.IntegrationsServer = append(result.Resources.IntegrationsServer, integrationsServerRes...)
 
-	enterpriseSearchRes, err := dep.EnterpriseSearch.Payload(template)
-	if err != nil {
-		merr = merr.Append(err)
+	enterpriseSearchRes, diags := enterpriseSearchesPayload(ctx, template, &dep.EnterpriseSearch)
+	if diags.HasError() {
+		diagsnostics.Append(diags...)
 	}
 	result.Resources.EnterpriseSearch = append(result.Resources.EnterpriseSearch, enterpriseSearchRes...)
 
-	if err := merr.ErrorOrNil(); err != nil {
-		return nil, err
+	if diags := trafficFilterToModel(ctx, dep.TrafficFilter, &result); diags.HasError() {
+		diagsnostics.Append(diags...)
 	}
 
-	trafficFilterToModel(dep.TrafficFilter, &result)
-
-	observability, err := dep.Observability.Model(client)
-	if err != nil {
-		return nil, err
+	observability, diags := observabilityPayload(ctx, client, &dep.Observability)
+	if diags.HasError() {
+		diagsnostics.Append(diags...)
 	}
 	result.Settings.Observability = observability
 
-	result.Metadata.Tags = converters.MapToTags(dep.Tags)
+	result.Metadata.Tags, diags = converters.TFmapToTags(ctx, dep.Tags)
+	if diags.HasError() {
+		diagsnostics.Append(diags...)
+	}
 
-	return &result, nil
+	return &result, diagsnostics
 }
 
 // parseCredentials parses the Create or Update response Resources populating
 // credential settings in the Terraform state if the keys are found, currently
 // populates the following credentials in plain text:
 // * Elasticsearch username and Password
-func (dep *Deployment) ParseCredentials(resources []*models.DeploymentResource) error {
+func (dep *DeploymentTF) parseCredentials(resources []*models.DeploymentResource) error {
 
 	for _, res := range resources {
 
@@ -244,7 +266,7 @@ func (dep *Deployment) ParseCredentials(resources []*models.DeploymentResource) 
 	return nil
 }
 
-func NewTrafficFilters(in *models.DeploymentSettings) ([]string, error) {
+func readTrafficFilters(in *models.DeploymentSettings) ([]string, error) {
 	if in == nil || in.TrafficFilterSettings == nil || len(in.TrafficFilterSettings.Rulesets) == 0 {
 		return nil, nil
 	}
@@ -265,13 +287,9 @@ func compatibleWithNodeRoles(version string) (bool, error) {
 
 // trafficFilterToModel expands the flattened "traffic_filter" settings to
 // a DeploymentCreateRequest.
-func trafficFilterToModel(set []string, req *models.DeploymentCreateRequest) {
-	if set == nil || req == nil {
-		return
-	}
-
-	if len(set) == 0 {
-		return
+func trafficFilterToModel(ctx context.Context, set types.Set, req *models.DeploymentCreateRequest) diag.Diagnostics {
+	if len(set.Elems) == 0 || req == nil {
+		return nil
 	}
 
 	if req.Settings == nil {
@@ -282,8 +300,15 @@ func trafficFilterToModel(set []string, req *models.DeploymentCreateRequest) {
 		req.Settings.TrafficFilterSettings = &models.TrafficFilterSettings{}
 	}
 
+	var rulesets []string
+	if diags := tfsdk.ValueAs(ctx, set, &rulesets); diags.HasError() {
+		return diags
+	}
+
 	req.Settings.TrafficFilterSettings.Rulesets = append(
 		req.Settings.TrafficFilterSettings.Rulesets,
-		set...,
+		rulesets...,
 	)
+
+	return nil
 }

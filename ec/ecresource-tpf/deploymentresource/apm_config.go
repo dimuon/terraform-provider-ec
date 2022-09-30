@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
+	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -38,42 +39,48 @@ type ApmConfigTF struct {
 }
 
 type ApmConfig struct {
-	DockerImage              string `tfsdk:"docker_image"`
-	DebugEnabled             bool   `tfsdk:"debug_enabled"`
-	UserSettingsJson         string `tfsdk:"user_settings_json"`
-	UserSettingsOverrideJson string `tfsdk:"user_settings_override_json"`
-	UserSettingsYaml         string `tfsdk:"user_settings_yaml"`
-	UserSettingsOverrideYaml string `tfsdk:"user_settings_override_yaml"`
+	DockerImage              *string `tfsdk:"docker_image"`
+	DebugEnabled             *bool   `tfsdk:"debug_enabled"`
+	UserSettingsJson         *string `tfsdk:"user_settings_json"`
+	UserSettingsOverrideJson *string `tfsdk:"user_settings_override_json"`
+	UserSettingsYaml         *string `tfsdk:"user_settings_yaml"`
+	UserSettingsOverrideYaml *string `tfsdk:"user_settings_override_yaml"`
 }
 
 type ApmConfigsTF types.List
 
 type ApmConfigs []ApmConfig
 
-func ReadApmConfigs(in *models.ApmConfiguration) (ApmConfigs, error) {
+func readApmConfigs(in *models.ApmConfiguration) (ApmConfigs, error) {
 	var cfg ApmConfig
 
-	cfg.UserSettingsYaml = in.UserSettingsYaml
+	if in.UserSettingsYaml != "" {
+		cfg.UserSettingsYaml = &in.UserSettingsYaml
+	}
 
-	cfg.UserSettingsOverrideYaml = in.UserSettingsOverrideYaml
+	if in.UserSettingsOverrideYaml != "" {
+		cfg.UserSettingsOverrideYaml = &in.UserSettingsOverrideYaml
+	}
 
 	if o := in.UserSettingsJSON; o != nil {
 		if b, _ := json.Marshal(o); len(b) > 0 && !bytes.Equal([]byte("{}"), b) {
-			cfg.UserSettingsJson = string(b)
+			cfg.UserSettingsJson = ec.String(string(b))
 		}
 	}
 
 	if o := in.UserSettingsOverrideJSON; o != nil {
 		if b, _ := json.Marshal(o); len(b) > 0 && !bytes.Equal([]byte("{}"), b) {
-			cfg.UserSettingsOverrideJson = string(b)
+			cfg.UserSettingsOverrideJson = ec.String(string(b))
 		}
 	}
 
-	cfg.DockerImage = in.DockerImage
+	if in.DockerImage != "" {
+		cfg.DockerImage = &in.DockerImage
+	}
 
 	if in.SystemSettings != nil {
 		if in.SystemSettings.DebugEnabled != nil {
-			cfg.DebugEnabled = *in.SystemSettings.DebugEnabled
+			cfg.DebugEnabled = in.SystemSettings.DebugEnabled
 		}
 	}
 

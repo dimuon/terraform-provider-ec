@@ -24,7 +24,7 @@ import (
 )
 
 func (r Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var data Deployment
+	var data DeploymentTF
 
 	diags := req.State.Get(ctx, &data)
 	resp.Diagnostics.Append(diags...)

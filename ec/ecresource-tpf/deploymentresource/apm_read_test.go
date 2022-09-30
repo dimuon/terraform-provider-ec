@@ -103,16 +103,16 @@ func Test_readApm(t *testing.T) {
 			}},
 			want: []Apm{
 				{
-					ElasticsearchClusterRefId: "main-elasticsearch",
-					RefId:                     "main-apm",
-					ResourceId:                mock.ValidClusterID,
-					Region:                    "some-region",
-					HttpEndpoint:              "http://apmresource.cloud.elastic.co:9200",
-					HttpsEndpoint:             "https://apmresource.cloud.elastic.co:9243",
-					Topology: []ApmTopology{{
-						InstanceConfigurationId: "aws.apm.r4",
-						Size:                    "1g",
-						SizeResource:            "memory",
+					ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+					RefId:                     ec.String("main-apm"),
+					ResourceId:                &mock.ValidClusterID,
+					Region:                    ec.String("some-region"),
+					HttpEndpoint:              ec.String("http://apmresource.cloud.elastic.co:9200"),
+					HttpsEndpoint:             ec.String("https://apmresource.cloud.elastic.co:9243"),
+					Topology: []Topology{{
+						InstanceConfigurationId: ec.String("aws.apm.r4"),
+						Size:                    ec.String("1g"),
+						SizeResource:            ec.String("memory"),
 						ZoneCount:               1,
 					}},
 				}},
@@ -210,23 +210,23 @@ func Test_readApm(t *testing.T) {
 				},
 			}},
 			want: Apms{{
-				ElasticsearchClusterRefId: "main-elasticsearch",
-				RefId:                     "main-apm",
-				ResourceId:                mock.ValidClusterID,
-				Region:                    "some-region",
-				HttpEndpoint:              "http://apmresource.cloud.elastic.co:9200",
-				HttpsEndpoint:             "https://apmresource.cloud.elastic.co:9243",
-				Topology: ApmTopologies{{
-					InstanceConfigurationId: "aws.apm.r4",
-					Size:                    "1g",
-					SizeResource:            "memory",
+				ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+				RefId:                     ec.String("main-apm"),
+				ResourceId:                &mock.ValidClusterID,
+				Region:                    ec.String("some-region"),
+				HttpEndpoint:              ec.String("http://apmresource.cloud.elastic.co:9200"),
+				HttpsEndpoint:             ec.String("https://apmresource.cloud.elastic.co:9243"),
+				Topology: Topologies{{
+					InstanceConfigurationId: ec.String("aws.apm.r4"),
+					Size:                    ec.String("1g"),
+					SizeResource:            ec.String("memory"),
 					ZoneCount:               1,
 				}},
 				Config: ApmConfigs{{
-					UserSettingsYaml:         "some.setting: value",
-					UserSettingsOverrideYaml: "some.setting: value2",
-					UserSettingsJson:         "{\"some.setting\":\"value\"}",
-					UserSettingsOverrideJson: "{\"some.setting\":\"value2\"}",
+					UserSettingsYaml:         ec.String("some.setting: value"),
+					UserSettingsOverrideYaml: ec.String("some.setting: value2"),
+					UserSettingsJson:         ec.String("{\"some.setting\":\"value\"}"),
+					UserSettingsOverrideJson: ec.String("{\"some.setting\":\"value2\"}"),
 				}},
 			}},
 		},
@@ -281,31 +281,31 @@ func Test_readApm(t *testing.T) {
 				},
 			}},
 			want: Apms{{
-				ElasticsearchClusterRefId: "main-elasticsearch",
-				RefId:                     "main-apm",
-				ResourceId:                mock.ValidClusterID,
-				Region:                    "some-region",
-				HttpEndpoint:              "http://apmresource.cloud.elastic.co:9200",
-				HttpsEndpoint:             "https://apmresource.cloud.elastic.co:9243",
-				Topology: ApmTopologies{{
-					InstanceConfigurationId: "aws.apm.r4",
-					Size:                    "1g",
-					SizeResource:            "memory",
+				ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+				RefId:                     ec.String("main-apm"),
+				ResourceId:                &mock.ValidClusterID,
+				Region:                    ec.String("some-region"),
+				HttpEndpoint:              ec.String("http://apmresource.cloud.elastic.co:9200"),
+				HttpsEndpoint:             ec.String("https://apmresource.cloud.elastic.co:9243"),
+				Topology: Topologies{{
+					InstanceConfigurationId: ec.String("aws.apm.r4"),
+					Size:                    ec.String("1g"),
+					SizeResource:            ec.String("memory"),
 					ZoneCount:               1,
 				}},
 				Config: ApmConfigs{{
-					UserSettingsYaml:         "some.setting: value",
-					UserSettingsOverrideYaml: "some.setting: value2",
-					UserSettingsJson:         "{\"some.setting\":\"value\"}",
-					UserSettingsOverrideJson: "{\"some.setting\":\"value2\"}",
-					DebugEnabled:             true,
+					UserSettingsYaml:         ec.String("some.setting: value"),
+					UserSettingsOverrideYaml: ec.String("some.setting: value2"),
+					UserSettingsJson:         ec.String("{\"some.setting\":\"value\"}"),
+					UserSettingsOverrideJson: ec.String("{\"some.setting\":\"value2\"}"),
+					DebugEnabled:             ec.Bool(true),
 				}},
 			}},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			apms, err := ReadApms(tt.args.in)
+			apms, err := readApms(tt.args.in)
 			assert.Nil(t, err)
 			assert.Equal(t, tt.want, apms)
 

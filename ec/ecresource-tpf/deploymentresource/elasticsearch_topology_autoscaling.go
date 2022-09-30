@@ -32,24 +32,40 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type ElasticsearchTopologyAutoscalings types.List
-
-func (autoscalings ElasticsearchTopologyAutoscalings) Read(ctx context.Context, in *models.ElasticsearchClusterTopologyElement) diag.Diagnostics {
-	var autoscaling ElasticsearchTopologyAutoscaling
-
-	diag := autoscaling.Read(in)
-	if diag.HasError() {
-		return diag
-	}
-
-	if autoscaling == (ElasticsearchTopologyAutoscaling{}) {
-		return nil
-	}
-
-	return tfsdk.ValueFrom(ctx, []*ElasticsearchTopologyAutoscaling{&autoscaling}, elasticsearchTopologyAutoscalingAttribute().Type, &autoscalings)
+type ElasticsearchTopologyAutoscalingTF struct {
+	MaxSizeResource    types.String `tfsdk:"max_size_resource"`
+	MaxSize            types.String `tfsdk:"max_size"`
+	MinSizeResource    types.String `tfsdk:"min_size_resource"`
+	MinSize            types.String `tfsdk:"min_size"`
+	PolicyOverrideJson types.String `tfsdk:"policy_override_json"`
 }
 
-func (autos ElasticsearchTopologyAutoscalings) Payload(ctx context.Context, topologyID string, elem *models.ElasticsearchClusterTopologyElement) diag.Diagnostics {
+type ElasticsearchTopologyAutoscalingsTF types.List
+
+type ElasticsearchTopologyAutoscaling struct {
+	MaxSizeResource    *string `tfsdk:"max_size_resource"`
+	MaxSize            *string `tfsdk:"max_size"`
+	MinSizeResource    *string `tfsdk:"min_size_resource"`
+	MinSize            *string `tfsdk:"min_size"`
+	PolicyOverrideJson *string `tfsdk:"policy_override_json"`
+}
+
+type ElasticsearchTopologyAutoscalings []ElasticsearchTopologyAutoscaling
+
+func readElasticsearchTopologyAutoscalings(in *models.ElasticsearchClusterTopologyElement) (ElasticsearchTopologyAutoscalings, error) {
+	autoscaling, err := readElasticsearchTopologyAutoscaling(in)
+	if err != nil {
+		return nil, err
+	}
+
+	if autoscaling.isEmpty() {
+		return nil, nil
+	}
+
+	return ElasticsearchTopologyAutoscalings{*autoscaling}, nil
+}
+
+func (autos ElasticsearchTopologyAutoscalingsTF) Payload(ctx context.Context, topologyID string, elem *models.ElasticsearchClusterTopologyElement) diag.Diagnostics {
 	var diag diag.Diagnostics
 
 	if len(autos.Elems) == 0 {
@@ -57,7 +73,7 @@ func (autos ElasticsearchTopologyAutoscalings) Payload(ctx context.Context, topo
 	}
 
 	// it should be only one element if any
-	var autoscale ElasticsearchTopologyAutoscaling
+	var autoscale ElasticsearchTopologyAutoscalingTF
 	tfsdk.ValueAs(ctx, autos.Elems[0], &autoscale)
 
 	if elem.AutoscalingMax == nil {
@@ -100,36 +116,32 @@ func (autos ElasticsearchTopologyAutoscalings) Payload(ctx context.Context, topo
 	return diag
 }
 
-type ElasticsearchTopologyAutoscaling struct {
-	MaxSizeResource    types.String `tfsdk:"max_size_resource"`
-	MaxSize            types.String `tfsdk:"max_size"`
-	MinSizeResource    types.String `tfsdk:"min_size_resource"`
-	MinSize            types.String `tfsdk:"min_size"`
-	PolicyOverrideJson types.String `tfsdk:"policy_override_json"`
-}
+func readElasticsearchTopologyAutoscaling(topology *models.ElasticsearchClusterTopologyElement) (*ElasticsearchTopologyAutoscaling, error) {
+	var a ElasticsearchTopologyAutoscaling
 
-func (a ElasticsearchTopologyAutoscaling) Read(topology *models.ElasticsearchClusterTopologyElement) diag.Diagnostics {
 	if ascale := topology.AutoscalingMax; ascale != nil {
-		a.MaxSizeResource = types.String{Value: *ascale.Resource}
-		a.MaxSize = types.String{Value: util.MemoryToState(*ascale.Value)}
+		a.MaxSizeResource = ascale.Resource
+		a.MaxSize = ec.String(util.MemoryToState(*ascale.Value))
 	}
 
 	if ascale := topology.AutoscalingMin; ascale != nil {
-		a.MinSizeResource = types.String{Value: *ascale.Resource}
-		a.MinSize = types.String{Value: util.MemoryToState(*ascale.Value)}
+		a.MinSizeResource = ascale.Resource
+		a.MinSize = ec.String(util.MemoryToState(*ascale.Value))
 	}
 
 	if topology.AutoscalingPolicyOverrideJSON != nil {
 		b, err := json.Marshal(topology.AutoscalingPolicyOverrideJSON)
 		if err != nil {
-			var diag diag.Diagnostics
-			diag.AddError(fmt.Sprintf("elasticsearch topology %s: unable to persist policy_override_json", topology.ID), err.Error())
-			return diag
+			return nil, fmt.Errorf("elasticsearch topology %s: unable to persist policy_override_json - %w", topology.ID, err)
 		}
-		a.PolicyOverrideJson = types.String{Value: string(b)}
+		a.PolicyOverrideJson = ec.String(string(b))
 	}
 
-	return nil
+	return &a, nil
+}
+
+func (a ElasticsearchTopologyAutoscaling) isEmpty() bool {
+	return reflect.ValueOf(a).IsZero()
 }
 
 // expandAutoscalingDimension centralises processing of %_size and %_size_resource attributes
@@ -137,7 +149,7 @@ func (a ElasticsearchTopologyAutoscaling) Read(topology *models.ElasticsearchClu
 // to work around this limitation, this function will default the %_size_resource attribute to `memory`.
 // Without this default, setting autoscaling limits on tiers which do not have those limits in the deployment
 // template leads to an API error due to the empty resource field on the TopologySize model.
-func (autoscale ElasticsearchTopologyAutoscaling) ExpandAutoscalingDimension(model *models.TopologySize, size, sizeResource types.String) error {
+func (autoscale ElasticsearchTopologyAutoscalingTF) ExpandAutoscalingDimension(model *models.TopologySize, size, sizeResource types.String) error {
 	if size.Value != "" {
 		val, err := deploymentsize.ParseGb(size.Value)
 		if err != nil {

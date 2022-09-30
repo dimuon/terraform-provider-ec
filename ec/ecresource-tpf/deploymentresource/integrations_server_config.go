@@ -19,14 +19,17 @@ package deploymentresource
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
+	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type IntegrationsServerConfig struct {
+type IntegrationsServerConfigTF struct {
 	DockerImage              types.String `tfsdk:"docker_image"`
 	DebugEnabled             types.Bool   `tfsdk:"debug_enabled"`
 	UserSettingsJson         types.String `tfsdk:"user_settings_json"`
@@ -35,48 +38,65 @@ type IntegrationsServerConfig struct {
 	UserSettingsOverrideYaml types.String `tfsdk:"user_settings_override_yaml"`
 }
 
-func NewIntegrationsServerConfig(in *models.IntegrationsServerConfiguration) ([]*IntegrationsServerConfig, error) {
+type IntegrationsServerConfig struct {
+	DockerImage              *string `tfsdk:"docker_image"`
+	DebugEnabled             *bool   `tfsdk:"debug_enabled"`
+	UserSettingsJson         *string `tfsdk:"user_settings_json"`
+	UserSettingsOverrideJson *string `tfsdk:"user_settings_override_json"`
+	UserSettingsYaml         *string `tfsdk:"user_settings_yaml"`
+	UserSettingsOverrideYaml *string `tfsdk:"user_settings_override_yaml"`
+}
+
+type IntegrationsServerConfigs []IntegrationsServerConfig
+
+func readIntegrationsServerConfig(in *models.IntegrationsServerConfiguration) (IntegrationsServerConfigs, error) {
 	var cfg IntegrationsServerConfig
 
-	if in == nil {
-		return nil, nil
+	if in.UserSettingsYaml != "" {
+		cfg.UserSettingsYaml = &in.UserSettingsYaml
 	}
 
-	cfg.UserSettingsYaml = types.String{Value: in.UserSettingsYaml}
-
-	cfg.UserSettingsOverrideYaml = types.String{Value: in.UserSettingsOverrideYaml}
+	if in.UserSettingsOverrideYaml != "" {
+		cfg.UserSettingsOverrideYaml = &in.UserSettingsOverrideYaml
+	}
 
 	if o := in.UserSettingsJSON; o != nil {
 		if b, _ := json.Marshal(o); len(b) > 0 && !bytes.Equal([]byte("{}"), b) {
-			cfg.UserSettingsJson = types.String{Value: string(b)}
+			cfg.UserSettingsJson = ec.String(string(b))
 		}
 	}
 
 	if o := in.UserSettingsOverrideJSON; o != nil {
 		if b, _ := json.Marshal(o); len(b) > 0 && !bytes.Equal([]byte("{}"), b) {
-			cfg.UserSettingsOverrideJson = types.String{Value: string(b)}
+			cfg.UserSettingsOverrideJson = ec.String(string(b))
 		}
 	}
 
-	cfg.DockerImage = types.String{Value: in.DockerImage}
+	if in.DockerImage != "" {
+		cfg.DockerImage = &in.DockerImage
+	}
 
 	if in.SystemSettings != nil {
 		if in.SystemSettings.DebugEnabled != nil {
-			cfg.DebugEnabled = types.Bool{Value: *in.SystemSettings.DebugEnabled}
+			cfg.DebugEnabled = in.SystemSettings.DebugEnabled
 		}
 	}
 
-	if cfg != (IntegrationsServerConfig{}) {
-		return []*IntegrationsServerConfig{&cfg}, nil
+	if cfg == (IntegrationsServerConfig{}) {
+		return nil, nil
 	}
 
-	return nil, nil
+	return IntegrationsServerConfigs{cfg}, nil
 }
 
-type IntegrationsServerConfigs []*IntegrationsServerConfig
+func payloadIntegrationsServerConfig(ctx context.Context, res *models.IntegrationsServerConfiguration, cfgs *types.List) diag.Diagnostics {
+	var diags diag.Diagnostics
 
-func (cfgs IntegrationsServerConfigs) Payload(res *models.IntegrationsServerConfiguration) error {
-	for _, cfg := range cfgs {
+	for _, elem := range cfgs.Elems {
+		var cfg IntegrationsServerConfigTF
+		if diags := tfsdk.ValueAs(ctx, elem, &cfg); diags.HasError() {
+			return diags
+		}
 
 		if !cfg.DebugEnabled.IsNull() {
 			if res.SystemSettings == nil {
@@ -87,13 +107,15 @@ func (cfgs IntegrationsServerConfigs) Payload(res *models.IntegrationsServerConf
 
 		if cfg.UserSettingsJson.Value != "" {
 			if err := json.Unmarshal([]byte(cfg.UserSettingsJson.Value), &res.UserSettingsJSON); err != nil {
-				return fmt.Errorf("failed expanding IntegrationsServer user_settings_json: %w", err)
+				diags.AddError("failed expanding IntegrationsServer user_settings_json", err.Error())
+				return diags
 			}
 		}
 
 		if cfg.UserSettingsOverrideJson.Value != "" {
 			if err := json.Unmarshal([]byte(cfg.UserSettingsOverrideJson.Value), &res.UserSettingsOverrideJSON); err != nil {
-				return fmt.Errorf("failed expanding IntegrationsServer user_settings_override_json: %w", err)
+				diags.AddError("failed expanding IntegrationsServer user_settings_override_json", err.Error())
+				return diags
 			}
 		}
 

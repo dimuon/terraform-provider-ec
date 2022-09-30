@@ -26,14 +26,21 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type ElasticsearchSnapshotSource struct {
+type ElasticsearchSnapshotSourceTF struct {
 	SourceElasticsearchClusterId types.String `tfsdk:"source_elasticsearch_cluster_id"`
 	SnapshotName                 types.String `tfsdk:"snapshot_name"`
 }
 
-type ElasticsearchSnapshotSources types.List
+type ElasticsearchSnapshotSourcesTF types.List
 
-func (snapshots ElasticsearchSnapshotSources) Payload(ctx context.Context) (*models.TransientElasticsearchPlanConfiguration, diag.Diagnostics) {
+type ElasticsearchSnapshotSource struct {
+	SourceElasticsearchClusterId string `tfsdk:"source_elasticsearch_cluster_id"`
+	SnapshotName                 string `tfsdk:"snapshot_name"`
+}
+
+type ElasticsearchSnapshotSources []ElasticsearchSnapshotSource
+
+func (snapshots ElasticsearchSnapshotSourcesTF) Payload(ctx context.Context) (*models.TransientElasticsearchPlanConfiguration, diag.Diagnostics) {
 	if len(snapshots.Elems) == 0 {
 		return nil, nil
 	}
@@ -43,7 +50,7 @@ func (snapshots ElasticsearchSnapshotSources) Payload(ctx context.Context) (*mod
 	}
 
 	for _, elem := range snapshots.Elems {
-		var snapshot ElasticsearchSnapshotSource
+		var snapshot ElasticsearchSnapshotSourceTF
 		if diags := tfsdk.ValueAs(ctx, elem, &snapshot); diags.HasError() {
 			return nil, diags
 		}

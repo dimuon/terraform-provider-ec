@@ -20,7 +20,6 @@ package deploymentresource
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/elastic/cloud-sdk-go/pkg/api/apierror"
 	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi"
@@ -28,7 +27,9 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi/esremoteclustersapi"
 	"github.com/elastic/cloud-sdk-go/pkg/client/deployments"
 	"github.com/elastic/cloud-sdk-go/pkg/models"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 )
 
 func (r Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -36,7 +37,7 @@ func (r Resource) Read(ctx context.Context, req resource.ReadRequest, resp *reso
 		return
 	}
 
-	var curState Deployment
+	var curState DeploymentTF
 
 	diags := req.State.Get(ctx, &curState)
 	resp.Diagnostics.Append(diags...)
@@ -45,11 +46,11 @@ func (r Resource) Read(ctx context.Context, req resource.ReadRequest, resp *reso
 		return
 	}
 
-	var newState *Deployment
+	var newState *DeploymentTF
 	var err error
 
-	if newState, err = r.read(ctx, curState.Id.Value, curState); err != nil {
-		resp.Diagnostics.AddError("Read error", err.Error())
+	if newState, diags = r.read(ctx, curState.Id.Value, curState); err != nil {
+		resp.Diagnostics.Append(diags...)
 	}
 
 	if newState == nil {
@@ -63,7 +64,8 @@ func (r Resource) Read(ctx context.Context, req resource.ReadRequest, resp *reso
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r Resource) read(ctx context.Context, id string, state Deployment) (*Deployment, error) {
+func (r Resource) read(ctx context.Context, id string, state DeploymentTF) (*DeploymentTF, diag.Diagnostics) {
+	var diags diag.Diagnostics
 	res, err := deploymentapi.Get(deploymentapi.GetParams{
 		API: r.client, DeploymentID: id,
 		QueryParams: deputil.QueryParams{
@@ -75,31 +77,51 @@ func (r Resource) read(ctx context.Context, id string, state Deployment) (*Deplo
 	})
 	if err != nil {
 		if deploymentNotFound(err) {
-			return nil, err
+			diags.AddError("Deployment not found", err.Error())
+			return nil, diags
 		}
-		return nil, fmt.Errorf("failed reading deployment - %w", err)
+		diags.AddError("Deloyment get error", err.Error())
+		return nil, diags
 	}
 
 	if !hasRunningResources(res) {
 		return nil, nil
 	}
 
+	var es ElasticsearchTF
+	if diags := tfsdk.ValueAs(ctx, state.Elasticsearch.Elems[0], &es); diags.HasError() {
+		return nil, diags
+	}
+
 	remotes, err := esremoteclustersapi.Get(esremoteclustersapi.GetParams{
 		API: r.client, DeploymentID: id,
-		RefID: state.Elasticsearch[0].RefId.Value,
+		RefID: es.RefId.Value,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed reading remote clusters - %w", err)
+		diags.AddError("Remote clusters read error", err.Error())
+		return nil, diags
 	}
 	if remotes == nil {
 		remotes = &models.RemoteResources{}
 	}
 
-	if dep, err := NewDeployment(res, remotes); err != nil {
-		return nil, err
-	} else {
-		return dep, nil
+	dep, err := readDeployment(res, remotes)
+	if err != nil {
+		diags.AddError("Deployment read error", err.Error())
+		return nil, diags
 	}
+
+	var deployment DeploymentTF
+	schema, diags := r.GetSchema(ctx)
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	if diags := tfsdk.ValueFrom(ctx, dep, schema.Type(), &deployment); diags.HasError() {
+		return nil, diags
+	}
+
+	return &deployment, diags
 }
 
 func deploymentNotFound(err error) bool {

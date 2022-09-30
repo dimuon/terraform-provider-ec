@@ -26,40 +26,55 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type ElasticsearchExtensions types.Set
+type ElasticsearchExtensionTF struct {
+	Name    types.String `tfsdk:"name"`
+	Type    types.String `tfsdk:"type"`
+	Version types.String `tfsdk:"version"`
+	Url     types.String `tfsdk:"url"`
+}
 
-func (extensions ElasticsearchExtensions) Read(ctx context.Context, in *models.ElasticsearchConfiguration) diag.Diagnostics {
+type ElasticsearchExtensionsTF types.Set
+
+type ElasticsearchExtension struct {
+	Name    string `tfsdk:"name"`
+	Type    string `tfsdk:"type"`
+	Version string `tfsdk:"version"`
+	Url     string `tfsdk:"url"`
+}
+
+type ElasticsearchExtensions []ElasticsearchExtension
+
+func readElasticsearchExtensions(in *models.ElasticsearchConfiguration) (ElasticsearchExtensions, error) {
 	if len(in.UserBundles) == 0 && len(in.UserPlugins) == 0 {
-		return nil
+		return nil, nil
 	}
 
-	exts := make([]ElasticsearchExtension, 0, len(in.UserBundles)+len(in.UserPlugins))
+	extensions := make(ElasticsearchExtensions, 0, len(in.UserBundles)+len(in.UserPlugins))
 
 	for _, model := range in.UserBundles {
-		var extension ElasticsearchExtension
-
-		if diags := extension.ReadFromUserBundle(ctx, model); diags.HasError() {
-			return diags
+		extension, err := readFromUserBundle(model)
+		if err != nil {
+			return nil, err
 		}
 
-		exts = append(exts, extension)
+		extensions = append(extensions, *extension)
 	}
 
 	for _, model := range in.UserPlugins {
-		var extension ElasticsearchExtension
-
-		if diag := extension.ReadFromUserPlugin(ctx, model); diag != nil {
-			return nil
+		extension, err := readFromUserPlugin(model)
+		if err != nil {
+			return nil, err
 		}
-		exts = append(exts, extension)
+
+		extensions = append(extensions, *extension)
 	}
 
-	return tfsdk.ValueFrom(ctx, exts, elasticsearchExtension().Type(), extensions)
+	return extensions, nil
 }
 
-func (extensions ElasticsearchExtensions) Payload(ctx context.Context, es *models.ElasticsearchConfiguration) diag.Diagnostics {
+func (extensions ElasticsearchExtensionsTF) Payload(ctx context.Context, es *models.ElasticsearchConfiguration) diag.Diagnostics {
 	for _, elem := range extensions.Elems {
-		var extension ElasticsearchExtension
+		var extension ElasticsearchExtensionTF
 
 		if diags := tfsdk.ValueAs(ctx, elem, &extension); diags.HasError() {
 			return diags
@@ -88,61 +103,48 @@ func (extensions ElasticsearchExtensions) Payload(ctx context.Context, es *model
 	return nil
 }
 
-type ElasticsearchExtension struct {
-	Name    types.String `tfsdk:"name"`
-	Type    types.String `tfsdk:"type"`
-	Version types.String `tfsdk:"version"`
-	Url     types.String `tfsdk:"url"`
-}
+func readFromUserBundle(in *models.ElasticsearchUserBundle) (*ElasticsearchExtension, error) {
+	var ext ElasticsearchExtension
 
-func (ext ElasticsearchExtension) ReadFromUserBundle(ctx context.Context, in *models.ElasticsearchUserBundle) diag.Diagnostics {
-	ext.Type = types.String{Value: "bundle"}
-
-	var diag diag.Diagnostics
+	ext.Type = "bundle"
 
 	if in.ElasticsearchVersion == nil {
-		diag.AddError("Elasticsearch extension read error", missingField("ElasticsearchUserBundle.ElasticsearchVersion").Error())
-		return diag
+		return nil, missingField("ElasticsearchUserBundle.ElasticsearchVersion")
 	}
-	ext.Version = types.String{Value: *in.ElasticsearchVersion}
+	ext.Version = *in.ElasticsearchVersion
 
 	if in.URL == nil {
-		diag.AddError("Elasticsearch extension read error", missingField("ElasticsearchUserBundle.URL").Error())
-		return diag
+		return nil, missingField("ElasticsearchUserBundle.URL")
 	}
-	ext.Url = types.String{Value: *in.URL}
+	ext.Url = *in.URL
 
 	if in.Name == nil {
-		diag.AddError("Elasticsearch extension read error", missingField("ElasticsearchUserBundle.Name").Error())
-		return diag
+		return nil, missingField("ElasticsearchUserBundle.Name")
 	}
-	ext.Name = types.String{Value: *in.Name}
+	ext.Name = *in.Name
 
-	return nil
+	return &ext, nil
 }
 
-func (ext ElasticsearchExtension) ReadFromUserPlugin(ctx context.Context, in *models.ElasticsearchUserPlugin) diag.Diagnostics {
-	ext.Type = types.String{Value: "plugin"}
+func readFromUserPlugin(in *models.ElasticsearchUserPlugin) (*ElasticsearchExtension, error) {
+	var ext ElasticsearchExtension
 
-	var diag diag.Diagnostics
+	ext.Type = "plugin"
 
 	if in.ElasticsearchVersion == nil {
-		diag.AddError("Elasticsearch extension read error", missingField("ElasticsearchUserPlugin.ElasticsearchVersion").Error())
-		return diag
+		return nil, missingField("ElasticsearchUserPlugin.ElasticsearchVersion")
 	}
-	ext.Version = types.String{Value: *in.ElasticsearchVersion}
+	ext.Version = *in.ElasticsearchVersion
 
 	if in.URL == nil {
-		diag.AddError("Elasticsearch extension read error", missingField("ElasticsearchUserPlugin.URL").Error())
-		return diag
+		return nil, missingField("ElasticsearchUserPlugin.URL")
 	}
-	ext.Url = types.String{Value: *in.URL}
+	ext.Url = *in.URL
 
 	if in.Name == nil {
-		diag.AddError("Elasticsearch extension read error", missingField("ElasticsearchUserPlugin.Name").Error())
-		return diag
+		return nil, missingField("ElasticsearchUserPlugin.Name")
 	}
-	ext.Name = types.String{Value: *in.Name}
+	ext.Name = *in.Name
 
-	return nil
+	return &ext, nil
 }

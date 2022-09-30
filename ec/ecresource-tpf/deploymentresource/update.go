@@ -24,7 +24,7 @@ import (
 )
 
 func (r Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data Deployment
+	var data DeploymentTF
 
 	diags := req.Plan.Get(ctx, &data)
 	resp.Diagnostics.Append(diags...)

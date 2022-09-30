@@ -18,9 +18,12 @@
 package converters
 
 import (
+	"context"
 	"sort"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
@@ -42,6 +45,9 @@ func TagsToTypeMap(metadataItems []*models.MetadataItem) types.Map {
 // flattenTags takes in Deployment Metadata resource models and returns its
 // Tags as Go map
 func TagsToMap(metadataItems []*models.MetadataItem) map[string]string {
+	if len(metadataItems) == 0 {
+		return nil
+	}
 	res := make(map[string]string)
 	for _, item := range metadataItems {
 		if item.Key != nil {
@@ -66,4 +72,25 @@ func MapToTags(raw map[string]string) []*models.MetadataItem {
 	})
 
 	return result
+}
+
+func TFmapToTags(ctx context.Context, raw types.Map) ([]*models.MetadataItem, diag.Diagnostics) {
+	result := make([]*models.MetadataItem, 0, len(raw.Elems))
+	for k, v := range raw.Elems {
+		var tag string
+		if diags := tfsdk.ValueAs(ctx, v, &tag); diags.HasError() {
+			return nil, diags
+		}
+		result = append(result, &models.MetadataItem{
+			Key:   ec.String(k),
+			Value: ec.String(tag),
+		})
+	}
+
+	// Sort by key
+	sort.SliceStable(result, func(i, j int) bool {
+		return *result[i].Key < *result[j].Key
+	})
+
+	return result, nil
 }

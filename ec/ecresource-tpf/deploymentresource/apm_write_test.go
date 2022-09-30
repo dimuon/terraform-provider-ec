@@ -55,15 +55,15 @@ func Test_writeApm(t *testing.T) {
 				tpl: tpl(),
 				apms: Apms{
 					{
-						RefId:                     "main-apm",
-						ResourceId:                mock.ValidClusterID,
-						Region:                    "some-region",
-						ElasticsearchClusterRefId: "somerefid",
-						Topology: ApmTopologies{
+						RefId:                     ec.String("main-apm"),
+						ResourceId:                &mock.ValidClusterID,
+						Region:                    ec.String("some-region"),
+						ElasticsearchClusterRefId: ec.String("somerefid"),
+						Topology: Topologies{
 							{
-								InstanceConfigurationId: "aws.apm.r5d",
-								Size:                    "2g",
-								SizeResource:            "memory",
+								InstanceConfigurationId: ec.String("aws.apm.r5d"),
+								Size:                    ec.String("2g"),
+								SizeResource:            ec.String("memory"),
 								ZoneCount:               1,
 							},
 						},
@@ -95,15 +95,15 @@ func Test_writeApm(t *testing.T) {
 				tpl: tpl(),
 				apms: Apms{
 					{
-						RefId:                     "main-apm",
-						ResourceId:                mock.ValidClusterID,
-						Region:                    "some-region",
-						ElasticsearchClusterRefId: "somerefid",
-						Topology: ApmTopologies{
+						RefId:                     ec.String("main-apm"),
+						ResourceId:                &mock.ValidClusterID,
+						Region:                    ec.String("some-region"),
+						ElasticsearchClusterRefId: ec.String("somerefid"),
+						Topology: Topologies{
 							{
-								InstanceConfigurationId: "so invalid",
-								Size:                    "2g",
-								SizeResource:            "memory",
+								InstanceConfigurationId: ec.String("so invalid"),
+								Size:                    ec.String("2g"),
+								SizeResource:            ec.String("memory"),
 								ZoneCount:               1,
 							}},
 					},
@@ -124,10 +124,10 @@ func Test_writeApm(t *testing.T) {
 				tpl: tpl(),
 				apms: Apms{
 					{
-						RefId:                     "main-apm",
-						ResourceId:                mock.ValidClusterID,
-						Region:                    "some-region",
-						ElasticsearchClusterRefId: "somerefid",
+						RefId:                     ec.String("main-apm"),
+						ResourceId:                &mock.ValidClusterID,
+						Region:                    ec.String("some-region"),
+						ElasticsearchClusterRefId: ec.String("somerefid"),
 					},
 				},
 			},
@@ -156,14 +156,14 @@ func Test_writeApm(t *testing.T) {
 				tpl: tpl(),
 				apms: Apms{
 					{
-						RefId:                     "main-apm",
-						ResourceId:                mock.ValidClusterID,
-						Region:                    "some-region",
-						ElasticsearchClusterRefId: "somerefid",
-						Topology: ApmTopologies{
+						RefId:                     ec.String("main-apm"),
+						ResourceId:                &mock.ValidClusterID,
+						Region:                    ec.String("some-region"),
+						ElasticsearchClusterRefId: ec.String("somerefid"),
+						Topology: Topologies{
 							{
-								Size:         "2g",
-								SizeResource: "memory",
+								Size:         ec.String("2g"),
+								SizeResource: ec.String("memory"),
 							},
 						},
 					},
@@ -194,23 +194,23 @@ func Test_writeApm(t *testing.T) {
 				tpl: tpl(),
 				apms: Apms{
 					{
-						RefId:                     "tertiary-apm",
-						ElasticsearchClusterRefId: "somerefid",
-						ResourceId:                mock.ValidClusterID,
-						Region:                    "some-region",
+						RefId:                     ec.String("tertiary-apm"),
+						ElasticsearchClusterRefId: ec.String("somerefid"),
+						ResourceId:                &mock.ValidClusterID,
+						Region:                    ec.String("some-region"),
 						Config: ApmConfigs{
 							{
-								UserSettingsYaml:         "some.setting: value",
-								UserSettingsOverrideYaml: "some.setting: value2",
-								UserSettingsJson:         "{\"some.setting\": \"value\"}",
-								UserSettingsOverrideJson: "{\"some.setting\": \"value2\"}",
-								DebugEnabled:             true,
+								UserSettingsYaml:         ec.String("some.setting: value"),
+								UserSettingsOverrideYaml: ec.String("some.setting: value2"),
+								UserSettingsJson:         ec.String("{\"some.setting\": \"value\"}"),
+								UserSettingsOverrideJson: ec.String("{\"some.setting\": \"value2\"}"),
+								DebugEnabled:             ec.Bool(true),
 							}},
-						Topology: ApmTopologies{
+						Topology: Topologies{
 							{
-								InstanceConfigurationId: "aws.apm.r5d",
-								Size:                    "4g",
-								SizeResource:            "memory",
+								InstanceConfigurationId: ec.String("aws.apm.r5d"),
+								Size:                    ec.String("4g"),
+								SizeResource:            ec.String("memory"),
 								ZoneCount:               1,
 							}},
 					}},
@@ -250,20 +250,20 @@ func Test_writeApm(t *testing.T) {
 				tpl: nil,
 				apms: Apms{
 					{
-						RefId:                     "tertiary-apm",
-						ElasticsearchClusterRefId: "somerefid",
-						ResourceId:                mock.ValidClusterID,
-						Region:                    "some-region",
-						Topology: ApmTopologies{
+						RefId:                     ec.String("tertiary-apm"),
+						ElasticsearchClusterRefId: ec.String("somerefid"),
+						ResourceId:                &mock.ValidClusterID,
+						Region:                    ec.String("some-region"),
+						Topology: Topologies{
 							{
-								InstanceConfigurationId: "aws.apm.r5d",
-								Size:                    "4g",
-								SizeResource:            "memory",
+								InstanceConfigurationId: ec.String("aws.apm.r5d"),
+								Size:                    ec.String("4g"),
+								SizeResource:            ec.String("memory"),
 								ZoneCount:               1,
 							}},
 						Config: ApmConfigs{
 							{
-								DebugEnabled: true,
+								DebugEnabled: ec.Bool(true),
 							}},
 					}},
 			},
@@ -280,7 +280,7 @@ func Test_writeApm(t *testing.T) {
 			diags := tfsdk.ValueFrom(context.Background(), tt.args.apms, apm().Type(), &apmsTF)
 			assert.Nil(t, diags)
 
-			got, diags := ApmPayload(context.Background(), tt.args.tpl, apmsTF)
+			got, diags := apmsPayload(context.Background(), tt.args.tpl, &apmsTF)
 			if tt.diags != nil {
 				assert.Equal(t, tt.diags, diags)
 			}

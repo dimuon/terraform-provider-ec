@@ -18,54 +18,61 @@
 package deploymentresource
 
 import (
-	"errors"
+	"context"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type Kibana struct {
-	ElasticsearchClusterRefId types.String     `tfsdk:"elasticsearch_cluster_ref_id"`
-	RefId                     types.String     `tfsdk:"ref_id"`
-	ResourceId                types.String     `tfsdk:"resource_id"`
-	Region                    types.String     `tfsdk:"region"`
-	HttpEndpoint              types.String     `tfsdk:"http_endpoint"`
-	HttpsEndpoint             types.String     `tfsdk:"https_endpoint"`
-	Topology                  KibanaTopologies `tfsdk:"topology"`
-	Config                    KibanaConfigs    `tfsdk:"config"`
+type KibanaTF struct {
+	ElasticsearchClusterRefId types.String `tfsdk:"elasticsearch_cluster_ref_id"`
+	RefId                     types.String `tfsdk:"ref_id"`
+	ResourceId                types.String `tfsdk:"resource_id"`
+	Region                    types.String `tfsdk:"region"`
+	HttpEndpoint              types.String `tfsdk:"http_endpoint"`
+	HttpsEndpoint             types.String `tfsdk:"https_endpoint"`
+	Topology                  types.List   `tfsdk:"topology"`
+	Config                    types.List   `tfsdk:"config"`
 }
 
-func NewKibana(in *models.KibanaResourceInfo) (*Kibana, error) {
+type Kibana struct {
+	ElasticsearchClusterRefId *string       `tfsdk:"elasticsearch_cluster_ref_id"`
+	RefId                     *string       `tfsdk:"ref_id"`
+	ResourceId                *string       `tfsdk:"resource_id"`
+	Region                    *string       `tfsdk:"region"`
+	HttpEndpoint              *string       `tfsdk:"http_endpoint"`
+	HttpsEndpoint             *string       `tfsdk:"https_endpoint"`
+	Topology                  Topologies    `tfsdk:"topology"`
+	Config                    KibanaConfigs `tfsdk:"config"`
+}
+
+type Kibanas []Kibana
+
+func readKibana(in *models.KibanaResourceInfo) (*Kibana, error) {
 	var kibana Kibana
 
-	if in.RefID != nil {
-		kibana.RefId = types.String{Value: *in.RefID}
-	}
+	kibana.RefId = in.RefID
 
-	if in.Info.ClusterID != nil {
-		kibana.ResourceId = types.String{Value: *in.Info.ClusterID}
-	}
+	kibana.ResourceId = in.Info.ClusterID
 
-	if in.Region != nil {
-		kibana.Region = types.String{Value: *in.Region}
-	}
+	kibana.Region = in.Region
 
 	plan := in.Info.PlanInfo.Current.Plan
 	var err error
 
-	if kibana.Topology, err = NewKibanaTopologies(plan.ClusterTopology); err != nil {
+	if kibana.Topology, err = readKibanaTopologies(plan.ClusterTopology); err != nil {
 		return nil, err
 	}
 
-	if in.ElasticsearchClusterRefID != nil {
-		kibana.ElasticsearchClusterRefId = types.String{Value: *in.ElasticsearchClusterRefID}
-	}
+	kibana.ElasticsearchClusterRefId = in.ElasticsearchClusterRefID
 
-	kibana.HttpEndpoint, kibana.HttpsEndpoint = converters.ExtractEndpointsTF(in.Info.Metadata)
+	kibana.HttpEndpoint, kibana.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
 
-	cfg, err := NewKibanaConfigs(plan.Kibana)
+	cfg, err := readKibanaConfigs(plan.Kibana)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +81,7 @@ func NewKibana(in *models.KibanaResourceInfo) (*Kibana, error) {
 	return &kibana, nil
 }
 
-func (kibana Kibana) Payload(payload models.KibanaPayload) (*models.KibanaPayload, error) {
+func (kibana KibanaTF) Payload(ctx context.Context, payload models.KibanaPayload) (*models.KibanaPayload, diag.Diagnostics) {
 	if !kibana.ElasticsearchClusterRefId.IsNull() {
 		payload.ElasticsearchClusterRefID = &kibana.ElasticsearchClusterRefId.Value
 	}
@@ -87,58 +94,63 @@ func (kibana Kibana) Payload(payload models.KibanaPayload) (*models.KibanaPayloa
 		payload.Region = &kibana.Region.Value
 	}
 
-	if err := kibana.Config.Payload(payload.Plan.Kibana); err != nil {
-		return nil, err
+	if diags := kibanaConfigPayload(ctx, payload.Plan.Kibana, &kibana.Config); diags.HasError() {
+		return nil, diags
 	}
 
-	topology, err := kibana.Topology.Payload(payload.Plan.ClusterTopology)
-	if err != nil {
-		return nil, err
+	topology, diags := kibanaTopologyPayload(ctx, payload.Plan.ClusterTopology, &kibana.Topology)
+	if diags.HasError() {
+		return nil, diags
 	}
 	payload.Plan.ClusterTopology = topology
 
 	return &payload, nil
 }
 
-type Kibanas []*Kibana
-
-func NewKibanas(in []*models.KibanaResourceInfo) (Kibanas, error) {
+func readKibanas(in []*models.KibanaResourceInfo) (Kibanas, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}
 
-	kibanas := make([]*Kibana, 0, len(in))
+	kibanas := make(Kibanas, 0, len(in))
 	for _, model := range in {
 		if util.IsCurrentKibanaPlanEmpty(model) || isKibanaResourceStopped(model) {
 			continue
 		}
 
-		kibana, err := NewKibana(model)
+		kibana, err := readKibana(model)
 		if err != nil {
 			return nil, err
 		}
-		kibanas = append(kibanas, kibana)
+		kibanas = append(kibanas, *kibana)
 	}
 	return kibanas, nil
 }
 
-func (kibanas Kibanas) Payload(template *models.DeploymentTemplateInfoV2) ([]*models.KibanaPayload, error) {
-	if len(kibanas) == 0 {
+func kibanaPayload(ctx context.Context, template *models.DeploymentTemplateInfoV2, kibanas *types.List) ([]*models.KibanaPayload, diag.Diagnostics) {
+	if len(kibanas.Elems) == 0 {
 		return nil, nil
 	}
 
 	templatePlayload := kibanaResource(template)
 
+	var diags diag.Diagnostics
+
 	if templatePlayload == nil {
-		return nil, errors.New("kibana specified but deployment template is not configured for it. Use a different template if you wish to add kibana")
+		diags.AddError("Kibana payload error", "kibana specified but deployment template is not configured for it. Use a different template if you wish to add kibana")
 	}
 
-	payloads := make([]*models.KibanaPayload, 0, len(kibanas))
+	payloads := make([]*models.KibanaPayload, 0, len(kibanas.Elems))
 
-	for _, kibana := range kibanas {
-		payload, err := kibana.Payload(*templatePlayload)
-		if err != nil {
-			return nil, err
+	for _, elem := range kibanas.Elems {
+		var kibana KibanaTF
+		if tfsdk.ValueAs(ctx, elem, &kibana); diags.HasError() {
+			return nil, diags
+		}
+
+		payload, diags := kibana.Payload(ctx, *templatePlayload)
+		if diags.HasError() {
+			return nil, diags
 		}
 		payloads = append(payloads, payload)
 	}

@@ -18,107 +18,119 @@
 package deploymentresource
 
 import (
-	"fmt"
+	"context"
 
 	"github.com/elastic/cloud-sdk-go/pkg/api"
 	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi"
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type Observability struct {
+type ObservabilityTF struct {
 	DeploymentId types.String `tfsdk:"deployment_id"`
 	RefId        types.String `tfsdk:"ref_id"`
 	Logs         types.Bool   `tfsdk:"logs"`
 	Metrics      types.Bool   `tfsdk:"metrics"`
 }
 
-func NewObservability(in *models.DeploymentSettings) ([]*Observability, error) {
+type Observability struct {
+	DeploymentId *string `tfsdk:"deployment_id"`
+	RefId        *string `tfsdk:"ref_id"`
+	Logs         bool    `tfsdk:"logs"`
+	Metrics      bool    `tfsdk:"metrics"`
+}
+
+type Observabilities []Observability
+
+func ReadObservability(in *models.DeploymentSettings) (Observabilities, error) {
 	if in == nil || in.Observability == nil {
 		return nil, nil
 	}
 
-	obs := Observability{
-		DeploymentId: types.String{Null: true},
-		RefId:        types.String{Null: true},
-		Logs:         types.Bool{Null: true},
-		Metrics:      types.Bool{Null: true},
-	}
+	var obs Observability
 
 	// We are only accepting a single deployment ID and refID for both logs and metrics.
 	// If either of them is not nil the deployment ID and refID will be filled.
 	if in.Observability.Metrics != nil {
 		if in.Observability.Metrics.Destination.DeploymentID != nil {
-			obs.DeploymentId = types.String{Value: *in.Observability.Metrics.Destination.DeploymentID}
+			obs.DeploymentId = in.Observability.Metrics.Destination.DeploymentID
 		}
 
-		obs.RefId = types.String{Value: in.Observability.Metrics.Destination.RefID}
-		obs.Metrics = types.Bool{Value: true}
+		obs.RefId = &in.Observability.Metrics.Destination.RefID
+		obs.Metrics = true
 	}
 
 	if in.Observability.Logging != nil {
 		if in.Observability.Logging.Destination.DeploymentID != nil {
-			obs.DeploymentId = types.String{Value: *in.Observability.Logging.Destination.DeploymentID}
+			obs.DeploymentId = in.Observability.Logging.Destination.DeploymentID
 		}
-		obs.RefId = types.String{Value: in.Observability.Logging.Destination.RefID}
-		obs.Logs = types.Bool{Value: true}
+		obs.RefId = &in.Observability.Logging.Destination.RefID
+		obs.Logs = true
 	}
 
 	if obs == (Observability{}) {
 		return nil, nil
 	}
 
-	return []*Observability{&obs}, nil
+	return []Observability{obs}, nil
 }
 
-type Observabilities []*Observability
-
-func (obs Observabilities) Model(client *api.API) (*models.DeploymentObservabilitySettings, error) {
-	if len(obs) == 0 {
+func observabilityPayload(ctx context.Context, client *api.API, observabilities *types.List) (*models.DeploymentObservabilitySettings, diag.Diagnostics) {
+	if len(observabilities.Elems) == 0 {
 		return nil, nil
 	}
 
 	var req models.DeploymentObservabilitySettings
 
-	for _, obs := range obs {
-		if obs.DeploymentId.Value == "" {
+	for _, elem := range observabilities.Elems {
+		var observability ObservabilityTF
+
+		if diags := tfsdk.ValueAs(ctx, elem, &observability); diags.HasError() {
+			return nil, diags
+		}
+
+		if observability.DeploymentId.Value == "" {
 			return nil, nil
 		}
 
-		refID := obs.RefId.Value
+		refID := observability.RefId.Value
 
-		if obs.DeploymentId.Value != "self" && refID == "" {
+		if observability.DeploymentId.Value != "self" && refID == "" {
 			// Since ms-77, the refID is optional.
 			// To not break ECE users with older versions, we still pre-calculate the refID here
 			params := deploymentapi.PopulateRefIDParams{
 				Kind:         util.Elasticsearch,
 				API:          client,
-				DeploymentID: obs.DeploymentId.Value,
+				DeploymentID: observability.DeploymentId.Value,
 				RefID:        ec.String(""),
 			}
 
 			if err := deploymentapi.PopulateRefID(params); err != nil {
-				return nil, fmt.Errorf("observability ref_id auto discovery: %w", err)
+				var diags diag.Diagnostics
+				diags.AddError("observability ref_id auto discovery", err.Error())
+				return nil, diags
 			}
 
 			refID = *params.RefID
 		}
 
-		if obs.Logs.Value {
+		if observability.Logs.Value {
 			req.Logging = &models.DeploymentLoggingSettings{
 				Destination: &models.ObservabilityAbsoluteDeployment{
-					DeploymentID: ec.String(obs.DeploymentId.Value),
+					DeploymentID: ec.String(observability.DeploymentId.Value),
 					RefID:        refID,
 				},
 			}
 		}
 
-		if obs.Metrics.Value {
+		if observability.Metrics.Value {
 			req.Metrics = &models.DeploymentMetricsSettings{
 				Destination: &models.ObservabilityAbsoluteDeployment{
-					DeploymentID: ec.String(obs.DeploymentId.Value),
+					DeploymentID: ec.String(observability.DeploymentId.Value),
 					RefID:        refID,
 				},
 			}

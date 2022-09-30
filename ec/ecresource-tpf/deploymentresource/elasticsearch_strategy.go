@@ -26,13 +26,19 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type ElasticsearchStrategy struct {
+type ElasticsearchStrategyTF struct {
 	Type types.String `tfsdk:"type"`
 }
 
-type ElasticsearchStrategies types.List
+type ElasticsearchStrategiesTF types.List
 
-func (strategies ElasticsearchStrategies) Payload(ctx context.Context, model *models.TransientElasticsearchPlanConfiguration) (*models.TransientElasticsearchPlanConfiguration, diag.Diagnostics) {
+type ElasticsearchStrategy struct {
+	Type string `tfsdk:"type"`
+}
+
+type ElasticsearchStrategies []ElasticsearchStrategy
+
+func (strategies ElasticsearchStrategiesTF) Payload(ctx context.Context, model *models.TransientElasticsearchPlanConfiguration) (*models.TransientElasticsearchPlanConfiguration, diag.Diagnostics) {
 	if len(strategies.Elems) == 0 {
 		return nil, nil
 	}
@@ -44,7 +50,7 @@ func (strategies ElasticsearchStrategies) Payload(ctx context.Context, model *mo
 	}
 
 	for _, elem := range strategies.Elems {
-		var strategy ElasticsearchStrategy
+		var strategy ElasticsearchStrategyTF
 		if diags := tfsdk.ValueAs(ctx, elem, &strategy); diags.HasError() {
 			return nil, diags
 		}

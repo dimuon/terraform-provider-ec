@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
+	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -46,17 +47,17 @@ func ExtractEndpointsTF(metadata *models.ClusterMetadataInfo) (httpEndpoint, htt
 // FlattenClusterEndpoint receives a ClusterMetadataInfo, parses the http and
 // https endpoints and returns a map with two keys: `http_endpoint` and
 // `https_endpoint`
-func ExtractEndpoints(metadata *models.ClusterMetadataInfo) (httpEndpoint, httpsEndpoint string) {
+func ExtractEndpoints(metadata *models.ClusterMetadataInfo) (httpEndpoint, httpsEndpoint *string) {
 	if metadata == nil || metadata.Endpoint == "" || metadata.Ports == nil {
 		return
 	}
 
 	if metadata.Ports.HTTP != nil {
-		httpEndpoint = fmt.Sprintf("http://%s:%d", metadata.Endpoint, *metadata.Ports.HTTP)
+		httpEndpoint = ec.String(fmt.Sprintf("http://%s:%d", metadata.Endpoint, *metadata.Ports.HTTP))
 	}
 
 	if metadata.Ports.HTTPS != nil {
-		httpsEndpoint = fmt.Sprintf("https://%s:%d", metadata.Endpoint, *metadata.Ports.HTTPS)
+		httpsEndpoint = ec.String(fmt.Sprintf("https://%s:%d", metadata.Endpoint, *metadata.Ports.HTTPS))
 	}
 
 	return

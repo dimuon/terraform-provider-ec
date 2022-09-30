@@ -19,14 +19,17 @@ package deploymentresource
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
+	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type KibanaConfig struct {
+type KibanaConfigTF struct {
 	DockerImage              types.String `tfsdk:"docker_image"`
 	UserSettingsJson         types.String `tfsdk:"user_settings_json"`
 	UserSettingsOverrideJson types.String `tfsdk:"user_settings_override_json"`
@@ -34,52 +37,73 @@ type KibanaConfig struct {
 	UserSettingsOverrideYaml types.String `tfsdk:"user_settings_override_yaml"`
 }
 
-type KibanaConfigs []*KibanaConfig
+type KibanaConfigsTF []*KibanaConfigTF
 
-func NewKibanaConfigs(in *models.KibanaConfiguration) (KibanaConfigs, error) {
+type KibanaConfig struct {
+	DockerImage              *string `tfsdk:"docker_image"`
+	UserSettingsJson         *string `tfsdk:"user_settings_json"`
+	UserSettingsOverrideJson *string `tfsdk:"user_settings_override_json"`
+	UserSettingsYaml         *string `tfsdk:"user_settings_yaml"`
+	UserSettingsOverrideYaml *string `tfsdk:"user_settings_override_yaml"`
+}
+
+type KibanaConfigs []KibanaConfig
+
+func readKibanaConfigs(in *models.KibanaConfiguration) (KibanaConfigs, error) {
 	var cfg KibanaConfig
 
-	if in == nil {
-		return nil, nil
+	if in.UserSettingsYaml != "" {
+		cfg.UserSettingsYaml = &in.UserSettingsYaml
 	}
 
-	cfg.UserSettingsYaml = types.String{Value: in.UserSettingsYaml}
-
-	cfg.UserSettingsOverrideYaml = types.String{Value: in.UserSettingsOverrideYaml}
+	if in.UserSettingsOverrideYaml != "" {
+		cfg.UserSettingsOverrideYaml = &in.UserSettingsOverrideYaml
+	}
 
 	if o := in.UserSettingsJSON; o != nil {
 		if b, _ := json.Marshal(o); len(b) > 0 && !bytes.Equal([]byte("{}"), b) {
-			cfg.UserSettingsJson = types.String{Value: string(b)}
+			cfg.UserSettingsJson = ec.String(string(b))
 		}
 	}
 
 	if o := in.UserSettingsOverrideJSON; o != nil {
 		if b, _ := json.Marshal(o); len(b) > 0 && !bytes.Equal([]byte("{}"), b) {
-			cfg.UserSettingsOverrideJson = types.String{Value: string(b)}
+			cfg.UserSettingsOverrideJson = ec.String(string(b))
 		}
 	}
 
-	cfg.DockerImage = types.String{Value: in.DockerImage}
-
-	if cfg != (KibanaConfig{}) {
-		return []*KibanaConfig{&cfg}, nil
+	if in.DockerImage != "" {
+		cfg.DockerImage = &in.DockerImage
 	}
 
-	return nil, nil
+	if cfg == (KibanaConfig{}) {
+		return nil, nil
+	}
+
+	return []KibanaConfig{cfg}, nil
 }
 
-func (cfgs KibanaConfigs) Payload(model *models.KibanaConfiguration) error {
+func kibanaConfigPayload(ctx context.Context, model *models.KibanaConfiguration, cfgs *types.List) diag.Diagnostics {
+	for _, elem := range cfgs.Elems {
+		var cfg KibanaConfigTF
 
-	for _, cfg := range cfgs {
+		if diags := tfsdk.ValueAs(ctx, elem, &cfg); diags.HasError() {
+			return diags
+		}
+
+		var diags diag.Diagnostics
+
 		if cfg.UserSettingsJson.Value != "" {
 			if err := json.Unmarshal([]byte(cfg.UserSettingsJson.Value), &model.UserSettingsJSON); err != nil {
-				return fmt.Errorf("failed expanding kibana user_settings_json: %w", err)
+				diags.AddError("failed expanding kibana user_settings_json", err.Error())
+				return diags
 			}
 		}
 
 		if cfg.UserSettingsOverrideJson.Value != "" {
 			if err := json.Unmarshal([]byte(cfg.UserSettingsOverrideJson.Value), &model.UserSettingsOverrideJSON); err != nil {
-				return fmt.Errorf("failed expanding kibana user_settings_override_json: %w", err)
+				diags.AddError("failed expanding kibana user_settings_override_json", err.Error())
+				return diags
 			}
 		}
 
