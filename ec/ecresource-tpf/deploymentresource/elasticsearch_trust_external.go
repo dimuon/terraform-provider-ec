@@ -43,7 +43,7 @@ type ElasticsearchTrustExternal struct {
 type ElasticsearchTrustExternals []ElasticsearchTrustExternal
 
 func readElasticsearchTrustExternals(in *models.ElasticsearchClusterTrustSettings) (ElasticsearchTrustExternals, error) {
-	if in == nil || len(in.External) == 0 {
+	if in == nil {
 		return nil, nil
 	}
 

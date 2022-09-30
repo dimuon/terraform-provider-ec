@@ -104,7 +104,7 @@ func (r Resource) Create(ctx context.Context, req resource.CreateRequest, resp *
 		resp.Diagnostics.AddError("failed updating remote cluster", err.Error())
 	}
 
-	deployment, diags := r.read(ctx, *res.ID, plan)
+	deployment, diags := r.read(ctx, *res.ID, plan, res.Resources)
 
 	if diags.HasError() {
 		resp.Diagnostics.Append(diags...)
@@ -113,10 +113,6 @@ func (r Resource) Create(ctx context.Context, req resource.CreateRequest, resp *
 	if deployment == nil {
 		resp.State.RemoveResource(ctx)
 		return
-	}
-
-	if err := deployment.parseCredentials(res.Resources); err != nil {
-		resp.Diagnostics.AddError("failed parse credentials", err.Error())
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, deployment)...)

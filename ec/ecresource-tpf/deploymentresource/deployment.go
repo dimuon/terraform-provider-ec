@@ -25,7 +25,6 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/api"
 	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi/deptemplateapi"
 	"github.com/elastic/cloud-sdk-go/pkg/models"
-	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -56,14 +55,14 @@ type DeploymentTF struct {
 type Deployment struct {
 	Id                    string              `tfsdk:"id"`
 	Alias                 string              `tfsdk:"alias"`
-	Version               *string             `tfsdk:"version"`
-	Region                *string             `tfsdk:"region"`
-	DeploymentTemplateId  *string             `tfsdk:"deployment_template_id"`
+	Version               string              `tfsdk:"version"`
+	Region                string              `tfsdk:"region"`
+	DeploymentTemplateId  string              `tfsdk:"deployment_template_id"`
 	Name                  string              `tfsdk:"name"`
 	RequestId             string              `tfsdk:"request_id"`
-	ElasticsearchUsername *string             `tfsdk:"elasticsearch_username"`
-	ElasticsearchPassword *string             `tfsdk:"elasticsearch_password"`
-	ApmSecretToken        *string             `tfsdk:"apm_secret_token"`
+	ElasticsearchUsername string              `tfsdk:"elasticsearch_username"`
+	ElasticsearchPassword string              `tfsdk:"elasticsearch_password"`
+	ApmSecretToken        string              `tfsdk:"apm_secret_token"`
 	TrafficFilter         []string            `tfsdk:"traffic_filter"`
 	Tags                  map[string]string   `tfsdk:"tags"`
 	Elasticsearch         Elasticsearches     `tfsdk:"elasticsearch"`
@@ -82,7 +81,7 @@ func missingField(field string) error {
 	return fmt.Errorf("server response doesn't contain deployment '%s'", field)
 }
 
-func readDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteResources) (*Deployment, error) {
+func readDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteResources, depRes []*models.DeploymentResource) (*Deployment, error) {
 	var dep Deployment
 
 	if res.ID == nil {
@@ -108,9 +107,9 @@ func readDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteRes
 		return nil, err
 	}
 
-	dep.DeploymentTemplateId = &templateID
+	dep.DeploymentTemplateId = templateID
 
-	dep.Region = ec.String(getRegion(res.Resources))
+	dep.Region = getRegion(res.Resources)
 
 	// We're reconciling the version and storing the lowest version of any
 	// of the deployment resources. This ensures that if an upgrade fails,
@@ -123,7 +122,7 @@ func readDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteRes
 		// error in case one of the versions isn't parseable by semver.
 		return nil, fmt.Errorf("failed reading deployment: %w", err)
 	}
-	dep.Version = ec.String(version)
+	dep.Version = version
 
 	if dep.Elasticsearch, err = readElasticsearches(res.Resources.Elasticsearch, remotes); err != nil {
 		return nil, err
@@ -154,6 +153,10 @@ func readDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteRes
 	}
 
 	if dep.Observability, err = ReadObservability(res.Settings); err != nil {
+		return nil, err
+	}
+
+	if err := dep.parseCredentials(depRes); err != nil {
 		return nil, err
 	}
 
@@ -244,22 +247,21 @@ func (dep *DeploymentTF) Payload(ctx context.Context, client *api.API) (*models.
 // credential settings in the Terraform state if the keys are found, currently
 // populates the following credentials in plain text:
 // * Elasticsearch username and Password
-func (dep *DeploymentTF) parseCredentials(resources []*models.DeploymentResource) error {
-
+func (dep *Deployment) parseCredentials(resources []*models.DeploymentResource) error {
 	for _, res := range resources {
 
 		if creds := res.Credentials; creds != nil {
 			if creds.Username != nil && *creds.Username != "" {
-				dep.ElasticsearchUsername = types.String{Value: *creds.Username}
+				dep.ElasticsearchUsername = *creds.Username
 			}
 
 			if creds.Password != nil && *creds.Password != "" {
-				dep.ElasticsearchPassword = types.String{Value: *creds.Password}
+				dep.ElasticsearchPassword = *creds.Password
 			}
 		}
 
 		if res.SecretToken != "" {
-			dep.ApmSecretToken = types.String{Value: res.SecretToken}
+			dep.ApmSecretToken = res.SecretToken
 		}
 	}
 

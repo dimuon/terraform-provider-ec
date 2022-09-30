@@ -49,7 +49,7 @@ func (r Resource) Read(ctx context.Context, req resource.ReadRequest, resp *reso
 	var newState *DeploymentTF
 	var err error
 
-	if newState, diags = r.read(ctx, curState.Id.Value, curState); err != nil {
+	if newState, diags = r.read(ctx, curState.Id.Value, curState, nil); err != nil {
 		resp.Diagnostics.Append(diags...)
 	}
 
@@ -64,7 +64,7 @@ func (r Resource) Read(ctx context.Context, req resource.ReadRequest, resp *reso
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r Resource) read(ctx context.Context, id string, state DeploymentTF) (*DeploymentTF, diag.Diagnostics) {
+func (r Resource) read(ctx context.Context, id string, state DeploymentTF, depRes []*models.DeploymentResource) (*DeploymentTF, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	res, err := deploymentapi.Get(deploymentapi.GetParams{
 		API: r.client, DeploymentID: id,
@@ -105,7 +105,7 @@ func (r Resource) read(ctx context.Context, id string, state DeploymentTF) (*Dep
 		remotes = &models.RemoteResources{}
 	}
 
-	dep, err := readDeployment(res, remotes)
+	dep, err := readDeployment(res, remotes, depRes)
 	if err != nil {
 		diags.AddError("Deployment read error", err.Error())
 		return nil, diags
