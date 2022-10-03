@@ -19,25 +19,95 @@ package deploymentresource
 
 import (
 	"context"
+	"errors"
 
+	"github.com/elastic/cloud-sdk-go/pkg/api"
+	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi"
+	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi/trafficfilterapi"
+	"github.com/elastic/cloud-sdk-go/pkg/client/deployments"
+	"github.com/elastic/terraform-provider-ec/ec/internal/util"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 )
 
 func (r Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var data DeploymentTF
+	if !r.ready(&resp.Diagnostics) {
+		return
+	}
 
-	diags := req.State.Get(ctx, &data)
+	var state DeploymentTF
+
+	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// If applicable, this is a great opportunity to initialize any necessary
-	// provider client data and make a call using it.
-	// example, err := d.provider.client.DeleteExample(...)
-	// if err != nil {
-	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete example, got error: %s", err))
-	//     return
-	// }
+	//TODO retries
+
+	if _, err := deploymentapi.Shutdown(deploymentapi.ShutdownParams{
+		API: r.client, DeploymentID: state.Id.Value,
+	}); err != nil {
+		if alreadyDestroyed(err) {
+			return
+		}
+	}
+
+	if err := WaitForPlanCompletion(r.client, state.Id.Value); err != nil {
+		resp.Diagnostics.AddError("deployment deletion error", err.Error())
+		return
+	}
+
+	var rules []string
+	diags = state.TrafficFilter.ElementsAs(ctx, rules, true)
+	resp.Diagnostics.Append(diags...)
+	if !diags.HasError() {
+		for _, rule := range rules {
+			if err := removeRule(rule, state.Id.Value, r.client); err != nil {
+				resp.Diagnostics.AddError("traffic rule deletion error", err.Error())
+			}
+		}
+	}
+
+	// We don't particularly care if delete succeeds or not. It's better to
+	// remove it, but it might fail on ESS. For example, when user's aren't
+	// allowed to delete deployments, or on ECE when the cluster is "still
+	// being shutdown". Sumarizing, even if the call fails the deployment
+	// won't be there.
+	_, _ = deploymentapi.Delete(deploymentapi.DeleteParams{
+		API: r.client, DeploymentID: state.Id.Value,
+	})
+}
+
+func alreadyDestroyed(err error) bool {
+	var destroyed *deployments.ShutdownDeploymentNotFound
+	return errors.As(err, &destroyed)
+}
+
+func removeRule(ruleID, deploymentID string, client *api.API) error {
+	res, err := trafficfilterapi.Get(trafficfilterapi.GetParams{
+		API: client, ID: ruleID, IncludeAssociations: true,
+	})
+
+	// If the rule is gone (403 or 404), return nil.
+	if err != nil {
+		if util.TrafficFilterNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	// If the rule is found, then delete the association.
+	for _, assoc := range res.Associations {
+		if deploymentID == *assoc.ID {
+			return trafficfilterapi.DeleteAssociation(trafficfilterapi.DeleteAssociationParams{
+				API:        client,
+				ID:         ruleID,
+				EntityID:   *assoc.ID,
+				EntityType: *assoc.EntityType,
+			})
+		}
+	}
+
+	return nil
 }
