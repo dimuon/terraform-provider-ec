@@ -280,7 +280,7 @@ func Test_writeApm(t *testing.T) {
 			diags := tfsdk.ValueFrom(context.Background(), tt.args.apms, apm().Type(), &apmsTF)
 			assert.Nil(t, diags)
 
-			got, diags := apmsPayload(context.Background(), tt.args.tpl, &apmsTF)
+			got, diags := apmsPayload(context.Background(), tt.args.tpl, apmsTF)
 			if tt.diags != nil {
 				assert.Equal(t, tt.diags, diags)
 			}
