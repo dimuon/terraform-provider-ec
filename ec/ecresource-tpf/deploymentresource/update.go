@@ -20,27 +20,178 @@ package deploymentresource
 import (
 	"context"
 
+	"github.com/elastic/cloud-sdk-go/pkg/api"
+	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi"
+	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi/esremoteclustersapi"
+	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi/trafficfilterapi"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 )
 
 func (r Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data DeploymentTF
+	var plan DeploymentTF
 
-	diags := req.Plan.Get(ctx, &data)
+	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// If applicable, this is a great opportunity to initialize any necessary
-	// provider client data and make a call using it.
-	// example, err := d.provider.client.UpdateExample(...)
-	// if err != nil {
-	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update example, got error: %s", err))
-	//     return
-	// }
+	var state DeploymentTF
+	diags = req.State.Get(ctx, &state)
 
-	diags = resp.State.Set(ctx, &data)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	updateReq, diags := plan.UpdateRequest(ctx, r.client, state)
+	if diags.HasError() {
+		resp.Diagnostics.Append(diags...)
+		return
+	}
+
+	res, err := deploymentapi.Update(deploymentapi.UpdateParams{
+		API:          r.client,
+		DeploymentID: plan.Id.Value,
+		Request:      updateReq,
+		Overrides: deploymentapi.PayloadOverrides{
+			Version: plan.Version.Value,
+			Region:  plan.Region.Value,
+		},
+	})
+	if err != nil {
+		diags.AddError("failed updating deployment", err.Error())
+		return
+	}
+
+	if err := WaitForPlanCompletion(r.client, plan.Id.Value); err != nil {
+		diags.AddError("failed tracking update progress", err.Error())
+		return
+	}
+
+	resp.Diagnostics.Append(handleTrafficFilterChange(ctx, r.client, plan, state)...)
+
+	resp.Diagnostics.Append(handleRemoteClusters(ctx, r.client, plan, state)...)
+
+	deployment, diags := r.read(ctx, plan.Id.Value, plan, res.Resources)
 	resp.Diagnostics.Append(diags...)
+
+	if diags.HasError() {
+		return
+	}
+
+	diags = resp.State.Set(ctx, deployment)
+	resp.Diagnostics.Append(diags...)
+}
+
+func handleTrafficFilterChange(ctx context.Context, client *api.API, plan, state DeploymentTF) diag.Diagnostics {
+	if plan.TrafficFilter.IsNull() || plan.TrafficFilter.Equal(state.TrafficFilter) {
+		return nil
+	}
+
+	var planRules, stateRules ruleSet
+	if diags := plan.TrafficFilter.ElementsAs(ctx, &planRules, true); diags.HasError() {
+		return diags
+	}
+
+	if diags := state.TrafficFilter.ElementsAs(ctx, &stateRules, true); diags.HasError() {
+		return diags
+	}
+
+	var rulesToAdd, rulesToDelete []string
+
+	for _, rule := range planRules {
+		if !stateRules.exist(rule) {
+			rulesToAdd = append(rulesToAdd, rule)
+		}
+	}
+
+	for _, rule := range stateRules {
+		if !planRules.exist(rule) {
+			rulesToDelete = append(rulesToDelete, rule)
+		}
+	}
+
+	var diags diag.Diagnostics
+	for _, rule := range rulesToAdd {
+		if err := associateRule(rule, plan.Id.Value, client); err != nil {
+			diags.AddError("cannot associate traffic filter rule", err.Error())
+		}
+	}
+
+	for _, rule := range rulesToDelete {
+		if err := removeRule(rule, plan.Id.Value, client); err != nil {
+			diags.AddError("cannot remove traffic filter rule", err.Error())
+		}
+	}
+
+	return diags
+}
+
+type ruleSet []string
+
+func (rs ruleSet) exist(rule string) bool {
+	for _, r := range rs {
+		if r == rule {
+			return true
+		}
+	}
+	return false
+}
+
+func associateRule(ruleID, deploymentID string, client *api.API) error {
+	res, err := trafficfilterapi.Get(trafficfilterapi.GetParams{
+		API: client, ID: ruleID, IncludeAssociations: true,
+	})
+	if err != nil {
+		return err
+	}
+
+	// When the rule has already been associated, return.
+	for _, assoc := range res.Associations {
+		if deploymentID == *assoc.ID {
+			return nil
+		}
+	}
+
+	// Create assignment.
+	if err := trafficfilterapi.CreateAssociation(trafficfilterapi.CreateAssociationParams{
+		API: client, ID: ruleID, EntityType: "deployment", EntityID: deploymentID,
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func handleRemoteClusters(ctx context.Context, client *api.API, plan, state DeploymentTF) diag.Diagnostics {
+	if len(plan.Elasticsearch.Elems) == 0 {
+		return nil
+	}
+
+	if plan.Elasticsearch.Equal(state.Elasticsearch) {
+		return nil
+	}
+
+	var ess []ElasticsearchTF
+	if diags := plan.Elasticsearch.ElementsAs(ctx, &ess, true); diags.HasError() {
+		return diags
+	}
+
+	remoteRes, diags := ElasticsearchRemoteClustersTF(ess[0].RemoteCluster).Payload(ctx)
+	if diags.HasError() {
+		return diags
+	}
+
+	if err := esremoteclustersapi.Update(esremoteclustersapi.UpdateParams{
+		API:             client,
+		DeploymentID:    plan.Id.Value,
+		RefID:           ess[0].RefId.Value,
+		RemoteResources: remoteRes,
+	}); err != nil {
+		diags.AddError("cannot update remote clusters", err.Error())
+		return diags
+	}
+
+	return nil
 }

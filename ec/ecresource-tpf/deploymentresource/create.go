@@ -48,7 +48,7 @@ func (r Resource) Create(ctx context.Context, req resource.CreateRequest, resp *
 		return
 	}
 
-	payload, diags := plan.Payload(ctx, r.client)
+	request, diags := plan.CreateRequest(ctx, r.client)
 	if diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return
@@ -59,7 +59,7 @@ func (r Resource) Create(ctx context.Context, req resource.CreateRequest, resp *
 	res, err := deploymentapi.Create(deploymentapi.CreateParams{
 		API:       r.client,
 		RequestID: reqID,
-		Request:   payload,
+		Request:   request,
 		Overrides: &deploymentapi.PayloadOverrides{
 			Name:    plan.Name.Value,
 			Version: plan.Version.Value,

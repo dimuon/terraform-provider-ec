@@ -129,7 +129,7 @@ func readApms(in []*models.ApmResourceInfo) (Apms, error) {
 	return apms, nil
 }
 
-func apmsPayload(ctx context.Context, template *models.DeploymentTemplateInfoV2, apms *types.List) ([]*models.ApmPayload, diag.Diagnostics) {
+func apmsPayload(ctx context.Context, template *models.DeploymentTemplateInfoV2, apms types.List) ([]*models.ApmPayload, diag.Diagnostics) {
 	if len(apms.Elems) == 0 {
 		return nil, nil
 	}

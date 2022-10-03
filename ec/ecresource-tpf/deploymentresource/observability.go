@@ -79,7 +79,7 @@ func ReadObservability(in *models.DeploymentSettings) (Observabilities, error) {
 	return []Observability{obs}, nil
 }
 
-func observabilityPayload(ctx context.Context, client *api.API, observabilities *types.List) (*models.DeploymentObservabilitySettings, diag.Diagnostics) {
+func observabilityPayload(ctx context.Context, client *api.API, observabilities types.List) (*models.DeploymentObservabilitySettings, diag.Diagnostics) {
 	if len(observabilities.Elems) == 0 {
 		return nil, nil
 	}

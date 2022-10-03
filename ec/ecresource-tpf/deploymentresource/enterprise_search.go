@@ -129,7 +129,7 @@ func readEnterpriseSearches(in []*models.EnterpriseSearchResourceInfo) (Enterpri
 	return esss, nil
 }
 
-func enterpriseSearchesPayload(ctx context.Context, template *models.DeploymentTemplateInfoV2, ess *types.List) ([]*models.EnterpriseSearchPayload, diag.Diagnostics) {
+func enterpriseSearchesPayload(ctx context.Context, template *models.DeploymentTemplateInfoV2, ess types.List) ([]*models.EnterpriseSearchPayload, diag.Diagnostics) {
 	if len(ess.Elems) == 0 {
 		return nil, nil
 	}

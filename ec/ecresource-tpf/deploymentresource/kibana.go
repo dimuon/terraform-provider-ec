@@ -127,7 +127,7 @@ func readKibanas(in []*models.KibanaResourceInfo) (Kibanas, error) {
 	return kibanas, nil
 }
 
-func kibanaPayload(ctx context.Context, template *models.DeploymentTemplateInfoV2, kibanas *types.List) ([]*models.KibanaPayload, diag.Diagnostics) {
+func kibanaPayload(ctx context.Context, template *models.DeploymentTemplateInfoV2, kibanas types.List) ([]*models.KibanaPayload, diag.Diagnostics) {
 	if len(kibanas.Elems) == 0 {
 		return nil, nil
 	}

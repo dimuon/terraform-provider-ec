@@ -93,7 +93,7 @@ func readElasticsearches(in []*models.ElasticsearchResourceInfo, remotes *models
 	return ess, nil
 }
 
-func elasticsearchPayload(ctx context.Context, template *models.DeploymentTemplateInfoV2, dtID, version string, useNodeRoles bool, ess *types.List) ([]*models.ElasticsearchPayload, diag.Diagnostics) {
+func elasticsearchPayload(ctx context.Context, template *models.DeploymentTemplateInfoV2, dtID, version string, useNodeRoles bool, ess types.List, skipTopologies bool) ([]*models.ElasticsearchPayload, diag.Diagnostics) {
 	if len(ess.Elems) == 0 {
 		return nil, nil
 	}
@@ -107,7 +107,7 @@ func elasticsearchPayload(ctx context.Context, template *models.DeploymentTempla
 		if diags := tfsdk.ValueAs(ctx, elem, &es); diags.HasError() {
 			return nil, diags
 		}
-		payload, diags := es.Payload(ctx, templatePayload)
+		payload, diags := es.Payload(ctx, templatePayload, skipTopologies)
 		if diags.HasError() {
 			return nil, diags
 		}
@@ -188,7 +188,7 @@ func readElasticsearch(in *models.ElasticsearchResourceInfo, remotes *models.Rem
 	return &es, nil
 }
 
-func (es *ElasticsearchTF) Payload(ctx context.Context, res *models.ElasticsearchPayload) (*models.ElasticsearchPayload, diag.Diagnostics) {
+func (es *ElasticsearchTF) Payload(ctx context.Context, res *models.ElasticsearchPayload, skipTopologies bool) (*models.ElasticsearchPayload, diag.Diagnostics) {
 	if !es.RefId.IsNull() {
 		res.RefID = &es.RefId.Value
 	}
@@ -203,9 +203,11 @@ func (es *ElasticsearchTF) Payload(ctx context.Context, res *models.Elasticsearc
 
 	var diags diag.Diagnostics
 
-	res.Plan.ClusterTopology, diags = ElasticsearchTopologiesTF(es.Topology).Payload(ctx, res.Plan.ClusterTopology)
-	if diags.HasError() {
-		return nil, diags
+	if !skipTopologies {
+		res.Plan.ClusterTopology, diags = ElasticsearchTopologiesTF(es.Topology).Payload(ctx, res.Plan.ClusterTopology)
+		if diags.HasError() {
+			return nil, diags
+		}
 	}
 
 	// Fixes the node_roles field to remove the dedicated tier roles from the

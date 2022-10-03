@@ -128,7 +128,7 @@ func (srv IntegrationsServerTF) Payload(ctx context.Context, payload models.Inte
 	return &payload, nil
 }
 
-func integrationsServerPayload(ctx context.Context, template *models.DeploymentTemplateInfoV2, srvs *types.List) ([]*models.IntegrationsServerPayload, diag.Diagnostics) {
+func integrationsServerPayload(ctx context.Context, template *models.DeploymentTemplateInfoV2, srvs types.List) ([]*models.IntegrationsServerPayload, diag.Diagnostics) {
 	if len(srvs.Elems) == 0 {
 		return nil, nil
 	}
