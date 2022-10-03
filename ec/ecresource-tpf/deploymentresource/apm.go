@@ -50,7 +50,7 @@ type Apm struct {
 	Config                    ApmConfigs `tfsdk:"config"`
 }
 
-func ReadApm(in *models.ApmResourceInfo) (*Apm, error) {
+func readApm(in *models.ApmResourceInfo) (*Apm, error) {
 	var apm Apm
 
 	apm.RefId = in.RefID
@@ -118,7 +118,7 @@ func readApms(in []*models.ApmResourceInfo) (Apms, error) {
 			continue
 		}
 
-		apm, err := ReadApm(model)
+		apm, err := readApm(model)
 		if err != nil {
 			return nil, err
 		}

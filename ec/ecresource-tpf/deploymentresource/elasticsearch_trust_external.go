@@ -42,14 +42,14 @@ type ElasticsearchTrustExternal struct {
 
 type ElasticsearchTrustExternals []ElasticsearchTrustExternal
 
-func readElasticsearchTrustExternals(in *models.ElasticsearchClusterTrustSettings) (ElasticsearchTrustExternals, error) {
-	if in == nil {
+func readElasticsearchTrustExternals(in *models.ElasticsearchClusterSettings) (ElasticsearchTrustExternals, error) {
+	if in == nil || in.Trust == nil {
 		return nil, nil
 	}
 
-	externals := make(ElasticsearchTrustExternals, 0, len(in.External))
+	externals := make(ElasticsearchTrustExternals, 0, len(in.Trust.External))
 
-	for _, model := range in.External {
+	for _, model := range in.Trust.External {
 		external, err := readElasticsearchTrustExternal(model)
 		if err != nil {
 			return nil, err

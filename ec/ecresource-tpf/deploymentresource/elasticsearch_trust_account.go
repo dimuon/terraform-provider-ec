@@ -42,14 +42,14 @@ type ElasticsearchTrustAccount struct {
 
 type ElasticsearchTrustAccounts []ElasticsearchTrustAccount
 
-func readElasticsearchTrustAccounts(in *models.ElasticsearchClusterTrustSettings) (ElasticsearchTrustAccounts, error) {
-	if in == nil {
+func readElasticsearchTrustAccounts(in *models.ElasticsearchClusterSettings) (ElasticsearchTrustAccounts, error) {
+	if in == nil || in.Trust == nil {
 		return nil, nil
 	}
 
-	accounts := make(ElasticsearchTrustAccounts, 0, len(in.Accounts))
+	accounts := make(ElasticsearchTrustAccounts, 0, len(in.Trust.Accounts))
 
-	for _, model := range in.Accounts {
+	for _, model := range in.Trust.Accounts {
 		account, err := readElasticsearchTrustAccount(model)
 		if err != nil {
 			return nil, err

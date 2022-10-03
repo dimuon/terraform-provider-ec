@@ -73,10 +73,6 @@ type ElasticsearchesTF []*ElasticsearchTF
 type Elasticsearches []Elasticsearch
 
 func readElasticsearches(in []*models.ElasticsearchResourceInfo, remotes *models.RemoteResources) (Elasticsearches, error) {
-	if len(in) == 0 {
-		return nil, nil
-	}
-
 	ess := make([]Elasticsearch, 0, len(in))
 
 	for _, model := range in {
@@ -173,13 +169,13 @@ func readElasticsearch(in *models.ElasticsearchResourceInfo, remotes *models.Rem
 	}
 	es.Extension = extensions
 
-	accounts, err := readElasticsearchTrustAccounts(in.Info.Settings.Trust)
+	accounts, err := readElasticsearchTrustAccounts(in.Info.Settings)
 	if err != nil {
 		return nil, err
 	}
 	es.TrustAccount = accounts
 
-	externals, err := readElasticsearchTrustExternals(in.Info.Settings.Trust)
+	externals, err := readElasticsearchTrustExternals(in.Info.Settings)
 	if err != nil {
 		return nil, err
 	}

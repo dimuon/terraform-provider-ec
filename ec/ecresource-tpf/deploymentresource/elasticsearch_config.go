@@ -119,7 +119,7 @@ func (configs ElasticsearchConfigsTF) Payload(ctx context.Context, model *models
 }
 
 func (c *ElasticsearchConfig) isEmpty() bool {
-	return reflect.ValueOf(*c).IsZero()
+	return c == nil || reflect.ValueOf(*c).IsZero()
 }
 
 func ReadElasticsearchConfig(in *models.ElasticsearchConfiguration) (*ElasticsearchConfig, error) {
