@@ -195,7 +195,7 @@ func (dep DeploymentTF) CreateRequest(ctx context.Context, client *api.API) (*mo
 		return nil, diagsnostics
 	}
 
-	esRes, diags := elasticsearchPayload(ctx, template, dtID, version, useNodeRoles, dep.Elasticsearch, false)
+	esRes, diags := elasticsearchPayload(ctx, dep.Elasticsearch, template, dtID, version, useNodeRoles, false)
 
 	if diags.HasError() {
 		diagsnostics.Append(diags...)
@@ -364,7 +364,7 @@ func (plan DeploymentTF) UpdateRequest(ctx context.Context, client *api.API, cur
 	}
 	useNodeRoles = useNodeRoles && convertLegacy
 
-	esRes, diags := elasticsearchPayload(ctx, template, dtID, version, useNodeRoles, plan.Elasticsearch, skipEStopologies)
+	esRes, diags := elasticsearchPayload(ctx, plan.Elasticsearch, template, dtID, version, useNodeRoles, skipEStopologies)
 
 	if diags.HasError() {
 		diagsnostics.Append(diags...)

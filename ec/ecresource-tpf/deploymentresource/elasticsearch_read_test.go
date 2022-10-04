@@ -21,10 +21,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/elastic/cloud-sdk-go/pkg/api/mock"
 	"github.com/elastic/cloud-sdk-go/pkg/models"
@@ -277,162 +278,167 @@ func Test_readElasticsearch(t *testing.T) {
 	}
 }
 
-// func Test_flattenEsTopology(t *testing.T) {
-// 	type args struct {
-// 		plan *models.ElasticsearchClusterPlan
-// 	}
-// 	tests := []struct {
-// 		name string
-// 		args args
-// 		want []interface{}
-// 		err  string
-// 	}{
-// 		{
-// 			name: "no zombie topologies",
-// 			args: args{plan: &models.ElasticsearchClusterPlan{
-// 				ClusterTopology: []*models.ElasticsearchClusterTopologyElement{
-// 					{
-// 						ID:                      "hot_content",
-// 						ZoneCount:               1,
-// 						InstanceConfigurationID: "aws.data.highio.i3",
-// 						Size: &models.TopologySize{
-// 							Value: ec.Int32(4096), Resource: ec.String("memory"),
-// 						},
-// 						NodeType: &models.ElasticsearchNodeType{
-// 							Data:   ec.Bool(true),
-// 							Ingest: ec.Bool(true),
-// 							Master: ec.Bool(true),
-// 						},
-// 					},
-// 					{
-// 						ID:                      "coordinating",
-// 						ZoneCount:               2,
-// 						InstanceConfigurationID: "aws.coordinating.m5",
-// 						Size: &models.TopologySize{
-// 							Value: ec.Int32(0), Resource: ec.String("memory"),
-// 						},
-// 					},
-// 				},
-// 			}},
-// 			want: []interface{}{map[string]interface{}{
-// 				"config":                    func() []interface{} { return nil }(),
-// 				"id":                        "hot_content",
-// 				"instance_configuration_id": "aws.data.highio.i3",
-// 				"size":                      "4g",
-// 				"size_resource":             "memory",
-// 				"zone_count":                int32(1),
-// 				"node_type_data":            "true",
-// 				"node_type_ingest":          "true",
-// 				"node_type_master":          "true",
-// 			}},
-// 		},
-// 		{
-// 			name: "includes unsized autoscaling topologies",
-// 			args: args{plan: &models.ElasticsearchClusterPlan{
-// 				AutoscalingEnabled: ec.Bool(true),
-// 				ClusterTopology: []*models.ElasticsearchClusterTopologyElement{
-// 					{
-// 						ID:                      "hot_content",
-// 						ZoneCount:               1,
-// 						InstanceConfigurationID: "aws.data.highio.i3",
-// 						Size: &models.TopologySize{
-// 							Value: ec.Int32(4096), Resource: ec.String("memory"),
-// 						},
-// 						NodeType: &models.ElasticsearchNodeType{
-// 							Data:   ec.Bool(true),
-// 							Ingest: ec.Bool(true),
-// 							Master: ec.Bool(true),
-// 						},
-// 					},
-// 					{
-// 						ID:                      "ml",
-// 						ZoneCount:               1,
-// 						InstanceConfigurationID: "aws.ml.m5",
-// 						Size: &models.TopologySize{
-// 							Value: ec.Int32(0), Resource: ec.String("memory"),
-// 						},
-// 						AutoscalingMax: &models.TopologySize{
-// 							Value: ec.Int32(8192), Resource: ec.String("memory"),
-// 						},
-// 						AutoscalingMin: &models.TopologySize{
-// 							Value: ec.Int32(0), Resource: ec.String("memory"),
-// 						},
-// 					},
-// 				},
-// 			}},
-// 			want: []interface{}{
-// 				map[string]interface{}{
-// 					"config":                    func() []interface{} { return nil }(),
-// 					"id":                        "hot_content",
-// 					"instance_configuration_id": "aws.data.highio.i3",
-// 					"size":                      "4g",
-// 					"size_resource":             "memory",
-// 					"zone_count":                int32(1),
-// 					"node_type_data":            "true",
-// 					"node_type_ingest":          "true",
-// 					"node_type_master":          "true",
-// 				},
-// 				map[string]interface{}{
-// 					"config":                    func() []interface{} { return nil }(),
-// 					"id":                        "ml",
-// 					"instance_configuration_id": "aws.ml.m5",
-// 					"size":                      "0g",
-// 					"size_resource":             "memory",
-// 					"zone_count":                int32(1),
-// 					"autoscaling": []interface{}{
-// 						map[string]interface{}{
-// 							"max_size":          "8g",
-// 							"max_size_resource": "memory",
-// 							"min_size":          "0g",
-// 							"min_size_resource": "memory",
-// 						},
-// 					},
-// 				},
-// 			},
-// 		},
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			got, err := flattenEsTopology(tt.args.plan)
-// 			if err != nil && !assert.EqualError(t, err, tt.err) {
-// 				t.Error(err)
-// 			}
-// 			assert.Equal(t, tt.want, got)
-// 		})
-// 	}
-// }
+func Test_readElasticsearchTopology(t *testing.T) {
+	type args struct {
+		plan *models.ElasticsearchClusterPlan
+	}
+	tests := []struct {
+		name string
+		args args
+		want ElasticsearchTopologies
+		err  string
+	}{
+		{
+			name: "no zombie topologies",
+			args: args{plan: &models.ElasticsearchClusterPlan{
+				ClusterTopology: []*models.ElasticsearchClusterTopologyElement{
+					{
+						ID:                      "hot_content",
+						ZoneCount:               1,
+						InstanceConfigurationID: "aws.data.highio.i3",
+						Size: &models.TopologySize{
+							Value: ec.Int32(4096), Resource: ec.String("memory"),
+						},
+						NodeType: &models.ElasticsearchNodeType{
+							Data:   ec.Bool(true),
+							Ingest: ec.Bool(true),
+							Master: ec.Bool(true),
+						},
+					},
+					{
+						ID:                      "coordinating",
+						ZoneCount:               2,
+						InstanceConfigurationID: "aws.coordinating.m5",
+						Size: &models.TopologySize{
+							Value: ec.Int32(0), Resource: ec.String("memory"),
+						},
+					},
+				},
+			}},
+			want: ElasticsearchTopologies{
+				{
+					Config:                  nil,
+					Id:                      "hot_content",
+					InstanceConfigurationId: ec.String("aws.data.highio.i3"),
+					Size:                    ec.String("4g"),
+					SizeResource:            ec.String("memory"),
+					ZoneCount:               1,
+					NodeTypeData:            ec.String("true"),
+					NodeTypeIngest:          ec.String("true"),
+					NodeTypeMaster:          ec.String("true"),
+				},
+			},
+		},
+		{
+			name: "includes unsized autoscaling topologies",
+			args: args{plan: &models.ElasticsearchClusterPlan{
+				AutoscalingEnabled: ec.Bool(true),
+				ClusterTopology: []*models.ElasticsearchClusterTopologyElement{
+					{
+						ID:                      "hot_content",
+						ZoneCount:               1,
+						InstanceConfigurationID: "aws.data.highio.i3",
+						Size: &models.TopologySize{
+							Value: ec.Int32(4096), Resource: ec.String("memory"),
+						},
+						NodeType: &models.ElasticsearchNodeType{
+							Data:   ec.Bool(true),
+							Ingest: ec.Bool(true),
+							Master: ec.Bool(true),
+						},
+					},
+					{
+						ID:                      "ml",
+						ZoneCount:               1,
+						InstanceConfigurationID: "aws.ml.m5",
+						Size: &models.TopologySize{
+							Value: ec.Int32(0), Resource: ec.String("memory"),
+						},
+						AutoscalingMax: &models.TopologySize{
+							Value: ec.Int32(8192), Resource: ec.String("memory"),
+						},
+						AutoscalingMin: &models.TopologySize{
+							Value: ec.Int32(0), Resource: ec.String("memory"),
+						},
+					},
+				},
+			}},
+			want: ElasticsearchTopologies{
+				{
+					Config:                  nil,
+					Id:                      "hot_content",
+					InstanceConfigurationId: ec.String("aws.data.highio.i3"),
+					Size:                    ec.String("4g"),
+					SizeResource:            ec.String("memory"),
+					ZoneCount:               1,
+					NodeTypeData:            ec.String("true"),
+					NodeTypeIngest:          ec.String("true"),
+					NodeTypeMaster:          ec.String("true"),
+				},
+				{
+					Config:                  nil,
+					Id:                      "ml",
+					InstanceConfigurationId: ec.String("aws.ml.m5"),
+					Size:                    ec.String("0g"),
+					SizeResource:            ec.String("memory"),
+					ZoneCount:               1,
+					Autoscaling: ElasticsearchTopologyAutoscalings{
+						{
+							MaxSize:         ec.String("8g"),
+							MaxSizeResource: ec.String("memory"),
+							MinSize:         ec.String("0g"),
+							MinSizeResource: ec.String("memory"),
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := readElasticsearchTopologies(tt.args.plan)
+			if err != nil && !assert.EqualError(t, err, tt.err) {
+				t.Error(err)
+			}
+			assert.Equal(t, tt.want, got)
 
-// func Test_flattenEsConfig(t *testing.T) {
-// 	type args struct {
-// 		cfg *models.ElasticsearchConfiguration
-// 	}
-// 	tests := []struct {
-// 		name string
-// 		args args
-// 		want []interface{}
-// 	}{
-// 		{
-// 			name: "flattens plugins allowlist",
-// 			args: args{cfg: &models.ElasticsearchConfiguration{
-// 				EnabledBuiltInPlugins: []string{"some-allowed-plugin"},
-// 			}},
-// 			want: []interface{}{map[string]interface{}{
-// 				"plugins": []interface{}{"some-allowed-plugin"},
-// 			}},
-// 		},
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			got := flattenEsConfig(tt.args.cfg)
-// 			for _, g := range got {
-// 				var rawVal []interface{}
-// 				m := g.(map[string]interface{})
-// 				if v, ok := m["plugins"]; ok {
-// 					rawVal = v.(*schema.Set).List()
-// 				}
-// 				m["plugins"] = rawVal
-// 			}
-// 			assert.Equal(t, tt.want, got)
-// 		})
-// 	}
-// }
+			var topologiesTF types.List
+			diags := tfsdk.ValueFrom(context.Background(), got, elasticsearchTopology().FrameworkType(), &topologiesTF)
+			assert.Nil(t, diags)
+		})
+	}
+}
+
+func Test_readElasticsearchConfig(t *testing.T) {
+	type args struct {
+		cfg *models.ElasticsearchConfiguration
+	}
+	tests := []struct {
+		name string
+		args args
+		want ElasticsearchConfigs
+	}{
+		{
+			name: "read plugins allowlist",
+			args: args{cfg: &models.ElasticsearchConfiguration{
+				EnabledBuiltInPlugins: []string{"some-allowed-plugin"},
+			}},
+			want: ElasticsearchConfigs{
+				{
+					Plugins: []string{"some-allowed-plugin"},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := readElasticsearchConfigs(tt.args.cfg)
+			assert.Nil(t, err)
+			assert.Equal(t, tt.want, got)
+
+			var configsTF types.List
+			diags := tfsdk.ValueFrom(context.Background(), got, elasticsearchConfig().Type(), &configsTF)
+			assert.Nil(t, diags)
+		})
+	}
+}

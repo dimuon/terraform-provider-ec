@@ -89,7 +89,7 @@ func readElasticsearches(in []*models.ElasticsearchResourceInfo, remotes *models
 	return ess, nil
 }
 
-func elasticsearchPayload(ctx context.Context, template *models.DeploymentTemplateInfoV2, dtID, version string, useNodeRoles bool, ess types.List, skipTopologies bool) ([]*models.ElasticsearchPayload, diag.Diagnostics) {
+func elasticsearchPayload(ctx context.Context, ess types.List, template *models.DeploymentTemplateInfoV2, dtID, version string, useNodeRoles bool, skipTopologies bool) ([]*models.ElasticsearchPayload, diag.Diagnostics) {
 	if len(ess.Elems) == 0 {
 		return nil, nil
 	}
@@ -135,7 +135,7 @@ func readElasticsearch(in *models.ElasticsearchResourceInfo, remotes *models.Rem
 	plan := in.Info.PlanInfo.Current.Plan
 	var err error
 
-	topologies, err := readElasticsearchTopologies(plan.ClusterTopology, plan.AutoscalingEnabled != nil && *plan.AutoscalingEnabled)
+	topologies, err := readElasticsearchTopologies(plan)
 	if err != nil {
 		return nil, err
 	}
@@ -215,8 +215,7 @@ func (es *ElasticsearchTF) Payload(ctx context.Context, res *models.Elasticsearc
 		return nil, diags
 	}
 
-	res.Plan.Transient, diags = ElasticsearchSnapshotSourcesTF(es.SnapshotSource).Payload(ctx)
-	if diags.HasError() {
+	if diags := elasticsearchSnapshotSourcePayload(ctx, es.SnapshotSource, res.Plan); diags.HasError() {
 		return nil, diags
 	}
 
@@ -249,22 +248,20 @@ func (es *ElasticsearchTF) Payload(ctx context.Context, res *models.Elasticsearc
 		res.Settings = settings
 	}
 
-	res.Plan.Transient, diags = ElasticsearchStrategiesTF(es.Strategy).Payload(ctx, res.Plan.Transient)
-
-	if diags.HasError() {
+	if diags := elasticsearchStrategyPayload(ctx, es.Strategy, res.Plan); diags.HasError() {
 		return nil, diags
 	}
 
 	return res, nil
 }
 
-func enrichElasticsearchTemplate(tpl *models.ElasticsearchPayload, dt, version string, useNodeRoles bool) *models.ElasticsearchPayload {
+func enrichElasticsearchTemplate(tpl *models.ElasticsearchPayload, templateId, version string, useNodeRoles bool) *models.ElasticsearchPayload {
 	if tpl.Plan.DeploymentTemplate == nil {
 		tpl.Plan.DeploymentTemplate = &models.DeploymentTemplateReference{}
 	}
 
 	if tpl.Plan.DeploymentTemplate.ID == nil || *tpl.Plan.DeploymentTemplate.ID == "" {
-		tpl.Plan.DeploymentTemplate.ID = ec.String(dt)
+		tpl.Plan.DeploymentTemplate.ID = ec.String(templateId)
 	}
 
 	if tpl.Plan.Elasticsearch.Version == "" {

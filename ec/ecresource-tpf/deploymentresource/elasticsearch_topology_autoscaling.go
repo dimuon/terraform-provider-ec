@@ -40,8 +40,6 @@ type ElasticsearchTopologyAutoscalingTF struct {
 	PolicyOverrideJson types.String `tfsdk:"policy_override_json"`
 }
 
-type ElasticsearchTopologyAutoscalingsTF types.List
-
 type ElasticsearchTopologyAutoscaling struct {
 	MaxSizeResource    *string `tfsdk:"max_size_resource"`
 	MaxSize            *string `tfsdk:"max_size"`
@@ -65,7 +63,7 @@ func readElasticsearchTopologyAutoscalings(in *models.ElasticsearchClusterTopolo
 	return ElasticsearchTopologyAutoscalings{*autoscaling}, nil
 }
 
-func (autos ElasticsearchTopologyAutoscalingsTF) Payload(ctx context.Context, topologyID string, elem *models.ElasticsearchClusterTopologyElement) diag.Diagnostics {
+func elasticsearchTopologyAutoscalingPayload(ctx context.Context, autos types.List, topologyID string, elem *models.ElasticsearchClusterTopologyElement) diag.Diagnostics {
 	var diag diag.Diagnostics
 
 	if len(autos.Elems) == 0 {

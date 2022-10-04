@@ -67,15 +67,15 @@ type ElasticsearchTopology struct {
 
 type ElasticsearchTopologies []ElasticsearchTopology
 
-func readElasticsearchTopologies(in []*models.ElasticsearchClusterTopologyElement, autoscaling bool) (ElasticsearchTopologies, error) {
-	if len(in) == 0 {
+func readElasticsearchTopologies(in *models.ElasticsearchClusterPlan) (ElasticsearchTopologies, error) {
+	if len(in.ClusterTopology) == 0 {
 		return nil, nil
 	}
 
-	tops := make([]ElasticsearchTopology, 0, len(in))
+	tops := make([]ElasticsearchTopology, 0, len(in.ClusterTopology))
 
-	for _, model := range in {
-		if !isPotentiallySizedTopology(model, autoscaling) {
+	for _, model := range in.ClusterTopology {
+		if !isPotentiallySizedTopology(model, in.AutoscalingEnabled != nil && *in.AutoscalingEnabled) {
 			continue
 		}
 
@@ -117,7 +117,7 @@ func (tops ElasticsearchTopologiesTF) Payload(ctx context.Context, planTopologie
 
 		topologyElem, err := matchEsTopologyID(topologyID, planTopologies)
 		if err != nil {
-			diags.AddError("topology matching error", fmt.Errorf("id %s: %w", topologyID, err).Error())
+			diags.AddError("topology matching error", err.Error())
 			return nil, diags
 		}
 		if size != nil {
@@ -141,7 +141,10 @@ func (tops ElasticsearchTopologiesTF) Payload(ctx context.Context, planTopologie
 			topologyElem.NodeType = nil
 		}
 
-		ElasticsearchTopologyAutoscalingsTF(topology.Autoscaling).Payload(ctx, topologyID, topologyElem)
+		diags = elasticsearchTopologyAutoscalingPayload(ctx, topology.Autoscaling, topologyID, topologyElem)
+		if diags.HasError() {
+			return nil, diags
+		}
 
 		topologyElem.Elasticsearch, diags = ElasticsearchConfigsTF(topology.Config).Payload(ctx, topologyElem.Elasticsearch)
 		if diags.HasError() {

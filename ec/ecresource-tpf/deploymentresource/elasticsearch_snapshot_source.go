@@ -31,8 +31,6 @@ type ElasticsearchSnapshotSourceTF struct {
 	SnapshotName                 types.String `tfsdk:"snapshot_name"`
 }
 
-type ElasticsearchSnapshotSourcesTF types.List
-
 type ElasticsearchSnapshotSource struct {
 	SourceElasticsearchClusterId string `tfsdk:"source_elasticsearch_cluster_id"`
 	SnapshotName                 string `tfsdk:"snapshot_name"`
@@ -40,29 +38,31 @@ type ElasticsearchSnapshotSource struct {
 
 type ElasticsearchSnapshotSources []ElasticsearchSnapshotSource
 
-func (snapshots ElasticsearchSnapshotSourcesTF) Payload(ctx context.Context) (*models.TransientElasticsearchPlanConfiguration, diag.Diagnostics) {
+func elasticsearchSnapshotSourcePayload(ctx context.Context, snapshots types.List, payload *models.ElasticsearchClusterPlan) diag.Diagnostics {
 	if len(snapshots.Elems) == 0 {
-		return nil, nil
+		return nil
 	}
 
-	payload := models.TransientElasticsearchPlanConfiguration{
-		RestoreSnapshot: &models.RestoreSnapshotConfiguration{},
+	if payload.Transient == nil {
+		payload.Transient = &models.TransientElasticsearchPlanConfiguration{
+			RestoreSnapshot: &models.RestoreSnapshotConfiguration{},
+		}
 	}
 
 	for _, elem := range snapshots.Elems {
 		var snapshot ElasticsearchSnapshotSourceTF
 		if diags := tfsdk.ValueAs(ctx, elem, &snapshot); diags.HasError() {
-			return nil, diags
+			return diags
 		}
 
 		if !snapshot.SourceElasticsearchClusterId.IsNull() {
-			payload.RestoreSnapshot.SourceClusterID = snapshot.SourceElasticsearchClusterId.Value
+			payload.Transient.RestoreSnapshot.SourceClusterID = snapshot.SourceElasticsearchClusterId.Value
 		}
 
 		if !snapshot.SnapshotName.IsNull() {
-			payload.RestoreSnapshot.SnapshotName = &snapshot.SnapshotName.Value
+			payload.Transient.RestoreSnapshot.SnapshotName = &snapshot.SnapshotName.Value
 		}
 	}
 
-	return &payload, nil
+	return nil
 }
