@@ -89,7 +89,7 @@ func (r Resource) Create(ctx context.Context, req resource.CreateRequest, resp *
 		return
 	}
 
-	remoteClustersPayload, diags := ElasticsearchRemoteClustersTF(es.RemoteCluster).Payload(ctx)
+	remoteClustersPayload, diags := elasticsearchRemoteClustersPayload(ctx, es.RemoteCluster)
 	if diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return

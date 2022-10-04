@@ -40,8 +40,6 @@ type ElasticsearchRemoteCluster struct {
 	SkipUnavailable *bool   `tfsdk:"skip_unavailable"`
 }
 
-type ElasticsearchRemoteClustersTF types.Set
-
 type ElasticsearchRemoteClusters []ElasticsearchRemoteCluster
 
 func readElasticsearchRemoteClusters(in []*models.RemoteResourceRef) (ElasticsearchRemoteClusters, error) {
@@ -62,7 +60,7 @@ func readElasticsearchRemoteClusters(in []*models.RemoteResourceRef) (Elasticsea
 	return clusters, nil
 }
 
-func (clusters ElasticsearchRemoteClustersTF) Payload(ctx context.Context) (*models.RemoteResources, diag.Diagnostics) {
+func elasticsearchRemoteClustersPayload(ctx context.Context, clusters types.Set) (*models.RemoteResources, diag.Diagnostics) {
 	payloads := models.RemoteResources{Resources: []*models.RemoteResourceRef{}}
 
 	for _, elem := range clusters.Elems {
