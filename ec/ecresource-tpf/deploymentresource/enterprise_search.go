@@ -109,11 +109,8 @@ func (es *EnterpriseSearchTF) Payload(payload models.EnterpriseSearchPayload) (*
 }
 
 func readEnterpriseSearches(in []*models.EnterpriseSearchResourceInfo) (EnterpriseSearches, error) {
-	if len(in) == 0 {
-		return nil, nil
-	}
-
 	esss := make(EnterpriseSearches, 0, len(in))
+
 	for _, model := range in {
 		if util.IsCurrentEssPlanEmpty(model) || isEssResourceStopped(model) {
 			continue
