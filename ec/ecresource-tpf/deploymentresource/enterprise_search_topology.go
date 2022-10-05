@@ -186,7 +186,7 @@ func matchEssTopology(id string, topologies []*models.EnterpriseSearchTopologyEl
 		}
 	}
 	return nil, fmt.Errorf(
-		`enterprise_search topology: invalid instance_configuration_id: "%s" doesn't match any of the deployment template instance configurations`,
+		`invalid instance_configuration_id: "%s" doesn't match any of the deployment template instance configurations`,
 		id,
 	)
 }

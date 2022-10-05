@@ -140,8 +140,8 @@ func enterpriseSearchesPayload(ctx context.Context, template *models.DeploymentT
 
 	if templatePayload == nil {
 		diags.AddError(
-			"EnterpriseSearch payload create error",
-			"enterprise_search specified but deployment template is not configured for it. Use a different template if you wish to add enterprise_search",
+			"enterprise_search payload create error",
+			"deployment template is not configured for Enterprise Search. Use a different template if you wish to add enterprise_search",
 		)
 		return nil, diags
 	}
@@ -154,7 +154,7 @@ func enterpriseSearchesPayload(ctx context.Context, template *models.DeploymentT
 		}
 		payload, err := es.Payload(*templatePayload)
 		if err != nil {
-			diags.AddError("EnterpriseSearch payload create error", err.Error())
+			diags.AddError("enterprise_search payload create error", err.Error())
 			return nil, diags
 		}
 		payloads = append(payloads, payload)
@@ -166,7 +166,7 @@ func enterpriseSearchesPayload(ctx context.Context, template *models.DeploymentT
 // essResource returns the EnterpriseSearchPayload from a deployment
 // template or an empty version of the payload.
 func essResource(template *models.DeploymentTemplateInfoV2) *models.EnterpriseSearchPayload {
-	if len(template.DeploymentTemplate.Resources.EnterpriseSearch) == 0 {
+	if template == nil || len(template.DeploymentTemplate.Resources.EnterpriseSearch) == 0 {
 		return nil
 	}
 	return template.DeploymentTemplate.Resources.EnterpriseSearch[0]
