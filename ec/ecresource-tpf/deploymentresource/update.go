@@ -178,6 +178,10 @@ func handleRemoteClusters(ctx context.Context, client *api.API, plan, state Depl
 		return diags
 	}
 
+	if len(ess[0].RemoteCluster.Elems) == 0 {
+		return nil
+	}
+
 	remoteRes, diags := elasticsearchRemoteClustersPayload(ctx, ess[0].RemoteCluster)
 	if diags.HasError() {
 		return diags

@@ -29,6 +29,7 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/api/mock"
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
+	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/testutil"
 )
 
 func Test_enterpriseSearchPayload(t *testing.T) {
@@ -48,7 +49,7 @@ func Test_enterpriseSearchPayload(t *testing.T) {
 		{
 			name: "parses an enterprise_search resource with explicit topology",
 			args: args{
-				template: parseDeploymentTemplate(t, "testdata/template-aws-io-optimized-v2.json"),
+				template: testutil.ParseDeploymentTemplate(t, "testdata/template-aws-io-optimized-v2.json"),
 				ess: EnterpriseSearches{
 					{
 						RefId:                     ec.String("main-enterprise_search"),
@@ -90,7 +91,7 @@ func Test_enterpriseSearchPayload(t *testing.T) {
 		{
 			name: "parses an enterprise_search resource with no topology takes the minimum size",
 			args: args{
-				template: parseDeploymentTemplate(t, "testdata/template-aws-io-optimized-v2.json"),
+				template: testutil.ParseDeploymentTemplate(t, "testdata/template-aws-io-optimized-v2.json"),
 				ess: EnterpriseSearches{
 					{
 						RefId:                     ec.String("main-enterprise_search"),
@@ -125,7 +126,7 @@ func Test_enterpriseSearchPayload(t *testing.T) {
 		{
 			name: "parses an enterprise_search resource with topology but no instance_configuration_id",
 			args: args{
-				template: parseDeploymentTemplate(t, "testdata/template-aws-io-optimized-v2.json"),
+				template: testutil.ParseDeploymentTemplate(t, "testdata/template-aws-io-optimized-v2.json"),
 				ess: EnterpriseSearches{
 					{
 						RefId:                     ec.String("main-enterprise_search"),
@@ -165,7 +166,7 @@ func Test_enterpriseSearchPayload(t *testing.T) {
 		{
 			name: "parses an enterprise_search resource with topology but instance_configuration_id",
 			args: args{
-				template: parseDeploymentTemplate(t, "testdata/template-aws-io-optimized-v2.json"),
+				template: testutil.ParseDeploymentTemplate(t, "testdata/template-aws-io-optimized-v2.json"),
 				ess: EnterpriseSearches{
 					{
 						RefId:                     ec.String("main-enterprise_search"),
@@ -205,7 +206,7 @@ func Test_enterpriseSearchPayload(t *testing.T) {
 		{
 			name: "parses an enterprise_search resource with topology and zone_count",
 			args: args{
-				template: parseDeploymentTemplate(t, "testdata/template-aws-io-optimized-v2.json"),
+				template: testutil.ParseDeploymentTemplate(t, "testdata/template-aws-io-optimized-v2.json"),
 				ess: EnterpriseSearches{
 					{
 						RefId:                     ec.String("main-enterprise_search"),
@@ -245,7 +246,7 @@ func Test_enterpriseSearchPayload(t *testing.T) {
 		{
 			name: "parses an enterprise_search resource with explicit topology and config",
 			args: args{
-				template: parseDeploymentTemplate(t, "testdata/template-aws-io-optimized-v2.json"),
+				template: testutil.ParseDeploymentTemplate(t, "testdata/template-aws-io-optimized-v2.json"),
 				ess: EnterpriseSearches{
 					{
 						RefId:                     ec.String("secondary-enterprise_search"),
@@ -307,7 +308,7 @@ func Test_enterpriseSearchPayload(t *testing.T) {
 		{
 			name: "parses an enterprise_search resource with invalid instance_configuration_id",
 			args: args{
-				template: parseDeploymentTemplate(t, "testdata/template-aws-io-optimized-v2.json"),
+				template: testutil.ParseDeploymentTemplate(t, "testdata/template-aws-io-optimized-v2.json"),
 				ess: EnterpriseSearches{
 					{
 						RefId:                     ec.String("main-enterprise_search"),

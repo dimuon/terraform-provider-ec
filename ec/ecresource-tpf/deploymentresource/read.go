@@ -64,9 +64,9 @@ func (r Resource) Read(ctx context.Context, req resource.ReadRequest, resp *reso
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r Resource) read(ctx context.Context, id string, state DeploymentTF, depRes []*models.DeploymentResource) (*DeploymentTF, diag.Diagnostics) {
+func (r Resource) read(ctx context.Context, id string, current DeploymentTF, deploymentResources []*models.DeploymentResource) (*DeploymentTF, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	res, err := deploymentapi.Get(deploymentapi.GetParams{
+	response, err := deploymentapi.Get(deploymentapi.GetParams{
 		API: r.client, DeploymentID: id,
 		QueryParams: deputil.QueryParams{
 			ShowSettings:     true,
@@ -84,18 +84,18 @@ func (r Resource) read(ctx context.Context, id string, state DeploymentTF, depRe
 		return nil, diags
 	}
 
-	if !hasRunningResources(res) {
+	if !hasRunningResources(response) {
 		return nil, nil
 	}
 
-	var es ElasticsearchTF
-	if diags := tfsdk.ValueAs(ctx, state.Elasticsearch.Elems[0], &es); diags.HasError() {
+	var elasticsearch ElasticsearchTF
+	if diags := tfsdk.ValueAs(ctx, current.Elasticsearch.Elems[0], &elasticsearch); diags.HasError() {
 		return nil, diags
 	}
 
 	remotes, err := esremoteclustersapi.Get(esremoteclustersapi.GetParams{
 		API: r.client, DeploymentID: id,
-		RefID: es.RefId.Value,
+		RefID: elasticsearch.RefId.Value,
 	})
 	if err != nil {
 		diags.AddError("Remote clusters read error", err.Error())
@@ -105,23 +105,25 @@ func (r Resource) read(ctx context.Context, id string, state DeploymentTF, depRe
 		remotes = &models.RemoteResources{}
 	}
 
-	dep, err := readDeployment(res, remotes, depRes)
+	deployment, err := readDeployment(response, remotes, deploymentResources)
 	if err != nil {
 		diags.AddError("Deployment read error", err.Error())
 		return nil, diags
 	}
 
-	var deployment DeploymentTF
+	deployment.RequestId = current.RequestId.Value
+
+	var deploymentTF DeploymentTF
 	schema, diags := r.GetSchema(ctx)
 	if diags.HasError() {
 		return nil, diags
 	}
 
-	if diags := tfsdk.ValueFrom(ctx, dep, schema.Type(), &deployment); diags.HasError() {
+	if diags := tfsdk.ValueFrom(ctx, deployment, schema.Type(), &deploymentTF); diags.HasError() {
 		return nil, diags
 	}
 
-	return &deployment, diags
+	return &deploymentTF, diags
 }
 
 func deploymentNotFound(err error) bool {

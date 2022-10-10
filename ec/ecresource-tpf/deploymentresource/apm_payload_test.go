@@ -29,12 +29,13 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/api/mock"
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
+	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/testutil"
 )
 
 func Test_writeApm(t *testing.T) {
 	tplPath := "testdata/template-aws-io-optimized-v2.json"
 	tpl := func() *models.DeploymentTemplateInfoV2 {
-		return parseDeploymentTemplate(t, tplPath)
+		return testutil.ParseDeploymentTemplate(t, tplPath)
 	}
 	type args struct {
 		apms Apms

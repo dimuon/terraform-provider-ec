@@ -22,10 +22,8 @@ import (
 	"fmt"
 
 	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi"
-	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi/esremoteclustersapi"
 	"github.com/elastic/cloud-sdk-go/pkg/multierror"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
@@ -54,11 +52,11 @@ func (r Resource) Create(ctx context.Context, req resource.CreateRequest, resp *
 		return
 	}
 
-	reqID := deploymentapi.RequestID(plan.RequestId.Value)
+	requestId := deploymentapi.RequestID(plan.RequestId.Value)
 
 	res, err := deploymentapi.Create(deploymentapi.CreateParams{
 		API:       r.client,
-		RequestID: reqID,
+		RequestID: requestId,
 		Request:   request,
 		Overrides: &deploymentapi.PayloadOverrides{
 			Name:    plan.Name.Value,
@@ -69,40 +67,22 @@ func (r Resource) Create(ctx context.Context, req resource.CreateRequest, resp *
 
 	if err != nil {
 		merr := multierror.NewPrefixed("", err)
-		merr.Append(newCreationError(reqID))
+		merr.Append(newCreationError(requestId))
 		resp.Diagnostics.AddError("failed creating deployment", merr.Error())
 		return
 	}
 
 	if err := WaitForPlanCompletion(r.client, *res.ID); err != nil {
 		merr := multierror.NewPrefixed("", err)
-		merr.Append(newCreationError(reqID))
+		merr.Append(newCreationError(requestId))
 		resp.Diagnostics.AddError("failed tracking create progress", merr.Error())
 		return
 	}
 
 	tflog.Trace(ctx, "created a resource")
 
-	var es ElasticsearchTF
-	if diags := tfsdk.ValueAs(ctx, plan.Elasticsearch.Elems[0], &es); diags.HasError() {
-		resp.Diagnostics.Append(diags...)
-		return
-	}
-
-	remoteClustersPayload, diags := elasticsearchRemoteClustersPayload(ctx, es.RemoteCluster)
-	if diags.HasError() {
-		resp.Diagnostics.Append(diags...)
-		return
-	}
-
-	if err := esremoteclustersapi.Update(esremoteclustersapi.UpdateParams{
-		API:             r.client,
-		DeploymentID:    *res.ID,
-		RefID:           es.RefId.Value,
-		RemoteResources: remoteClustersPayload,
-	}); err != nil {
-		resp.Diagnostics.AddError("failed updating remote cluster", err.Error())
-	}
+	diags = handleRemoteClusters(ctx, r.client, plan, DeploymentTF{})
+	resp.Diagnostics.Append(diags...)
 
 	deployment, diags := r.read(ctx, *res.ID, plan, res.Resources)
 

@@ -82,7 +82,7 @@ func missingField(field string) error {
 	return fmt.Errorf("server response doesn't contain deployment '%s'", field)
 }
 
-func readDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteResources, depRes []*models.DeploymentResource) (*Deployment, error) {
+func readDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteResources, deploymentResources []*models.DeploymentResource) (*Deployment, error) {
 	var dep Deployment
 
 	if res.ID == nil {
@@ -157,7 +157,7 @@ func readDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteRes
 		return nil, err
 	}
 
-	if err := dep.parseCredentials(depRes); err != nil {
+	if err := dep.parseCredentials(deploymentResources); err != nil {
 		return nil, err
 	}
 
