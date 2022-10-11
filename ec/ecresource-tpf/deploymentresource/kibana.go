@@ -36,7 +36,7 @@ type KibanaTF struct {
 	HttpEndpoint              types.String `tfsdk:"http_endpoint"`
 	HttpsEndpoint             types.String `tfsdk:"https_endpoint"`
 	Topology                  types.List   `tfsdk:"topology"`
-	Config                    types.List   `tfsdk:"config"`
+	Config                    types.Object `tfsdk:"config"`
 }
 
 type Kibana struct {
@@ -47,10 +47,8 @@ type Kibana struct {
 	HttpEndpoint              *string       `tfsdk:"http_endpoint"`
 	HttpsEndpoint             *string       `tfsdk:"https_endpoint"`
 	Topology                  Topologies    `tfsdk:"topology"`
-	Config                    KibanaConfigs `tfsdk:"config"`
+	Config                    *KibanaConfig `tfsdk:"config"`
 }
-
-type Kibanas []Kibana
 
 func readKibana(in *models.KibanaResourceInfo) (*Kibana, error) {
 	var kibana Kibana
@@ -72,7 +70,7 @@ func readKibana(in *models.KibanaResourceInfo) (*Kibana, error) {
 
 	kibana.HttpEndpoint, kibana.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
 
-	cfg, err := readKibanaConfigs(plan.Kibana)
+	cfg, err := readKibanaConfig(plan.Kibana)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +92,7 @@ func (kibana KibanaTF) Payload(ctx context.Context, payload models.KibanaPayload
 		payload.Region = &kibana.Region.Value
 	}
 
-	if diags := kibanaConfigPayload(ctx, payload.Plan.Kibana, &kibana.Config); diags.HasError() {
+	if diags := kibanaConfigPayload(ctx, kibana.Config, payload.Plan.Kibana); diags.HasError() {
 		return nil, diags
 	}
 
@@ -107,12 +105,11 @@ func (kibana KibanaTF) Payload(ctx context.Context, payload models.KibanaPayload
 	return &payload, nil
 }
 
-func readKibanas(in []*models.KibanaResourceInfo) (Kibanas, error) {
+func readKibanas(in []*models.KibanaResourceInfo) (*Kibana, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}
 
-	kibanas := make(Kibanas, 0, len(in))
 	for _, model := range in {
 		if util.IsCurrentKibanaPlanEmpty(model) || isKibanaResourceStopped(model) {
 			continue
@@ -122,13 +119,15 @@ func readKibanas(in []*models.KibanaResourceInfo) (Kibanas, error) {
 		if err != nil {
 			return nil, err
 		}
-		kibanas = append(kibanas, *kibana)
+
+		return kibana, nil
 	}
-	return kibanas, nil
+
+	return nil, nil
 }
 
-func kibanaPayload(ctx context.Context, template *models.DeploymentTemplateInfoV2, kibanas types.List) ([]*models.KibanaPayload, diag.Diagnostics) {
-	if len(kibanas.Elems) == 0 {
+func kibanaPayload(ctx context.Context, kibana types.Object, template *models.DeploymentTemplateInfoV2) (*models.KibanaPayload, diag.Diagnostics) {
+	if kibana.IsNull() {
 		return nil, nil
 	}
 
@@ -140,22 +139,18 @@ func kibanaPayload(ctx context.Context, template *models.DeploymentTemplateInfoV
 		diags.AddError("Kibana payload error", "kibana specified but deployment template is not configured for it. Use a different template if you wish to add kibana")
 	}
 
-	payloads := make([]*models.KibanaPayload, 0, len(kibanas.Elems))
+	var kibanaTF KibanaTF
 
-	for _, elem := range kibanas.Elems {
-		var kibana KibanaTF
-		if tfsdk.ValueAs(ctx, elem, &kibana); diags.HasError() {
-			return nil, diags
-		}
-
-		payload, diags := kibana.Payload(ctx, *templatePlayload)
-		if diags.HasError() {
-			return nil, diags
-		}
-		payloads = append(payloads, payload)
+	if tfsdk.ValueAs(ctx, kibana, &kibanaTF); diags.HasError() {
+		return nil, diags
 	}
 
-	return payloads, nil
+	payload, diags := kibanaTF.Payload(ctx, *templatePlayload)
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	return payload, nil
 }
 
 // kibanaResource returns the KibanaPayload from a deployment

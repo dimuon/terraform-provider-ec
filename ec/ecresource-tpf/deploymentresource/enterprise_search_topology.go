@@ -18,12 +18,15 @@
 package deploymentresource
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -45,8 +48,6 @@ type EnterpriseSearchTopologyTF struct {
 	NodeTypeConnector       types.Bool   `tfsdk:"node_type_connector"`
 	NodeTypeWorker          types.Bool   `tfsdk:"node_type_worker"`
 }
-
-type EnterpriseSearchTopologiesTF []*EnterpriseSearchTopologyTF
 
 type EnterpriseSearchTopology struct {
 	InstanceConfigurationId *string `tfsdk:"instance_configuration_id"`
@@ -111,16 +112,27 @@ func readEnterpriseSearchTopologies(in []*models.EnterpriseSearchTopologyElement
 	return topologies, nil
 }
 
-func (tops EnterpriseSearchTopologiesTF) Payload(planModels []*models.EnterpriseSearchTopologyElement) ([]*models.EnterpriseSearchTopologyElement, error) {
-	if len(tops) == 0 {
+func enterpriseSearchTopologiesPayload(ctx context.Context, tops types.List, planModels []*models.EnterpriseSearchTopologyElement) ([]*models.EnterpriseSearchTopologyElement, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	if len(tops.Elems) == 0 {
 		return defaultEssTopology(planModels), nil
 	}
 
 	planModels = defaultEssTopology(planModels)
 
-	res := make([]*models.EnterpriseSearchTopologyElement, 0, len(tops))
+	res := make([]*models.EnterpriseSearchTopologyElement, 0, len(tops.Elems))
 
-	for i, topology := range tops {
+	for i, elem := range tops.Elems {
+		var topology EnterpriseSearchTopologyTF
+
+		ds := tfsdk.ValueAs(ctx, elem, &topology)
+		diags.Append(ds...)
+
+		if ds.HasError() {
+			continue
+		}
+
 		icID := topology.InstanceConfigurationId.Value
 
 		// When a topology element is set but no instance_configuration_id
@@ -130,26 +142,26 @@ func (tops EnterpriseSearchTopologiesTF) Payload(planModels []*models.Enterprise
 			icID = planModels[i].InstanceConfigurationID
 		}
 
-		size, err := converters.ParseTopologySize(topology.Size, topology.SizeResource)
-		if err != nil {
-			return nil, err
-		}
-
-		// Since Enterprise Search is not enabled by default in the template,
-		// if the size == nil, it means that the size hasn't been specified in
-		// the definition.
-		if size == nil {
-			size = &models.TopologySize{
-				Resource: ec.String("memory"),
-				Value:    ec.Int32(minimumEnterpriseSearchSize),
-			}
-		}
-
 		elem, err := matchEssTopology(icID, planModels)
 		if err != nil {
-			return nil, err
+			diags.AddError("cannot match enterprise search topology", err.Error())
+			continue
 		}
-		if size != nil {
+
+		size, err := converters.ParseTopologySize(topology.Size, topology.SizeResource)
+		if err != nil {
+			diags.AddError("failed parse enterprise search topology size", err.Error())
+		} else {
+			// Since Enterprise Search is not enabled by default in the template,
+			// if the size == nil, it means that the size hasn't been specified in
+			// the definition.
+			if size == nil {
+				size = &models.TopologySize{
+					Resource: ec.String("memory"),
+					Value:    ec.Int32(minimumEnterpriseSearchSize),
+				}
+			}
+
 			elem.Size = size
 		}
 
@@ -160,7 +172,7 @@ func (tops EnterpriseSearchTopologiesTF) Payload(planModels []*models.Enterprise
 		res = append(res, elem)
 	}
 
-	return res, nil
+	return res, diags
 }
 
 // defaultApmTopology iterates over all the templated topology elements and

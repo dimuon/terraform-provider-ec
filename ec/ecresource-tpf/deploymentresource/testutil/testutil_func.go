@@ -67,7 +67,7 @@ func OpenDeploymentGet(t *testing.T, name string) *models.DeploymentGetResponse 
 	return &res
 }
 
-func EnrichWithEmptyTopologies(tpl, want *models.ElasticsearchPayload) []*models.ElasticsearchPayload {
+func EnrichWithEmptyTopologies(tpl, want *models.ElasticsearchPayload) *models.ElasticsearchPayload {
 	tpl.DisplayName = want.DisplayName
 	tpl.RefID = want.RefID
 	tpl.Region = want.Region
@@ -84,7 +84,7 @@ func EnrichWithEmptyTopologies(tpl, want *models.ElasticsearchPayload) []*models
 		}
 	}
 
-	return []*models.ElasticsearchPayload{tpl}
+	return tpl
 }
 
 func ReaderToESPayload(t *testing.T, rc io.Reader, nr bool) *models.ElasticsearchPayload {

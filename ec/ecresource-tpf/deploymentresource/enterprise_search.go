@@ -29,17 +29,15 @@ import (
 )
 
 type EnterpriseSearchTF struct {
-	ElasticsearchClusterRefId types.String                 `tfsdk:"elasticsearch_cluster_ref_id"`
-	RefId                     types.String                 `tfsdk:"ref_id"`
-	ResourceId                types.String                 `tfsdk:"resource_id"`
-	Region                    types.String                 `tfsdk:"region"`
-	HttpEndpoint              types.String                 `tfsdk:"http_endpoint"`
-	HttpsEndpoint             types.String                 `tfsdk:"https_endpoint"`
-	Topology                  EnterpriseSearchTopologiesTF `tfsdk:"topology"`
-	Config                    EnterpriseSearchConfigsTF    `tfsdk:"config"`
+	ElasticsearchClusterRefId types.String `tfsdk:"elasticsearch_cluster_ref_id"`
+	RefId                     types.String `tfsdk:"ref_id"`
+	ResourceId                types.String `tfsdk:"resource_id"`
+	Region                    types.String `tfsdk:"region"`
+	HttpEndpoint              types.String `tfsdk:"http_endpoint"`
+	HttpsEndpoint             types.String `tfsdk:"https_endpoint"`
+	Topology                  types.List   `tfsdk:"topology"`
+	Config                    types.Object `tfsdk:"config"`
 }
-
-type EnterpriseSearchesTF types.List
 
 type EnterpriseSearch struct {
 	ElasticsearchClusterRefId *string                    `tfsdk:"elasticsearch_cluster_ref_id"`
@@ -49,10 +47,8 @@ type EnterpriseSearch struct {
 	HttpEndpoint              *string                    `tfsdk:"http_endpoint"`
 	HttpsEndpoint             *string                    `tfsdk:"https_endpoint"`
 	Topology                  EnterpriseSearchTopologies `tfsdk:"topology"`
-	Config                    EnterpriseSearchConfigs    `tfsdk:"config"`
+	Config                    *EnterpriseSearchConfig    `tfsdk:"config"`
 }
-
-type EnterpriseSearches []EnterpriseSearch
 
 func readEnterpriseSearch(in *models.EnterpriseSearchResourceInfo) (*EnterpriseSearch, error) {
 	var ess EnterpriseSearch
@@ -73,7 +69,7 @@ func readEnterpriseSearch(in *models.EnterpriseSearchResourceInfo) (*EnterpriseS
 
 	ess.HttpEndpoint, ess.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
 
-	cfg, err := readEnterpriseSearchConfigs(plan.EnterpriseSearch)
+	cfg, err := readEnterpriseSearchConfig(plan.EnterpriseSearch)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +78,9 @@ func readEnterpriseSearch(in *models.EnterpriseSearchResourceInfo) (*EnterpriseS
 	return &ess, nil
 }
 
-func (es *EnterpriseSearchTF) Payload(payload models.EnterpriseSearchPayload) (*models.EnterpriseSearchPayload, error) {
+func (es *EnterpriseSearchTF) Payload(ctx context.Context, payload models.EnterpriseSearchPayload) (*models.EnterpriseSearchPayload, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
 	if !es.ElasticsearchClusterRefId.IsNull() {
 		payload.ElasticsearchClusterRefID = &es.ElasticsearchClusterRefId.Value
 	}
@@ -95,22 +93,27 @@ func (es *EnterpriseSearchTF) Payload(payload models.EnterpriseSearchPayload) (*
 		payload.Region = &es.Region.Value
 	}
 
-	if err := es.Config.Payload(payload.Plan.EnterpriseSearch); err != nil {
-		return nil, err
+	if !es.Config.IsNull() {
+		var config EnterpriseSearchConfigTF
+
+		ds := tfsdk.ValueAs(ctx, es.Config, &config)
+		diags = append(diags, ds...)
+
+		if !ds.HasError() {
+			diags.Append(config.Payload(ctx, payload.Plan.EnterpriseSearch)...)
+		}
 	}
 
-	topology, err := es.Topology.Payload(payload.Plan.ClusterTopology)
+	topology, err := enterpriseSearchTopologiesPayload(ctx, es.Topology, payload.Plan.ClusterTopology)
 	if err != nil {
 		return nil, err
 	}
 	payload.Plan.ClusterTopology = topology
 
-	return &payload, nil
+	return &payload, diags
 }
 
-func readEnterpriseSearches(in []*models.EnterpriseSearchResourceInfo) (EnterpriseSearches, error) {
-	esss := make(EnterpriseSearches, 0, len(in))
-
+func readEnterpriseSearches(in []*models.EnterpriseSearchResourceInfo) (*EnterpriseSearch, error) {
 	for _, model := range in {
 		if util.IsCurrentEssPlanEmpty(model) || isEssResourceStopped(model) {
 			continue
@@ -120,14 +123,15 @@ func readEnterpriseSearches(in []*models.EnterpriseSearchResourceInfo) (Enterpri
 		if err != nil {
 			return nil, err
 		}
-		esss = append(esss, *ess)
+
+		return ess, nil
 	}
 
-	return esss, nil
+	return nil, nil
 }
 
-func enterpriseSearchesPayload(ctx context.Context, template *models.DeploymentTemplateInfoV2, ess types.List) ([]*models.EnterpriseSearchPayload, diag.Diagnostics) {
-	if len(ess.Elems) == 0 {
+func enterpriseSearchesPayload(ctx context.Context, esObj types.Object, template *models.DeploymentTemplateInfoV2) (*models.EnterpriseSearchPayload, diag.Diagnostics) {
+	if esObj.IsNull() {
 		return nil, nil
 	}
 
@@ -143,21 +147,19 @@ func enterpriseSearchesPayload(ctx context.Context, template *models.DeploymentT
 		return nil, diags
 	}
 
-	payloads := make([]*models.EnterpriseSearchPayload, 0, len(ess.Elems))
-	for _, elem := range ess.Elems {
-		var es EnterpriseSearchTF
-		if diags := tfsdk.ValueAs(ctx, elem, &es); diags.HasError() {
-			return nil, diags
-		}
-		payload, err := es.Payload(*templatePayload)
-		if err != nil {
-			diags.AddError("enterprise_search payload create error", err.Error())
-			return nil, diags
-		}
-		payloads = append(payloads, payload)
+	var es EnterpriseSearchTF
+
+	if diags = tfsdk.ValueAs(ctx, esObj, &es); diags.HasError() {
+		return nil, diags
 	}
 
-	return payloads, nil
+	payload, diags := es.Payload(ctx, *templatePayload)
+
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	return payload, nil
 }
 
 // essResource returns the EnterpriseSearchPayload from a deployment

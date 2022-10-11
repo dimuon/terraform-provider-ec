@@ -26,7 +26,6 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -48,25 +47,10 @@ type ElasticsearchConfig struct {
 	UserSettingsOverrideYaml *string  `tfsdk:"user_settings_override_yaml"`
 }
 
-type ElasticsearchConfigsTF types.List
+func (config *ElasticsearchConfigTF) Payload(ctx context.Context, model *models.ElasticsearchConfiguration) (*models.ElasticsearchConfiguration, diag.Diagnostics) {
+	var diags diag.Diagnostics
 
-type ElasticsearchConfigs []ElasticsearchConfig
-
-func readElasticsearchConfigs(in *models.ElasticsearchConfiguration) (ElasticsearchConfigs, error) {
-	config, err := ReadElasticsearchConfig(in)
-	if err != nil {
-		return nil, err
-	}
-
-	if config.isEmpty() {
-		return nil, nil
-	}
-
-	return ElasticsearchConfigs{*config}, nil
-}
-
-func (configs ElasticsearchConfigsTF) Payload(ctx context.Context, model *models.ElasticsearchConfiguration) (*models.ElasticsearchConfiguration, diag.Diagnostics) {
-	if len(configs.Elems) == 0 {
+	if config == nil {
 		return model, nil
 	}
 
@@ -74,55 +58,43 @@ func (configs ElasticsearchConfigsTF) Payload(ctx context.Context, model *models
 		model = &models.ElasticsearchConfiguration{}
 	}
 
-	for _, elem := range configs.Elems {
-		var config ElasticsearchConfigTF
+	if config.UserSettingsJson.Value != "" {
 
-		diags := tfsdk.ValueAs(ctx, elem, &config)
-
-		if diags.HasError() {
-			return nil, diags
-		}
-
-		if config.UserSettingsJson.Value != "" {
-
-			if err := json.Unmarshal([]byte(config.UserSettingsJson.Value), &model.UserSettingsJSON); err != nil {
-				diags.AddError("failed expanding elasticsearch user_settings_json", err.Error())
-				return nil, diags
-			}
-		}
-
-		if config.UserSettingsOverrideJson.Value != "" {
-			if err := json.Unmarshal([]byte(config.UserSettingsOverrideJson.Value), &model.UserSettingsOverrideJSON); err != nil {
-				diags.AddError("failed expanding elasticsearch user_settings_override_json", err.Error())
-				return nil, diags
-			}
-		}
-
-		if !config.UserSettingsYaml.IsNull() {
-			model.UserSettingsYaml = config.UserSettingsYaml.Value
-		}
-
-		if !config.UserSettingsOverrideYaml.IsNull() {
-			model.UserSettingsOverrideYaml = config.UserSettingsOverrideYaml.Value
-		}
-
-		if len(config.Plugins) > 0 {
-			model.EnabledBuiltInPlugins = config.Plugins
-		}
-
-		if !config.DockerImage.IsNull() {
-			model.DockerImage = config.DockerImage.Value
+		if err := json.Unmarshal([]byte(config.UserSettingsJson.Value), &model.UserSettingsJSON); err != nil {
+			diags.AddError("failed expanding elasticsearch user_settings_json", err.Error())
 		}
 	}
 
-	return model, nil
+	if config.UserSettingsOverrideJson.Value != "" {
+		if err := json.Unmarshal([]byte(config.UserSettingsOverrideJson.Value), &model.UserSettingsOverrideJSON); err != nil {
+			diags.AddError("failed expanding elasticsearch user_settings_override_json", err.Error())
+		}
+	}
+
+	if !config.UserSettingsYaml.IsNull() {
+		model.UserSettingsYaml = config.UserSettingsYaml.Value
+	}
+
+	if !config.UserSettingsOverrideYaml.IsNull() {
+		model.UserSettingsOverrideYaml = config.UserSettingsOverrideYaml.Value
+	}
+
+	if len(config.Plugins) > 0 {
+		model.EnabledBuiltInPlugins = config.Plugins
+	}
+
+	if !config.DockerImage.IsNull() {
+		model.DockerImage = config.DockerImage.Value
+	}
+
+	return model, diags
 }
 
 func (c *ElasticsearchConfig) isEmpty() bool {
 	return c == nil || reflect.ValueOf(*c).IsZero()
 }
 
-func ReadElasticsearchConfig(in *models.ElasticsearchConfiguration) (*ElasticsearchConfig, error) {
+func readElasticsearchConfig(in *models.ElasticsearchConfiguration) (*ElasticsearchConfig, error) {
 	var config ElasticsearchConfig
 	if in == nil {
 		return nil, nil
@@ -154,6 +126,10 @@ func ReadElasticsearchConfig(in *models.ElasticsearchConfiguration) (*Elasticsea
 
 	if in.DockerImage != "" {
 		config.DockerImage = ec.String(in.DockerImage)
+	}
+
+	if config.isEmpty() {
+		return nil, nil
 	}
 
 	return &config, nil

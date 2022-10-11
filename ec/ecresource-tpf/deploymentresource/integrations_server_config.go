@@ -47,9 +47,7 @@ type IntegrationsServerConfig struct {
 	UserSettingsOverrideYaml *string `tfsdk:"user_settings_override_yaml"`
 }
 
-type IntegrationsServerConfigs []IntegrationsServerConfig
-
-func readIntegrationsServerConfig(in *models.IntegrationsServerConfiguration) (IntegrationsServerConfigs, error) {
+func readIntegrationsServerConfig(in *models.IntegrationsServerConfiguration) (*IntegrationsServerConfig, error) {
 	var cfg IntegrationsServerConfig
 
 	if in.UserSettingsYaml != "" {
@@ -86,51 +84,52 @@ func readIntegrationsServerConfig(in *models.IntegrationsServerConfiguration) (I
 		return nil, nil
 	}
 
-	return IntegrationsServerConfigs{cfg}, nil
+	return &cfg, nil
 }
 
-func payloadIntegrationsServerConfig(ctx context.Context, res *models.IntegrationsServerConfiguration, cfgs *types.List) diag.Diagnostics {
+func payloadIntegrationsServerConfig(ctx context.Context, cfg types.Object, res *models.IntegrationsServerConfiguration) diag.Diagnostics {
+	if cfg.IsNull() {
+		return nil
+	}
+
 	var diags diag.Diagnostics
 
-	for _, elem := range cfgs.Elems {
-		var cfg IntegrationsServerConfigTF
-		if diags := tfsdk.ValueAs(ctx, elem, &cfg); diags.HasError() {
-			return diags
-		}
+	var cfgTF IntegrationsServerConfigTF
 
-		if !cfg.DebugEnabled.IsNull() {
-			if res.SystemSettings == nil {
-				res.SystemSettings = &models.IntegrationsServerSystemSettings{}
-			}
-			res.SystemSettings.DebugEnabled = &cfg.DebugEnabled.Value
-		}
+	if diags = tfsdk.ValueAs(ctx, cfg, &cfgTF); diags.HasError() {
+		return diags
+	}
 
-		if cfg.UserSettingsJson.Value != "" {
-			if err := json.Unmarshal([]byte(cfg.UserSettingsJson.Value), &res.UserSettingsJSON); err != nil {
-				diags.AddError("failed expanding IntegrationsServer user_settings_json", err.Error())
-				return diags
-			}
+	if !cfgTF.DebugEnabled.IsNull() {
+		if res.SystemSettings == nil {
+			res.SystemSettings = &models.IntegrationsServerSystemSettings{}
 		}
+		res.SystemSettings.DebugEnabled = &cfgTF.DebugEnabled.Value
+	}
 
-		if cfg.UserSettingsOverrideJson.Value != "" {
-			if err := json.Unmarshal([]byte(cfg.UserSettingsOverrideJson.Value), &res.UserSettingsOverrideJSON); err != nil {
-				diags.AddError("failed expanding IntegrationsServer user_settings_override_json", err.Error())
-				return diags
-			}
-		}
-
-		if !cfg.UserSettingsYaml.IsNull() {
-			res.UserSettingsYaml = cfg.UserSettingsYaml.Value
-		}
-
-		if !cfg.UserSettingsOverrideYaml.IsNull() {
-			res.UserSettingsOverrideYaml = cfg.UserSettingsOverrideYaml.Value
-		}
-
-		if !cfg.DockerImage.IsNull() {
-			res.DockerImage = cfg.DockerImage.Value
+	if cfgTF.UserSettingsJson.Value != "" {
+		if err := json.Unmarshal([]byte(cfgTF.UserSettingsJson.Value), &res.UserSettingsJSON); err != nil {
+			diags.AddError("failed expanding IntegrationsServer user_settings_json", err.Error())
 		}
 	}
 
-	return nil
+	if cfgTF.UserSettingsOverrideJson.Value != "" {
+		if err := json.Unmarshal([]byte(cfgTF.UserSettingsOverrideJson.Value), &res.UserSettingsOverrideJSON); err != nil {
+			diags.AddError("failed expanding IntegrationsServer user_settings_override_json", err.Error())
+		}
+	}
+
+	if !cfgTF.UserSettingsYaml.IsNull() {
+		res.UserSettingsYaml = cfgTF.UserSettingsYaml.Value
+	}
+
+	if !cfgTF.UserSettingsOverrideYaml.IsNull() {
+		res.UserSettingsOverrideYaml = cfgTF.UserSettingsOverrideYaml.Value
+	}
+
+	if !cfgTF.DockerImage.IsNull() {
+		res.DockerImage = cfgTF.DockerImage.Value
+	}
+
+	return diags
 }

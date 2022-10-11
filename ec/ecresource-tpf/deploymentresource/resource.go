@@ -166,286 +166,12 @@ func (t *Resource) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostic
 				},
 				Optional: true,
 			},
-		},
-
-		Blocks: map[string]tfsdk.Block{
-			"elasticsearch": elasticsearch(),
-
-			"kibana": {
-				NestingMode: tfsdk.BlockNestingModeList,
-				Description: "Optional Kibana resource definition",
-				MinItems:    0,
-				MaxItems:    1,
-				Attributes: map[string]tfsdk.Attribute{
-					"elasticsearch_cluster_ref_id": {
-						Type: types.StringType,
-						PlanModifiers: []tfsdk.AttributePlanModifier{
-							planmodifier.DefaultValue(types.String{Value: "main-elasticsearch"}),
-						},
-						Computed: true,
-						Optional: true,
-					},
-					"ref_id": {
-						Type: types.StringType,
-						PlanModifiers: []tfsdk.AttributePlanModifier{
-							planmodifier.DefaultValue(types.String{Value: "main-kibana"}),
-						},
-						Computed: true,
-						Optional: true,
-					},
-					"resource_id": {
-						Type:     types.StringType,
-						Computed: true,
-					},
-					"region": {
-						Type:     types.StringType,
-						Computed: true,
-					},
-					"http_endpoint": {
-						Type:     types.StringType,
-						Computed: true,
-					},
-					"https_endpoint": {
-						Type:     types.StringType,
-						Computed: true,
-					},
-				},
-				Blocks: map[string]tfsdk.Block{
-					"topology": {
-						NestingMode: tfsdk.BlockNestingModeList,
-						MinItems:    0,
-						Attributes: map[string]tfsdk.Attribute{
-							"instance_configuration_id": {
-								Type:     types.StringType,
-								Optional: true,
-								Computed: true,
-							},
-							"size": {
-								Type:     types.StringType,
-								Computed: true,
-								Optional: true,
-							},
-							"size_resource": {
-								Type:        types.StringType,
-								Description: `Optional size type, defaults to "memory".`,
-								PlanModifiers: []tfsdk.AttributePlanModifier{
-									planmodifier.DefaultValue(types.String{Value: "memory"}),
-								},
-								Computed: true,
-								Optional: true,
-							},
-							"zone_count": {
-								Type:     types.Int64Type,
-								Computed: true,
-								Optional: true,
-							},
-						},
-					},
-					"config": {
-						NestingMode: tfsdk.BlockNestingModeList,
-						MinItems:    0,
-						MaxItems:    1,
-						// TODO
-						// DiffSuppressFunc: suppressMissingOptionalConfigurationBlock,
-						Description: `Optionally define the Kibana configuration options for the Kibana Server`,
-						Attributes: map[string]tfsdk.Attribute{
-							"docker_image": {
-								Type:        types.StringType,
-								Description: "Optionally override the docker image the Kibana nodes will use. Note that this field will only work for internal users only.",
-								Optional:    true,
-							},
-							"user_settings_json": {
-								Type:        types.StringType,
-								Description: `An arbitrary JSON object allowing (non-admin) cluster owners to set their parameters (only one of this and 'user_settings_yaml' is allowed), provided they are on the whitelist ('user_settings_whitelist') and not on the blacklist ('user_settings_blacklist'). (This field together with 'user_settings_override*' and 'system_settings' defines the total set of resource settings)`,
-								Optional:    true,
-							},
-							"user_settings_override_json": {
-								Type:        types.StringType,
-								Description: `An arbitrary JSON object allowing ECE admins owners to set clusters' parameters (only one of this and 'user_settings_override_yaml' is allowed), ie in addition to the documented 'system_settings'. (This field together with 'system_settings' and 'user_settings*' defines the total set of resource settings)`,
-								Optional:    true,
-							},
-							"user_settings_yaml": {
-								Type:        types.StringType,
-								Description: `An arbitrary YAML object allowing ECE admins owners to set clusters' parameters (only one of this and 'user_settings_override_json' is allowed), ie in addition to the documented 'system_settings'. (This field together with 'system_settings' and 'user_settings*' defines the total set of resource settings)`,
-								Optional:    true,
-							},
-							"user_settings_override_yaml": {
-								Type:        types.StringType,
-								Description: `An arbitrary YAML object allowing (non-admin) cluster owners to set their parameters (only one of this and 'user_settings_json' is allowed), provided they are on the whitelist ('user_settings_whitelist') and not on the blacklist ('user_settings_blacklist'). (These field together with 'user_settings_override*' and 'system_settings' defines the total set of resource settings)`,
-								Optional:    true,
-							},
-						},
-					},
-				},
-			},
-
-			"apm": apm(),
-
-			"integrations_server": {
-				NestingMode: tfsdk.BlockNestingModeList,
-				Description: "Optional Integrations Server resource definition",
-				MinItems:    0,
-				MaxItems:    1,
-				Attributes: map[string]tfsdk.Attribute{
-					"elasticsearch_cluster_ref_id": {
-						Type:     types.StringType,
-						Optional: true,
-						Computed: true,
-						PlanModifiers: []tfsdk.AttributePlanModifier{
-							planmodifier.DefaultValue(types.String{Value: "main-elasticsearch"}),
-						},
-					},
-					"ref_id": {
-						Type:     types.StringType,
-						Optional: true,
-						Computed: true,
-						PlanModifiers: []tfsdk.AttributePlanModifier{
-							planmodifier.DefaultValue(types.String{Value: "main-integrations_server"}),
-						},
-					},
-					"resource_id": {
-						Type:     types.StringType,
-						Computed: true,
-					},
-					"region": {
-						Type:     types.StringType,
-						Computed: true,
-					},
-					"http_endpoint": {
-						Type:     types.StringType,
-						Computed: true,
-					},
-					"https_endpoint": {
-						Type:     types.StringType,
-						Computed: true,
-					},
-				},
-				Blocks: map[string]tfsdk.Block{
-					"topology": {
-						NestingMode: tfsdk.BlockNestingModeList,
-						MinItems:    0,
-						Attributes: map[string]tfsdk.Attribute{
-							"instance_configuration_id": {
-								Type:     types.StringType,
-								Optional: true,
-								Computed: true,
-							},
-							"size": {
-								Type:     types.StringType,
-								Computed: true,
-								Optional: true,
-							},
-							"size_resource": {
-								Type:        types.StringType,
-								Description: `Optional size type, defaults to "memory".`,
-								Optional:    true,
-								Computed:    true,
-								PlanModifiers: []tfsdk.AttributePlanModifier{
-									planmodifier.DefaultValue(types.String{Value: "memory"}),
-								},
-							},
-							"zone_count": {
-								Type:     types.Int64Type,
-								Computed: true,
-								Optional: true,
-							},
-						},
-					},
-
-					"config": {
-						NestingMode: tfsdk.BlockNestingModeList,
-						MinItems:    0,
-						MaxItems:    1,
-						// TODO
-						// DiffSuppressFunc: suppressMissingOptionalConfigurationBlock,
-						Description: `Optionally define the IntegrationsServer configuration options for the IntegrationsServer Server`,
-						Attributes: map[string]tfsdk.Attribute{
-							"docker_image": {
-								Type:        types.StringType,
-								Description: "Optionally override the docker image the IntegrationsServer nodes will use. Note that this field will only work for internal users only.",
-								Optional:    true,
-							},
-							// IntegrationsServer System Settings
-							"debug_enabled": {
-								Type:        types.BoolType,
-								Description: `Optionally enable debug mode for IntegrationsServer servers - defaults to false`,
-								Optional:    true,
-								Computed:    true,
-								PlanModifiers: []tfsdk.AttributePlanModifier{
-									planmodifier.DefaultValue(types.Bool{Value: false}),
-								},
-							},
-							"user_settings_json": {
-								Type:        types.StringType,
-								Description: `An arbitrary JSON object allowing (non-admin) cluster owners to set their parameters (only one of this and 'user_settings_yaml' is allowed), provided they are on the whitelist ('user_settings_whitelist') and not on the blacklist ('user_settings_blacklist'). (This field together with 'user_settings_override*' and 'system_settings' defines the total set of resource settings)`,
-								Optional:    true,
-							},
-							"user_settings_override_json": {
-								Type:        types.StringType,
-								Description: `An arbitrary JSON object allowing ECE admins owners to set clusters' parameters (only one of this and 'user_settings_override_yaml' is allowed), ie in addition to the documented 'system_settings'. (This field together with 'system_settings' and 'user_settings*' defines the total set of resource settings)`,
-								Optional:    true,
-							},
-							"user_settings_yaml": {
-								Type:        types.StringType,
-								Description: `An arbitrary YAML object allowing ECE admins owners to set clusters' parameters (only one of this and 'user_settings_override_json' is allowed), ie in addition to the documented 'system_settings'. (This field together with 'system_settings' and 'user_settings*' defines the total set of resource settings)`,
-								Optional:    true,
-							},
-							"user_settings_override_yaml": {
-								Type:        types.StringType,
-								Description: `An arbitrary YAML object allowing (non-admin) cluster owners to set their parameters (only one of this and 'user_settings_json' is allowed), provided they are on the whitelist ('user_settings_whitelist') and not on the blacklist ('user_settings_blacklist'). (These field together with 'user_settings_override*' and 'system_settings' defines the total set of resource settings)`,
-								Optional:    true,
-							},
-						},
-					},
-				},
-			},
-
-			"enterprise_search": enterpriseSearch(),
-
-			"observability": {
-				NestingMode: tfsdk.BlockNestingModeList,
-				Description: "Optional observability settings. Ship logs and metrics to a dedicated deployment.",
-				MinItems:    0,
-				MaxItems:    1,
-				Attributes: map[string]tfsdk.Attribute{
-					"deployment_id": {
-						Type:     types.StringType,
-						Required: true,
-						// TODO
-						// DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
-						// 	// The terraform config can contain 'self' as a deployment target
-						// 	// However the API will return the actual deployment-id.
-						// 	// This overrides 'self' with the deployment-id so the diff will work correctly.
-						// 	var deploymentID = d.Id()
-						// 	var mappedOldValue = mapSelfToDeploymentID(oldValue, deploymentID)
-						// 	var mappedNewValue = mapSelfToDeploymentID(newValue, deploymentID)
-
-						// 	return mappedOldValue == mappedNewValue
-						// },
-					},
-					"ref_id": {
-						Type:     types.StringType,
-						Computed: true,
-						Optional: true,
-					},
-					"logs": {
-						Type:     types.BoolType,
-						Optional: true,
-						Computed: true,
-						PlanModifiers: []tfsdk.AttributePlanModifier{
-							planmodifier.DefaultValue(types.Bool{Value: true}),
-						},
-					},
-					"metrics": {
-						Type:     types.BoolType,
-						Optional: true,
-						Computed: true,
-						PlanModifiers: []tfsdk.AttributePlanModifier{
-							planmodifier.DefaultValue(types.Bool{Value: true}),
-						},
-					},
-				},
-			},
+			"elasticsearch":       elasticsearchAttribute(),
+			"kibana":              kibanaAttribute(),
+			"apm":                 apmAttribute(),
+			"integrations_server": integrationsServerAttribute(),
+			"enterprise_search":   enterpriseSearchAttribute(),
+			"observability":       observabilityAttribute(),
 		},
 	}, nil
 }
@@ -458,13 +184,14 @@ func (r *Resource) Metadata(ctx context.Context, request resource.MetadataReques
 // 	tfsdk.ResourceImportStatePassthroughID(ctx, tftypes.NewAttributePath().WithAttributeName("id"), req, resp)
 // }
 
-func elasticsearch() tfsdk.Block {
-	return tfsdk.Block{
+func elasticsearchAttribute() tfsdk.Attribute {
+	return tfsdk.Attribute{
 		Description: "Required Elasticsearch resource definition",
-		NestingMode: tfsdk.BlockNestingModeList,
-		MinItems:    1,
-		MaxItems:    1,
-		Attributes: map[string]tfsdk.Attribute{
+		Required:    true,
+		PlanModifiers: tfsdk.AttributePlanModifiers{
+			resource.UseStateForUnknown(),
+		},
+		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
 			"autoscale": {
 				Type:        types.StringType,
 				Description: `Enable or disable autoscaling. Defaults to the setting coming from the deployment template. Accepted values are "true" or "false".`,
@@ -529,9 +256,7 @@ func elasticsearch() tfsdk.Block {
 			"trust_account": elasticsearchTrustAccount(),
 
 			"trust_external": elasticsearchTrustExternal(),
-		},
 
-		Blocks: map[string]tfsdk.Block{
 			"config": elasticsearchConfig(),
 
 			"remote_cluster": elasticsearchRemoteCluster(),
@@ -541,19 +266,17 @@ func elasticsearch() tfsdk.Block {
 			"extension": elasticsearchExtension(),
 
 			"strategy": elasticsearchStrategy(),
-		},
+		}),
 	}
 }
 
-func elasticsearchConfig() tfsdk.Block {
-	return tfsdk.Block{
-		NestingMode: tfsdk.BlockNestingModeList,
-		MinItems:    0,
-		MaxItems:    1,
-		// TODO
-		// DiffSuppressFunc: suppressMissingOptionalConfigurationBlock,
+func elasticsearchConfig() tfsdk.Attribute {
+	return tfsdk.Attribute{
 		Description: `Optional Elasticsearch settings which will be applied to all topologies unless overridden on the topology element`,
-		Attributes: map[string]tfsdk.Attribute{
+		Optional:    true,
+		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+			// TODO
+			// DiffSuppressFunc: suppressMissingOptionalConfigurationBlock,
 			"docker_image": {
 				Type:        types.StringType,
 				Description: "Optionally override the docker image the Elasticsearch nodes will use. Note that this field will only work for internal users only.",
@@ -586,7 +309,7 @@ func elasticsearchConfig() tfsdk.Block {
 				Description: `YAML-formatted admin (ECE) level "elasticsearch.yml" setting overrides`,
 				Optional:    true,
 			},
-		},
+		}),
 	}
 }
 
@@ -669,7 +392,7 @@ func elasticsearchTopology() tfsdk.Attribute {
 			"config": {
 				Description: `Computed read-only configuration to avoid unsetting plan settings from 'topology.elasticsearch'`,
 				Computed:    true,
-				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
 					"plugins": {
 						Type: types.SetType{
 							ElemType: types.StringType,
@@ -743,12 +466,18 @@ func elasticsearchTopologyAutoscalingAttribute() tfsdk.Attribute {
 	}
 }
 
-func elasticsearchRemoteCluster() tfsdk.Block {
-	return tfsdk.Block{
-		NestingMode: tfsdk.BlockNestingModeSet,
-		MinItems:    0,
+func elasticsearchRemoteCluster() tfsdk.Attribute {
+	return tfsdk.Attribute{
 		Description: "Optional Elasticsearch remote clusters to configure for the Elasticsearch resource, can be set multiple times",
-		Attributes: map[string]tfsdk.Attribute{
+		Optional:    true,
+		// Computed:    true,
+		Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
+
+			// return tfsdk.Block{
+			// 	NestingMode: tfsdk.BlockNestingModeSet,
+			// 	MinItems:    0,
+			// 	Description: "Optional Elasticsearch remote clusters to configure for the Elasticsearch resource, can be set multiple times",
+			// 	Attributes: map[string]tfsdk.Attribute{
 			"deployment_id": {
 				Description: "Remote deployment ID",
 				Type:        types.StringType,
@@ -780,17 +509,23 @@ func elasticsearchRemoteCluster() tfsdk.Block {
 				},
 				Optional: true,
 			},
-		},
+		}),
 	}
 }
 
-func elasticsearchSnapshotSource() tfsdk.Block {
-	return tfsdk.Block{
-		NestingMode: tfsdk.BlockNestingModeList,
+func elasticsearchSnapshotSource() tfsdk.Attribute {
+	return tfsdk.Attribute{
 		Description: "Optional snapshot source settings. Restore data from a snapshot of another deployment.",
-		MinItems:    0,
-		MaxItems:    1,
-		Attributes: map[string]tfsdk.Attribute{
+		Optional:    true,
+		// Computed:    true,
+		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+
+			// return tfsdk.Block{
+			// 	NestingMode: tfsdk.BlockNestingModeList,
+			// 	Description: "Optional snapshot source settings. Restore data from a snapshot of another deployment.",
+			// 	MinItems:    0,
+			// 	MaxItems:    1,
+			// 	Attributes: map[string]tfsdk.Attribute{
 			"source_elasticsearch_cluster_id": {
 				Description: "ID of the Elasticsearch cluster that will be used as the source of the snapshot",
 				Type:        types.StringType,
@@ -804,16 +539,22 @@ func elasticsearchSnapshotSource() tfsdk.Block {
 				},
 				Optional: true,
 			},
-		},
+		}),
 	}
 }
 
-func elasticsearchExtension() tfsdk.Block {
-	return tfsdk.Block{
-		NestingMode: tfsdk.BlockNestingModeSet,
+func elasticsearchExtension() tfsdk.Attribute {
+	return tfsdk.Attribute{
 		Description: "Optional Elasticsearch extensions such as custom bundles or plugins.",
-		MinItems:    0,
-		Attributes: map[string]tfsdk.Attribute{
+		Optional:    true,
+		// Computed:    true,
+		Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
+
+			// return tfsdk.Block{
+			// 	NestingMode: tfsdk.BlockNestingModeSet,
+			// 	Description: "Optional Elasticsearch extensions such as custom bundles or plugins.",
+			// 	MinItems:    0,
+			// 	Attributes: map[string]tfsdk.Attribute{
 			"name": {
 				Description: "Extension name.",
 				Type:        types.StringType,
@@ -835,7 +576,7 @@ func elasticsearchExtension() tfsdk.Block {
 				Type:        types.StringType,
 				Required:    true,
 			},
-		},
+		}),
 	}
 }
 
@@ -899,13 +640,12 @@ func elasticsearchTrustExternal() tfsdk.Attribute {
 	}
 }
 
-func elasticsearchStrategy() tfsdk.Block {
-	return tfsdk.Block{
-		NestingMode: tfsdk.BlockNestingModeList,
+func elasticsearchStrategy() tfsdk.Attribute {
+	return tfsdk.Attribute{
 		Description: "Configuration strategy settings.",
-		MinItems:    0,
-		MaxItems:    1,
-		Attributes: map[string]tfsdk.Attribute{
+		Optional:    true,
+		Validators:  []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
+		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 			"type": {
 				Description: "Configuration strategy type " + strings.Join(strategiesList, ", "),
 				Type:        types.StringType,
@@ -917,15 +657,15 @@ func elasticsearchStrategy() tfsdk.Block {
 				// 	return true
 				// },
 			},
-		},
+		}),
 	}
 }
 
-func apmTopology() tfsdk.Block {
-	return tfsdk.Block{
-		NestingMode: tfsdk.BlockNestingModeList,
-		MinItems:    0,
-		Attributes: map[string]tfsdk.Attribute{
+func apmTopology() tfsdk.Attribute {
+	return tfsdk.Attribute{
+		Description: "Optional topology attribute",
+		Optional:    true,
+		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 			"instance_configuration_id": {
 				Type:     types.StringType,
 				Optional: true,
@@ -950,19 +690,17 @@ func apmTopology() tfsdk.Block {
 				Computed: true,
 				Optional: true,
 			},
-		},
+		}),
 	}
 }
 
-func apmConfig() tfsdk.Block {
-	return tfsdk.Block{
-		NestingMode: tfsdk.BlockNestingModeList,
-		MinItems:    0,
-		MaxItems:    1,
-		// TODO
-		// DiffSuppressFunc: suppressMissingOptionalConfigurationBlock,
+func apmConfig() tfsdk.Attribute {
+	return tfsdk.Attribute{
 		Description: `Optionally define the Apm configuration options for the APM Server`,
-		Attributes: map[string]tfsdk.Attribute{
+		Optional:    true,
+		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+			// TODO
+			// DiffSuppressFunc: suppressMissingOptionalConfigurationBlock,
 			"docker_image": {
 				Type:        types.StringType,
 				Description: "Optionally override the docker image the APM nodes will use. Note that this field will only work for internal users only.",
@@ -997,17 +735,15 @@ func apmConfig() tfsdk.Block {
 				Description: `An arbitrary YAML object allowing (non-admin) cluster owners to set their parameters (only one of this and 'user_settings_json' is allowed), provided they are on the whitelist ('user_settings_whitelist') and not on the blacklist ('user_settings_blacklist'). (These field together with 'user_settings_override*' and 'system_settings' defines the total set of resource settings)`,
 				Optional:    true,
 			},
-		},
+		}),
 	}
 }
 
-func apm() tfsdk.Block {
-	return tfsdk.Block{
-		NestingMode: tfsdk.BlockNestingModeList,
+func apmAttribute() tfsdk.Attribute {
+	return tfsdk.Attribute{
 		Description: "Optional APM resource definition",
-		MinItems:    0,
-		MaxItems:    1,
-		Attributes: map[string]tfsdk.Attribute{
+		Optional:    true,
+		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
 			"elasticsearch_cluster_ref_id": {
 				Type:     types.StringType,
 				Optional: true,
@@ -1040,22 +776,17 @@ func apm() tfsdk.Block {
 				Type:     types.StringType,
 				Computed: true,
 			},
-		},
-
-		Blocks: map[string]tfsdk.Block{
 			"topology": apmTopology(),
 			"config":   apmConfig(),
-		},
+		}),
 	}
 }
 
-func enterpriseSearch() tfsdk.Block {
-	return tfsdk.Block{
-		NestingMode: tfsdk.BlockNestingModeList,
+func enterpriseSearchAttribute() tfsdk.Attribute {
+	return tfsdk.Attribute{
 		Description: "Optional Enterprise Search resource definition",
-		MinItems:    0,
-		MaxItems:    1,
-		Attributes: map[string]tfsdk.Attribute{
+		Optional:    true,
+		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
 			"elasticsearch_cluster_ref_id": {
 				Type:     types.StringType,
 				Optional: true,
@@ -1088,12 +819,10 @@ func enterpriseSearch() tfsdk.Block {
 				Type:     types.StringType,
 				Computed: true,
 			},
-		},
-		Blocks: map[string]tfsdk.Block{
 			"topology": {
-				NestingMode: tfsdk.BlockNestingModeList,
-				MinItems:    0,
-				Attributes: map[string]tfsdk.Attribute{
+				Description: "Optional topology attribute",
+				Optional:    true,
+				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 					"instance_configuration_id": {
 						Type:     types.StringType,
 						Optional: true,
@@ -1130,16 +859,14 @@ func enterpriseSearch() tfsdk.Block {
 						Type:     types.BoolType,
 						Computed: true,
 					},
-				},
+				}),
 			},
 			"config": {
-				NestingMode: tfsdk.BlockNestingModeList,
-				MinItems:    0,
-				MaxItems:    1,
-				// TODO
-				// DiffSuppressFunc: suppressMissingOptionalConfigurationBlock,
 				Description: `Optionally define the Enterprise Search configuration options for the Enterprise Search Server`,
-				Attributes: map[string]tfsdk.Attribute{
+				Optional:    true,
+				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+					// TODO
+					// DiffSuppressFunc: suppressMissingOptionalConfigurationBlock,
 					"docker_image": {
 						Type:        types.StringType,
 						Description: "Optionally override the docker image the Enterprise Search nodes will use. Note that this field will only work for internal users only.",
@@ -1165,8 +892,273 @@ func enterpriseSearch() tfsdk.Block {
 						Description: `An arbitrary YAML object allowing (non-admin) cluster owners to set their parameters (only one of this and 'user_settings_json' is allowed), provided they are on the whitelist ('user_settings_whitelist') and not on the blacklist ('user_settings_blacklist'). (These field together with 'user_settings_override*' and 'system_settings' defines the total set of resource settings)`,
 						Optional:    true,
 					},
+				}),
+			},
+		}),
+	}
+}
+
+func kibanaAttribute() tfsdk.Attribute {
+	return tfsdk.Attribute{
+		Description: "Optional Kibana resource definition",
+		Optional:    true,
+		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+			"elasticsearch_cluster_ref_id": {
+				Type: types.StringType,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					planmodifier.DefaultValue(types.String{Value: "main-elasticsearch"}),
+				},
+				Computed: true,
+				Optional: true,
+			},
+			"ref_id": {
+				Type: types.StringType,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					planmodifier.DefaultValue(types.String{Value: "main-kibana"}),
+				},
+				Computed: true,
+				Optional: true,
+			},
+			"resource_id": {
+				Type:     types.StringType,
+				Computed: true,
+			},
+			"region": {
+				Type:     types.StringType,
+				Computed: true,
+			},
+			"http_endpoint": {
+				Type:     types.StringType,
+				Computed: true,
+			},
+			"https_endpoint": {
+				Type:     types.StringType,
+				Computed: true,
+			},
+			"topology": {
+				// NestingMode: tfsdk.BlockNestingModeList,
+				// MinItems:    0,
+				Description: `Optional topology element`,
+				Optional:    true,
+				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+					"instance_configuration_id": {
+						Type:     types.StringType,
+						Optional: true,
+						Computed: true,
+					},
+					"size": {
+						Type:     types.StringType,
+						Computed: true,
+						Optional: true,
+					},
+					"size_resource": {
+						Type:        types.StringType,
+						Description: `Optional size type, defaults to "memory".`,
+						PlanModifiers: []tfsdk.AttributePlanModifier{
+							planmodifier.DefaultValue(types.String{Value: "memory"}),
+						},
+						Computed: true,
+						Optional: true,
+					},
+					"zone_count": {
+						Type:     types.Int64Type,
+						Computed: true,
+						Optional: true,
+					},
+				}),
+			},
+			"config": {
+				Optional: true,
+				// TODO
+				// DiffSuppressFunc: suppressMissingOptionalConfigurationBlock,
+				Description: `Optionally define the Kibana configuration options for the Kibana Server`,
+				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+					"docker_image": {
+						Type:        types.StringType,
+						Description: "Optionally override the docker image the Kibana nodes will use. Note that this field will only work for internal users only.",
+						Optional:    true,
+					},
+					"user_settings_json": {
+						Type:        types.StringType,
+						Description: `An arbitrary JSON object allowing (non-admin) cluster owners to set their parameters (only one of this and 'user_settings_yaml' is allowed), provided they are on the whitelist ('user_settings_whitelist') and not on the blacklist ('user_settings_blacklist'). (This field together with 'user_settings_override*' and 'system_settings' defines the total set of resource settings)`,
+						Optional:    true,
+					},
+					"user_settings_override_json": {
+						Type:        types.StringType,
+						Description: `An arbitrary JSON object allowing ECE admins owners to set clusters' parameters (only one of this and 'user_settings_override_yaml' is allowed), ie in addition to the documented 'system_settings'. (This field together with 'system_settings' and 'user_settings*' defines the total set of resource settings)`,
+						Optional:    true,
+					},
+					"user_settings_yaml": {
+						Type:        types.StringType,
+						Description: `An arbitrary YAML object allowing ECE admins owners to set clusters' parameters (only one of this and 'user_settings_override_json' is allowed), ie in addition to the documented 'system_settings'. (This field together with 'system_settings' and 'user_settings*' defines the total set of resource settings)`,
+						Optional:    true,
+					},
+					"user_settings_override_yaml": {
+						Type:        types.StringType,
+						Description: `An arbitrary YAML object allowing (non-admin) cluster owners to set their parameters (only one of this and 'user_settings_json' is allowed), provided they are on the whitelist ('user_settings_whitelist') and not on the blacklist ('user_settings_blacklist'). (These field together with 'user_settings_override*' and 'system_settings' defines the total set of resource settings)`,
+						Optional:    true,
+					},
+				}),
+			},
+		}),
+	}
+}
+
+func integrationsServerAttribute() tfsdk.Attribute {
+	return tfsdk.Attribute{
+		Description: "Optional Integrations Server resource definition",
+		Optional:    true,
+		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+			"elasticsearch_cluster_ref_id": {
+				Type:     types.StringType,
+				Optional: true,
+				Computed: true,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					planmodifier.DefaultValue(types.String{Value: "main-elasticsearch"}),
 				},
 			},
-		},
+			"ref_id": {
+				Type:     types.StringType,
+				Optional: true,
+				Computed: true,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					planmodifier.DefaultValue(types.String{Value: "main-integrations_server"}),
+				},
+			},
+			"resource_id": {
+				Type:     types.StringType,
+				Computed: true,
+			},
+			"region": {
+				Type:     types.StringType,
+				Computed: true,
+			},
+			"http_endpoint": {
+				Type:     types.StringType,
+				Computed: true,
+			},
+			"https_endpoint": {
+				Type:     types.StringType,
+				Computed: true,
+			},
+			"topology": {
+				Description: "Optional topology attribute",
+				Optional:    true,
+				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+					"instance_configuration_id": {
+						Type:     types.StringType,
+						Optional: true,
+						Computed: true,
+					},
+					"size": {
+						Type:     types.StringType,
+						Computed: true,
+						Optional: true,
+					},
+					"size_resource": {
+						Type:        types.StringType,
+						Description: `Optional size type, defaults to "memory".`,
+						Optional:    true,
+						Computed:    true,
+						PlanModifiers: []tfsdk.AttributePlanModifier{
+							planmodifier.DefaultValue(types.String{Value: "memory"}),
+						},
+					},
+					"zone_count": {
+						Type:     types.Int64Type,
+						Computed: true,
+						Optional: true,
+					},
+				}),
+			},
+			"config": {
+				Description: `Optionally define the IntegrationsServer configuration options for the IntegrationsServer Server`,
+				Optional:    true,
+				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+					// TODO
+					// DiffSuppressFunc: suppressMissingOptionalConfigurationBlock,
+					"docker_image": {
+						Type:        types.StringType,
+						Description: "Optionally override the docker image the IntegrationsServer nodes will use. Note that this field will only work for internal users only.",
+						Optional:    true,
+					},
+					// IntegrationsServer System Settings
+					"debug_enabled": {
+						Type:        types.BoolType,
+						Description: `Optionally enable debug mode for IntegrationsServer servers - defaults to false`,
+						Optional:    true,
+						Computed:    true,
+						PlanModifiers: []tfsdk.AttributePlanModifier{
+							planmodifier.DefaultValue(types.Bool{Value: false}),
+						},
+					},
+					"user_settings_json": {
+						Type:        types.StringType,
+						Description: `An arbitrary JSON object allowing (non-admin) cluster owners to set their parameters (only one of this and 'user_settings_yaml' is allowed), provided they are on the whitelist ('user_settings_whitelist') and not on the blacklist ('user_settings_blacklist'). (This field together with 'user_settings_override*' and 'system_settings' defines the total set of resource settings)`,
+						Optional:    true,
+					},
+					"user_settings_override_json": {
+						Type:        types.StringType,
+						Description: `An arbitrary JSON object allowing ECE admins owners to set clusters' parameters (only one of this and 'user_settings_override_yaml' is allowed), ie in addition to the documented 'system_settings'. (This field together with 'system_settings' and 'user_settings*' defines the total set of resource settings)`,
+						Optional:    true,
+					},
+					"user_settings_yaml": {
+						Type:        types.StringType,
+						Description: `An arbitrary YAML object allowing ECE admins owners to set clusters' parameters (only one of this and 'user_settings_override_json' is allowed), ie in addition to the documented 'system_settings'. (This field together with 'system_settings' and 'user_settings*' defines the total set of resource settings)`,
+						Optional:    true,
+					},
+					"user_settings_override_yaml": {
+						Type:        types.StringType,
+						Description: `An arbitrary YAML object allowing (non-admin) cluster owners to set their parameters (only one of this and 'user_settings_json' is allowed), provided they are on the whitelist ('user_settings_whitelist') and not on the blacklist ('user_settings_blacklist'). (These field together with 'user_settings_override*' and 'system_settings' defines the total set of resource settings)`,
+						Optional:    true,
+					},
+				}),
+			},
+		}),
+	}
+}
+
+func observabilityAttribute() tfsdk.Attribute {
+	return tfsdk.Attribute{
+		Description: "Optional observability settings. Ship logs and metrics to a dedicated deployment.",
+		Optional:    true,
+		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+			"deployment_id": {
+				Type:     types.StringType,
+				Required: true,
+				// TODO
+				// DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+				// 	// The terraform config can contain 'self' as a deployment target
+				// 	// However the API will return the actual deployment-id.
+				// 	// This overrides 'self' with the deployment-id so the diff will work correctly.
+				// 	var deploymentID = d.Id()
+				// 	var mappedOldValue = mapSelfToDeploymentID(oldValue, deploymentID)
+				// 	var mappedNewValue = mapSelfToDeploymentID(newValue, deploymentID)
+
+				// 	return mappedOldValue == mappedNewValue
+				// },
+			},
+			"ref_id": {
+				Type:     types.StringType,
+				Computed: true,
+				Optional: true,
+			},
+			"logs": {
+				Type:     types.BoolType,
+				Optional: true,
+				Computed: true,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					planmodifier.DefaultValue(types.Bool{Value: true}),
+				},
+			},
+			"metrics": {
+				Type:     types.BoolType,
+				Optional: true,
+				Computed: true,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					planmodifier.DefaultValue(types.Bool{Value: true}),
+				},
+			},
+		}),
 	}
 }

@@ -72,7 +72,7 @@ func readElasticsearchExtensions(in *models.ElasticsearchConfiguration) (Elastic
 	return extensions, nil
 }
 
-func (extensions ElasticsearchExtensionsTF) Payload(ctx context.Context, es *models.ElasticsearchConfiguration) diag.Diagnostics {
+func elasticsearchExtensionPayload(ctx context.Context, extensions types.Set, es *models.ElasticsearchConfiguration) diag.Diagnostics {
 	for _, elem := range extensions.Elems {
 		var extension ElasticsearchExtensionTF
 

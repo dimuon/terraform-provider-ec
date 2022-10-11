@@ -37,8 +37,6 @@ type KibanaConfigTF struct {
 	UserSettingsOverrideYaml types.String `tfsdk:"user_settings_override_yaml"`
 }
 
-type KibanaConfigsTF []*KibanaConfigTF
-
 type KibanaConfig struct {
 	DockerImage              *string `tfsdk:"docker_image"`
 	UserSettingsJson         *string `tfsdk:"user_settings_json"`
@@ -47,9 +45,7 @@ type KibanaConfig struct {
 	UserSettingsOverrideYaml *string `tfsdk:"user_settings_override_yaml"`
 }
 
-type KibanaConfigs []KibanaConfig
-
-func readKibanaConfigs(in *models.KibanaConfiguration) (KibanaConfigs, error) {
+func readKibanaConfig(in *models.KibanaConfiguration) (*KibanaConfig, error) {
 	var cfg KibanaConfig
 
 	if in.UserSettingsYaml != "" {
@@ -80,45 +76,45 @@ func readKibanaConfigs(in *models.KibanaConfiguration) (KibanaConfigs, error) {
 		return nil, nil
 	}
 
-	return []KibanaConfig{cfg}, nil
+	return &cfg, nil
 }
 
-func kibanaConfigPayload(ctx context.Context, model *models.KibanaConfiguration, cfgs *types.List) diag.Diagnostics {
-	for _, elem := range cfgs.Elems {
-		var cfg KibanaConfigTF
+func kibanaConfigPayload(ctx context.Context, cfgObj types.Object, model *models.KibanaConfiguration) diag.Diagnostics {
+	if cfgObj.IsNull() {
+		return nil
+	}
 
-		if diags := tfsdk.ValueAs(ctx, elem, &cfg); diags.HasError() {
-			return diags
-		}
+	var cfg KibanaConfigTF
 
-		var diags diag.Diagnostics
+	if diags := tfsdk.ValueAs(ctx, cfgObj, &cfg); diags.HasError() {
+		return diags
+	}
 
-		if cfg.UserSettingsJson.Value != "" {
-			if err := json.Unmarshal([]byte(cfg.UserSettingsJson.Value), &model.UserSettingsJSON); err != nil {
-				diags.AddError("failed expanding kibana user_settings_json", err.Error())
-				return diags
-			}
-		}
+	var diags diag.Diagnostics
 
-		if cfg.UserSettingsOverrideJson.Value != "" {
-			if err := json.Unmarshal([]byte(cfg.UserSettingsOverrideJson.Value), &model.UserSettingsOverrideJSON); err != nil {
-				diags.AddError("failed expanding kibana user_settings_override_json", err.Error())
-				return diags
-			}
-		}
-
-		if !cfg.UserSettingsYaml.IsNull() {
-			model.UserSettingsYaml = cfg.UserSettingsYaml.Value
-		}
-
-		if !cfg.UserSettingsOverrideYaml.IsNull() {
-			model.UserSettingsOverrideYaml = cfg.UserSettingsOverrideYaml.Value
-		}
-
-		if !cfg.DockerImage.IsNull() {
-			model.DockerImage = cfg.DockerImage.Value
+	if cfg.UserSettingsJson.Value != "" {
+		if err := json.Unmarshal([]byte(cfg.UserSettingsJson.Value), &model.UserSettingsJSON); err != nil {
+			diags.AddError("failed expanding kibana user_settings_json", err.Error())
 		}
 	}
 
-	return nil
+	if cfg.UserSettingsOverrideJson.Value != "" {
+		if err := json.Unmarshal([]byte(cfg.UserSettingsOverrideJson.Value), &model.UserSettingsOverrideJSON); err != nil {
+			diags.AddError("failed expanding kibana user_settings_override_json", err.Error())
+		}
+	}
+
+	if !cfg.UserSettingsYaml.IsNull() {
+		model.UserSettingsYaml = cfg.UserSettingsYaml.Value
+	}
+
+	if !cfg.UserSettingsOverrideYaml.IsNull() {
+		model.UserSettingsOverrideYaml = cfg.UserSettingsOverrideYaml.Value
+	}
+
+	if !cfg.DockerImage.IsNull() {
+		model.DockerImage = cfg.DockerImage.Value
+	}
+
+	return diags
 }

@@ -45,7 +45,7 @@ type ElasticsearchTopologyTF struct {
 	NodeTypeMl              types.String `tfsdk:"node_type_ml"`
 	NodeRoles               types.Set    `tfsdk:"node_roles"`
 	Autoscaling             types.List   `tfsdk:"autoscaling"`
-	Config                  types.List   `tfsdk:"config"`
+	Config                  types.Object `tfsdk:"config"`
 }
 
 type ElasticsearchTopologiesTF types.List
@@ -62,7 +62,7 @@ type ElasticsearchTopology struct {
 	NodeTypeMl              *string                           `tfsdk:"node_type_ml"`
 	NodeRoles               []string                          `tfsdk:"node_roles"`
 	Autoscaling             ElasticsearchTopologyAutoscalings `tfsdk:"autoscaling"`
-	Config                  ElasticsearchConfigs              `tfsdk:"config"`
+	Config                  *ElasticsearchConfig              `tfsdk:"config"`
 }
 
 type ElasticsearchTopologies []ElasticsearchTopology
@@ -95,31 +95,33 @@ func readElasticsearchTopologies(in *models.ElasticsearchClusterPlan) (Elasticse
 	return tops, nil
 }
 
-func (tops ElasticsearchTopologiesTF) Payload(ctx context.Context, planTopologies []*models.ElasticsearchClusterTopologyElement) ([]*models.ElasticsearchClusterTopologyElement, diag.Diagnostics) {
+func elasticsearchTopologiesPayload(ctx context.Context, tops types.List, planTopologies []*models.ElasticsearchClusterTopologyElement) ([]*models.ElasticsearchClusterTopologyElement, diag.Diagnostics) {
+	var diags diag.Diagnostics
 	payload := planTopologies
 
 	for _, elem := range tops.Elems {
-
 		var topology ElasticsearchTopologyTF
 
-		diags := tfsdk.ValueAs(ctx, elem, &topology)
-		if diags.HasError() {
-			return nil, diags
+		ds := tfsdk.ValueAs(ctx, elem, &topology)
+		diags = append(diags, ds...)
+
+		if ds.HasError() {
+			continue
 		}
 
 		topologyID := topology.Id.Value
 
-		size, err := converters.ParseTopologySize(topology.Size, topology.SizeResource)
-		if err != nil {
-			diags.AddError("size parsing error", err.Error())
-			return nil, diags
-		}
-
 		topologyElem, err := matchEsTopologyID(topologyID, planTopologies)
 		if err != nil {
 			diags.AddError("topology matching error", err.Error())
-			return nil, diags
+			continue
 		}
+
+		size, err := converters.ParseTopologySize(topology.Size, topology.SizeResource)
+		if err != nil {
+			diags.AddError("size parsing error", err.Error())
+		}
+
 		if size != nil {
 			topologyElem.Size = size
 		}
@@ -130,7 +132,6 @@ func (tops ElasticsearchTopologiesTF) Payload(ctx context.Context, planTopologie
 
 		if err := topology.ParseLegacyNodeType(topologyElem.NodeType); err != nil {
 			diags.AddError("topology legacy node type error", err.Error())
-			return nil, diags
 		}
 
 		if len(topology.NodeRoles.Elems) > 0 {
@@ -141,18 +142,22 @@ func (tops ElasticsearchTopologiesTF) Payload(ctx context.Context, planTopologie
 			topologyElem.NodeType = nil
 		}
 
-		diags = elasticsearchTopologyAutoscalingPayload(ctx, topology.Autoscaling, topologyID, topologyElem)
-		if diags.HasError() {
-			return nil, diags
-		}
+		diags.Append(elasticsearchTopologyAutoscalingPayload(ctx, topology.Autoscaling, topologyID, topologyElem)...)
 
-		topologyElem.Elasticsearch, diags = ElasticsearchConfigsTF(topology.Config).Payload(ctx, topologyElem.Elasticsearch)
-		if diags.HasError() {
-			return nil, diags
+		if !topology.Config.IsNull() {
+			var config ElasticsearchConfigTF
+
+			ds = tfsdk.ValueAs(ctx, topology.Config, &config)
+			diags = append(diags, ds...)
+
+			if !ds.HasError() {
+				topologyElem.Elasticsearch, ds = config.Payload(ctx, topologyElem.Elasticsearch)
+				diags = append(diags, ds...)
+			}
 		}
 	}
 
-	return payload, nil
+	return payload, diags
 }
 
 func readElasticsearchTopology(model *models.ElasticsearchClusterTopologyElement) (*ElasticsearchTopology, error) {
@@ -197,7 +202,7 @@ func readElasticsearchTopology(model *models.ElasticsearchClusterTopologyElement
 	}
 	topology.Autoscaling = autoscaling
 
-	config, err := readElasticsearchConfigs(model.Elasticsearch)
+	config, err := readElasticsearchConfig(model.Elasticsearch)
 	if err != nil {
 		return nil, err
 	}

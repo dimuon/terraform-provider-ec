@@ -44,9 +44,7 @@ type Observability struct {
 	Metrics      bool    `tfsdk:"metrics"`
 }
 
-type Observabilities []Observability
-
-func ReadObservability(in *models.DeploymentSettings) (Observabilities, error) {
+func readObservability(in *models.DeploymentSettings) (*Observability, error) {
 	if in == nil || in.Observability == nil {
 		return nil, nil
 	}
@@ -76,66 +74,64 @@ func ReadObservability(in *models.DeploymentSettings) (Observabilities, error) {
 		return nil, nil
 	}
 
-	return []Observability{obs}, nil
+	return &obs, nil
 }
 
-func observabilityPayload(ctx context.Context, client *api.API, observabilities types.List) (*models.DeploymentObservabilitySettings, diag.Diagnostics) {
-	if len(observabilities.Elems) == 0 {
+func observabilityPayload(ctx context.Context, obsObj types.Object, client *api.API) (*models.DeploymentObservabilitySettings, diag.Diagnostics) {
+	if obsObj.IsNull() {
 		return nil, nil
 	}
 
-	var req models.DeploymentObservabilitySettings
+	var payload models.DeploymentObservabilitySettings
 
-	for _, elem := range observabilities.Elems {
-		var observability ObservabilityTF
+	var observability ObservabilityTF
 
-		if diags := tfsdk.ValueAs(ctx, elem, &observability); diags.HasError() {
+	if diags := tfsdk.ValueAs(ctx, obsObj, &observability); diags.HasError() {
+		return nil, diags
+	}
+
+	if observability.DeploymentId.Value == "" {
+		return nil, nil
+	}
+
+	refID := observability.RefId.Value
+
+	if observability.DeploymentId.Value != "self" && refID == "" {
+		// Since ms-77, the refID is optional.
+		// To not break ECE users with older versions, we still pre-calculate the refID here
+		params := deploymentapi.PopulateRefIDParams{
+			Kind:         util.Elasticsearch,
+			API:          client,
+			DeploymentID: observability.DeploymentId.Value,
+			RefID:        ec.String(""),
+		}
+
+		if err := deploymentapi.PopulateRefID(params); err != nil {
+			var diags diag.Diagnostics
+			diags.AddError("observability ref_id auto discovery", err.Error())
 			return nil, diags
 		}
 
-		if observability.DeploymentId.Value == "" {
-			return nil, nil
-		}
+		refID = *params.RefID
+	}
 
-		refID := observability.RefId.Value
-
-		if observability.DeploymentId.Value != "self" && refID == "" {
-			// Since ms-77, the refID is optional.
-			// To not break ECE users with older versions, we still pre-calculate the refID here
-			params := deploymentapi.PopulateRefIDParams{
-				Kind:         util.Elasticsearch,
-				API:          client,
-				DeploymentID: observability.DeploymentId.Value,
-				RefID:        ec.String(""),
-			}
-
-			if err := deploymentapi.PopulateRefID(params); err != nil {
-				var diags diag.Diagnostics
-				diags.AddError("observability ref_id auto discovery", err.Error())
-				return nil, diags
-			}
-
-			refID = *params.RefID
-		}
-
-		if observability.Logs.Value {
-			req.Logging = &models.DeploymentLoggingSettings{
-				Destination: &models.ObservabilityAbsoluteDeployment{
-					DeploymentID: ec.String(observability.DeploymentId.Value),
-					RefID:        refID,
-				},
-			}
-		}
-
-		if observability.Metrics.Value {
-			req.Metrics = &models.DeploymentMetricsSettings{
-				Destination: &models.ObservabilityAbsoluteDeployment{
-					DeploymentID: ec.String(observability.DeploymentId.Value),
-					RefID:        refID,
-				},
-			}
+	if observability.Logs.Value {
+		payload.Logging = &models.DeploymentLoggingSettings{
+			Destination: &models.ObservabilityAbsoluteDeployment{
+				DeploymentID: ec.String(observability.DeploymentId.Value),
+				RefID:        refID,
+			},
 		}
 	}
 
-	return &req, nil
+	if observability.Metrics.Value {
+		payload.Metrics = &models.DeploymentMetricsSettings{
+			Destination: &models.ObservabilityAbsoluteDeployment{
+				DeploymentID: ec.String(observability.DeploymentId.Value),
+				RefID:        refID,
+			},
+		}
+	}
+
+	return &payload, nil
 }

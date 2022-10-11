@@ -54,7 +54,7 @@ func fileAsResponseBody(t *testing.T, name string) io.ReadCloser {
 
 func Test_createRequest(t *testing.T) {
 
-	sampleKibana := Kibana{
+	sampleKibana := &Kibana{
 		ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
 		RefId:                     ec.String("main-kibana"),
 		ResourceId:                ec.String(mock.ValidClusterID),
@@ -68,15 +68,13 @@ func Test_createRequest(t *testing.T) {
 		},
 	}
 
-	sampleApm := Apm{
+	sampleApm := &Apm{
 		ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
 		RefId:                     ec.String("main-apm"),
 		ResourceId:                ec.String(mock.ValidClusterID),
 		Region:                    ec.String("us-east-1"),
-		Config: ApmConfigs{
-			{
-				DebugEnabled: ec.Bool(false),
-			},
+		Config: &ApmConfig{
+			DebugEnabled: ec.Bool(false),
 		},
 		Topology: Topologies{
 			{
@@ -87,7 +85,7 @@ func Test_createRequest(t *testing.T) {
 		},
 	}
 
-	sampleEnterpriseSearch := EnterpriseSearch{
+	sampleEnterpriseSearch := &EnterpriseSearch{
 		ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
 		RefId:                     ec.String("main-enterprise_search"),
 		ResourceId:                ec.String(mock.ValidClusterID),
@@ -104,7 +102,7 @@ func Test_createRequest(t *testing.T) {
 		},
 	}
 
-	sampleObservability := Observability{
+	sampleObservability := &Observability{
 		DeploymentId: ec.String(mock.ValidClusterID),
 		RefId:        ec.String("main-elasticsearch"),
 		Logs:         true,
@@ -117,62 +115,57 @@ func Test_createRequest(t *testing.T) {
 		DeploymentTemplateId: "aws-hot-warm-v2",
 		Region:               "us-east-1",
 		Version:              "7.11.1",
-		Elasticsearch: Elasticsearches{
-			{
-				RefId:      ec.String("main-elasticsearch"),
-				ResourceId: ec.String(mock.ValidClusterID),
-				Region:     ec.String("us-east-1"),
-				Config: ElasticsearchConfigs{
-					{
-						UserSettingsYaml:         ec.String("some.setting: value"),
-						UserSettingsOverrideYaml: ec.String("some.setting: value2"),
-						UserSettingsJson:         ec.String("{\"some.setting\":\"value\"}"),
-						UserSettingsOverrideJson: ec.String("{\"some.setting\":\"value2\"}"),
-					},
-				},
-				Topology: ElasticsearchTopologies{
-					{
-						Id:   "hot_content",
-						Size: ec.String("2g"),
-						NodeRoles: []string{
-							"master",
-							"ingest",
-							"remote_cluster_client",
-							"data_hot",
-							"transform",
-							"data_content",
-						},
-						ZoneCount: 1,
-					},
-					{
-						Id:   "warm",
-						Size: ec.String("2g"),
-						NodeRoles: []string{
-							"data_warm",
-							"remote_cluster_client",
-						},
-						ZoneCount: 1,
-					},
-				},
-			}},
-		Kibana:           Kibanas{sampleKibana},
-		Apm:              Apms{sampleApm},
-		EnterpriseSearch: EnterpriseSearches{sampleEnterpriseSearch},
-		Observability:    Observabilities{sampleObservability},
-		TrafficFilter:    []string{"0.0.0.0/0", "192.168.10.0/24"},
-	}
-
-	sampleElasticsearch := Elasticsearch{
-		RefId:      ec.String("main-elasticsearch"),
-		ResourceId: ec.String(mock.ValidClusterID),
-		Region:     ec.String("us-east-1"),
-		Config: ElasticsearchConfigs{
-			{
+		Elasticsearch: &Elasticsearch{
+			RefId:      ec.String("main-elasticsearch"),
+			ResourceId: ec.String(mock.ValidClusterID),
+			Region:     ec.String("us-east-1"),
+			Config: &ElasticsearchConfig{
 				UserSettingsYaml:         ec.String("some.setting: value"),
 				UserSettingsOverrideYaml: ec.String("some.setting: value2"),
 				UserSettingsJson:         ec.String("{\"some.setting\":\"value\"}"),
 				UserSettingsOverrideJson: ec.String("{\"some.setting\":\"value2\"}"),
 			},
+			Topology: ElasticsearchTopologies{
+				{
+					Id:   "hot_content",
+					Size: ec.String("2g"),
+					NodeRoles: []string{
+						"master",
+						"ingest",
+						"remote_cluster_client",
+						"data_hot",
+						"transform",
+						"data_content",
+					},
+					ZoneCount: 1,
+				},
+				{
+					Id:   "warm",
+					Size: ec.String("2g"),
+					NodeRoles: []string{
+						"data_warm",
+						"remote_cluster_client",
+					},
+					ZoneCount: 1,
+				},
+			},
+		},
+		Kibana:           sampleKibana,
+		Apm:              sampleApm,
+		EnterpriseSearch: sampleEnterpriseSearch,
+		Observability:    sampleObservability,
+		TrafficFilter:    []string{"0.0.0.0/0", "192.168.10.0/24"},
+	}
+
+	sampleElasticsearch := &Elasticsearch{
+		RefId:      ec.String("main-elasticsearch"),
+		ResourceId: ec.String(mock.ValidClusterID),
+		Region:     ec.String("us-east-1"),
+		Config: &ElasticsearchConfig{
+			UserSettingsYaml:         ec.String("some.setting: value"),
+			UserSettingsOverrideYaml: ec.String("some.setting: value2"),
+			UserSettingsJson:         ec.String("{\"some.setting\":\"value\"}"),
+			UserSettingsOverrideJson: ec.String("{\"some.setting\":\"value2\"}"),
 		},
 		Topology: ElasticsearchTopologies{
 			{
@@ -194,11 +187,11 @@ func Test_createRequest(t *testing.T) {
 		DeploymentTemplateId: "aws-io-optimized-v2",
 		Region:               "us-east-1",
 		Version:              "7.7.0",
-		Elasticsearch:        Elasticsearches{sampleElasticsearch},
-		Kibana:               Kibanas{sampleKibana},
-		Apm:                  Apms{sampleApm},
-		EnterpriseSearch:     EnterpriseSearches{sampleEnterpriseSearch},
-		Observability:        Observabilities{sampleObservability},
+		Elasticsearch:        sampleElasticsearch,
+		Kibana:               sampleKibana,
+		Apm:                  sampleApm,
+		EnterpriseSearch:     sampleEnterpriseSearch,
+		Observability:        sampleObservability,
 		TrafficFilter:        []string{"0.0.0.0/0", "192.168.10.0/24"},
 	}
 
@@ -359,7 +352,7 @@ func Test_createRequest(t *testing.T) {
 					Tags: []*models.MetadataItem{},
 				},
 				Resources: &models.DeploymentCreateResources{
-					Elasticsearch: testutil.EnrichWithEmptyTopologies(testutil.ReaderToESPayload(t, hotWarmTpl(), true), &models.ElasticsearchPayload{
+					Elasticsearch: []*models.ElasticsearchPayload{testutil.EnrichWithEmptyTopologies(testutil.ReaderToESPayload(t, hotWarmTpl(), true), &models.ElasticsearchPayload{
 						Region: ec.String("us-east-1"),
 						RefID:  ec.String("main-elasticsearch"),
 						Settings: &models.ElasticsearchClusterSettings{
@@ -440,7 +433,7 @@ func Test_createRequest(t *testing.T) {
 								},
 							},
 						},
-					}),
+					})},
 					Kibana: []*models.KibanaPayload{
 						{
 							ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
@@ -557,7 +550,7 @@ func Test_createRequest(t *testing.T) {
 					Tags: []*models.MetadataItem{},
 				},
 				Resources: &models.DeploymentCreateResources{
-					Elasticsearch: testutil.EnrichWithEmptyTopologies(testutil.ReaderToESPayload(t, ioOptimizedTpl(), false), &models.ElasticsearchPayload{
+					Elasticsearch: []*models.ElasticsearchPayload{testutil.EnrichWithEmptyTopologies(testutil.ReaderToESPayload(t, ioOptimizedTpl(), false), &models.ElasticsearchPayload{
 						Region: ec.String("us-east-1"),
 						RefID:  ec.String("main-elasticsearch"),
 						Settings: &models.ElasticsearchClusterSettings{
@@ -608,7 +601,7 @@ func Test_createRequest(t *testing.T) {
 								},
 							}},
 						},
-					}),
+					})},
 					Kibana: []*models.KibanaPayload{
 						{
 							ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
@@ -3069,8 +3062,9 @@ func Test_createRequest(t *testing.T) {
 				assert.Equal(t, diags, tt.diags)
 			} else {
 				assert.Nil(t, diags)
+				assert.NotNil(t, got)
+				assert.Equal(t, *tt.want, *got)
 			}
-			assert.Equal(t, tt.want, got)
 		})
 	}
 }

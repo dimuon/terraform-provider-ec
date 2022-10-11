@@ -41,7 +41,7 @@ type ElasticsearchTF struct {
 	HttpEndpoint   types.String `tfsdk:"http_endpoint"`
 	HttpsEndpoint  types.String `tfsdk:"https_endpoint"`
 	Topology       types.List   `tfsdk:"topology"`
-	Config         types.List   `tfsdk:"config"`
+	Config         types.Object `tfsdk:"config"`
 	RemoteCluster  types.Set    `tfsdk:"remote_cluster"`
 	SnapshotSource types.List   `tfsdk:"snapshot_source"`
 	Extension      types.Set    `tfsdk:"extension"`
@@ -59,7 +59,7 @@ type Elasticsearch struct {
 	HttpEndpoint   *string                      `tfsdk:"http_endpoint"`
 	HttpsEndpoint  *string                      `tfsdk:"https_endpoint"`
 	Topology       ElasticsearchTopologies      `tfsdk:"topology"`
-	Config         ElasticsearchConfigs         `tfsdk:"config"`
+	Config         *ElasticsearchConfig         `tfsdk:"config"`
 	RemoteCluster  ElasticsearchRemoteClusters  `tfsdk:"remote_cluster"`
 	SnapshotSource ElasticsearchSnapshotSources `tfsdk:"snapshot_source"`
 	Extension      ElasticsearchExtensions      `tfsdk:"extension"`
@@ -89,28 +89,23 @@ func readElasticsearches(in []*models.ElasticsearchResourceInfo, remotes *models
 	return ess, nil
 }
 
-func elasticsearchPayload(ctx context.Context, ess types.List, template *models.DeploymentTemplateInfoV2, dtID, version string, useNodeRoles bool, skipTopologies bool) ([]*models.ElasticsearchPayload, diag.Diagnostics) {
-	if len(ess.Elems) == 0 {
+func elasticsearchPayload(ctx context.Context, esObj types.Object, template *models.DeploymentTemplateInfoV2, dtID, version string, useNodeRoles bool, skipTopologies bool) (*models.ElasticsearchPayload, diag.Diagnostics) {
+	if esObj.IsNull() {
 		return nil, nil
 	}
 
 	templatePayload := enrichElasticsearchTemplate(esResource(template), dtID, version, useNodeRoles)
 
-	payloads := make([]*models.ElasticsearchPayload, 0, len(ess.Elems))
-
-	for _, elem := range ess.Elems {
-		var es ElasticsearchTF
-		if diags := tfsdk.ValueAs(ctx, elem, &es); diags.HasError() {
-			return nil, diags
-		}
-		payload, diags := es.Payload(ctx, templatePayload, skipTopologies)
-		if diags.HasError() {
-			return nil, diags
-		}
-		payloads = append(payloads, payload)
+	var es ElasticsearchTF
+	if diags := tfsdk.ValueAs(ctx, esObj, &es); diags.HasError() {
+		return nil, diags
+	}
+	payload, diags := es.Payload(ctx, templatePayload, skipTopologies)
+	if diags.HasError() {
+		return nil, diags
 	}
 
-	return payloads, nil
+	return payload, nil
 }
 
 func readElasticsearch(in *models.ElasticsearchResourceInfo, remotes *models.RemoteResources) (*Elasticsearch, error) {
@@ -151,11 +146,10 @@ func readElasticsearch(in *models.ElasticsearchResourceInfo, remotes *models.Rem
 
 	es.HttpEndpoint, es.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
 
-	configs, err := readElasticsearchConfigs(plan.Elasticsearch)
+	es.Config, err = readElasticsearchConfig(plan.Elasticsearch)
 	if err != nil {
 		return nil, err
 	}
-	es.Config = configs
 
 	clusters, err := readElasticsearchRemoteClusters(remotes.Resources)
 	if err != nil {
@@ -185,6 +179,8 @@ func readElasticsearch(in *models.ElasticsearchResourceInfo, remotes *models.Rem
 }
 
 func (es *ElasticsearchTF) Payload(ctx context.Context, res *models.ElasticsearchPayload, skipTopologies bool) (*models.ElasticsearchPayload, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
 	if !es.RefId.IsNull() {
 		res.RefID = &es.RefId.Value
 	}
@@ -197,62 +193,51 @@ func (es *ElasticsearchTF) Payload(ctx context.Context, res *models.Elasticsearc
 	// >= 6.6.0 which is when ILM is introduced in Elasticsearch.
 	unsetElasticsearchCuration(res)
 
-	var diags diag.Diagnostics
+	var ds diag.Diagnostics
 
 	if !skipTopologies {
-		res.Plan.ClusterTopology, diags = ElasticsearchTopologiesTF(es.Topology).Payload(ctx, res.Plan.ClusterTopology)
-		if diags.HasError() {
-			return nil, diags
-		}
+		res.Plan.ClusterTopology, ds = elasticsearchTopologiesPayload(ctx, es.Topology, res.Plan.ClusterTopology)
+		diags.Append(ds...)
 	}
 
 	// Fixes the node_roles field to remove the dedicated tier roles from the
 	// list when these are set as a dedicated tier as a topology element.
 	updateNodeRolesOnDedicatedTiers(res.Plan.ClusterTopology)
 
-	res.Plan.Elasticsearch, diags = ElasticsearchConfigsTF(es.Config).Payload(ctx, res.Plan.Elasticsearch)
-	if diags.HasError() {
-		return nil, diags
+	if !es.Config.IsNull() {
+		var config ElasticsearchConfigTF
+
+		ds = tfsdk.ValueAs(ctx, es.Config, &config)
+		diags.Append(ds...)
+
+		if !ds.HasError() {
+			res.Plan.Elasticsearch, ds = config.Payload(ctx, res.Plan.Elasticsearch)
+			diags = append(diags, ds...)
+		}
 	}
 
-	if diags := elasticsearchSnapshotSourcePayload(ctx, es.SnapshotSource, res.Plan); diags.HasError() {
-		return nil, diags
-	}
+	diags.Append(elasticsearchSnapshotSourcePayload(ctx, es.SnapshotSource, res.Plan)...)
 
-	if diags := ElasticsearchExtensionsTF(es.Extension).Payload(ctx, res.Plan.Elasticsearch); diags.HasError() {
-		return nil, diags
-	}
+	diags.Append(elasticsearchExtensionPayload(ctx, es.Extension, res.Plan.Elasticsearch)...)
 
 	if es.Autoscale.Value != "" {
 		autoscaleBool, err := strconv.ParseBool(es.Autoscale.Value)
 		if err != nil {
 			diags.AddError("failed parsing autoscale value", err.Error())
-			return nil, diags
+		} else {
+			res.Plan.AutoscalingEnabled = &autoscaleBool
 		}
-		res.Plan.AutoscalingEnabled = &autoscaleBool
 	}
 
-	settings, diags := ElasticsearchTrustAccountsTF(es.TrustAccount).Payload(ctx, res.Settings)
-	if diags.HasError() {
-		return nil, diags
-	}
-	if settings != nil {
-		res.Settings = settings
-	}
+	res.Settings, ds = elasticsearchTrustAccountPayload(ctx, es.TrustAccount, res.Settings)
+	diags = append(diags, ds...)
 
-	settings, diags = ElasticsearchTrustExternalsTF(es.TrustExternal).Payload(ctx, res.Settings)
-	if diags.HasError() {
-		return nil, diags
-	}
-	if settings != nil {
-		res.Settings = settings
-	}
+	res.Settings, ds = elasticsearchTrustExternalPayload(ctx, es.TrustExternal, res.Settings)
+	diags = append(diags, ds...)
 
-	if diags := elasticsearchStrategyPayload(ctx, es.Strategy, res.Plan); diags.HasError() {
-		return nil, diags
-	}
+	diags.Append(elasticsearchStrategyPayload(ctx, es.Strategy, res.Plan)...)
 
-	return res, nil
+	return res, diags
 }
 
 func enrichElasticsearchTemplate(tpl *models.ElasticsearchPayload, templateId, version string, useNodeRoles bool) *models.ElasticsearchPayload {
@@ -280,7 +265,7 @@ func enrichElasticsearchTemplate(tpl *models.ElasticsearchPayload, templateId, v
 }
 
 func esResource(res *models.DeploymentTemplateInfoV2) *models.ElasticsearchPayload {
-	if len(res.DeploymentTemplate.Resources.Elasticsearch) == 0 {
+	if res == nil || len(res.DeploymentTemplate.Resources.Elasticsearch) == 0 {
 		return &models.ElasticsearchPayload{
 			Plan: &models.ElasticsearchClusterPlan{
 				Elasticsearch: &models.ElasticsearchConfiguration{},

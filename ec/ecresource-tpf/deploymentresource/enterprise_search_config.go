@@ -19,11 +19,12 @@ package deploymentresource
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -35,8 +36,6 @@ type EnterpriseSearchConfigTF struct {
 	UserSettingsOverrideYaml types.String `tfsdk:"user_settings_override_yaml"`
 }
 
-type EnterpriseSearchConfigsTF []*EnterpriseSearchConfigTF
-
 type EnterpriseSearchConfig struct {
 	DockerImage              *string `tfsdk:"docker_image"`
 	UserSettingsJson         *string `tfsdk:"user_settings_json"`
@@ -45,9 +44,7 @@ type EnterpriseSearchConfig struct {
 	UserSettingsOverrideYaml *string `tfsdk:"user_settings_override_yaml"`
 }
 
-type EnterpriseSearchConfigs []EnterpriseSearchConfig
-
-func readEnterpriseSearchConfigs(in *models.EnterpriseSearchConfiguration) (EnterpriseSearchConfigs, error) {
+func readEnterpriseSearchConfig(in *models.EnterpriseSearchConfiguration) (*EnterpriseSearchConfig, error) {
 	var cfg EnterpriseSearchConfig
 
 	if in == nil {
@@ -82,33 +79,32 @@ func readEnterpriseSearchConfigs(in *models.EnterpriseSearchConfiguration) (Ente
 		return nil, nil
 	}
 
-	return EnterpriseSearchConfigs{cfg}, nil
+	return &cfg, nil
 }
 
-func (configs EnterpriseSearchConfigsTF) Payload(res *models.EnterpriseSearchConfiguration) error {
-	for _, cfg := range configs {
+func (cfg EnterpriseSearchConfigTF) Payload(ctx context.Context, res *models.EnterpriseSearchConfiguration) diag.Diagnostics {
+	var diags diag.Diagnostics
 
-		if cfg.UserSettingsJson.Value != "" {
-			if err := json.Unmarshal([]byte(cfg.UserSettingsJson.Value), &res.UserSettingsJSON); err != nil {
-				return fmt.Errorf("failed expanding enterprise_search user_settings_json: %w", err)
-			}
-		}
-		if cfg.UserSettingsOverrideJson.Value != "" {
-			if err := json.Unmarshal([]byte(cfg.UserSettingsOverrideJson.Value), &res.UserSettingsOverrideJSON); err != nil {
-				return fmt.Errorf("failed expanding enterprise_search user_settings_override_json: %w", err)
-			}
-		}
-		if !cfg.UserSettingsYaml.IsNull() {
-			res.UserSettingsYaml = cfg.UserSettingsYaml.Value
-		}
-		if !cfg.UserSettingsOverrideYaml.IsNull() {
-			res.UserSettingsOverrideYaml = cfg.UserSettingsOverrideYaml.Value
-		}
-
-		if !cfg.DockerImage.IsNull() {
-			res.DockerImage = cfg.DockerImage.Value
+	if cfg.UserSettingsJson.Value != "" {
+		if err := json.Unmarshal([]byte(cfg.UserSettingsJson.Value), &res.UserSettingsJSON); err != nil {
+			diags.AddError("failed expanding enterprise_search user_settings_json", err.Error())
 		}
 	}
+	if cfg.UserSettingsOverrideJson.Value != "" {
+		if err := json.Unmarshal([]byte(cfg.UserSettingsOverrideJson.Value), &res.UserSettingsOverrideJSON); err != nil {
+			diags.AddError("failed expanding enterprise_search user_settings_override_json", err.Error())
+		}
+	}
+	if !cfg.UserSettingsYaml.IsNull() {
+		res.UserSettingsYaml = cfg.UserSettingsYaml.Value
+	}
+	if !cfg.UserSettingsOverrideYaml.IsNull() {
+		res.UserSettingsOverrideYaml = cfg.UserSettingsOverrideYaml.Value
+	}
 
-	return nil
+	if !cfg.DockerImage.IsNull() {
+		res.DockerImage = cfg.DockerImage.Value
+	}
+
+	return diags
 }

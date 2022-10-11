@@ -45,12 +45,12 @@ type DeploymentTF struct {
 	ApmSecretToken        types.String `tfsdk:"apm_secret_token"`
 	TrafficFilter         types.Set    `tfsdk:"traffic_filter"`
 	Tags                  types.Map    `tfsdk:"tags"`
-	Elasticsearch         types.List   `tfsdk:"elasticsearch"`
-	Kibana                types.List   `tfsdk:"kibana"`
-	Apm                   types.List   `tfsdk:"apm"`
-	IntegrationsServer    types.List   `tfsdk:"integrations_server"`
-	EnterpriseSearch      types.List   `tfsdk:"enterprise_search"`
-	Observability         types.List   `tfsdk:"observability"`
+	Elasticsearch         types.Object `tfsdk:"elasticsearch"`
+	Kibana                types.Object `tfsdk:"kibana"`
+	Apm                   types.Object `tfsdk:"apm"`
+	IntegrationsServer    types.Object `tfsdk:"integrations_server"`
+	EnterpriseSearch      types.Object `tfsdk:"enterprise_search"`
+	Observability         types.Object `tfsdk:"observability"`
 }
 
 type Deployment struct {
@@ -66,12 +66,12 @@ type Deployment struct {
 	ApmSecretToken        string              `tfsdk:"apm_secret_token"`
 	TrafficFilter         []string            `tfsdk:"traffic_filter"`
 	Tags                  map[string]string   `tfsdk:"tags"`
-	Elasticsearch         Elasticsearches     `tfsdk:"elasticsearch"`
-	Kibana                Kibanas             `tfsdk:"kibana"`
-	Apm                   Apms                `tfsdk:"apm"`
-	IntegrationsServer    IntegrationsServers `tfsdk:"integrations_server"`
-	EnterpriseSearch      EnterpriseSearches  `tfsdk:"enterprise_search"`
-	Observability         Observabilities     `tfsdk:"observability"`
+	Elasticsearch         *Elasticsearch      `tfsdk:"elasticsearch"`
+	Kibana                *Kibana             `tfsdk:"kibana"`
+	Apm                   *Apm                `tfsdk:"apm"`
+	IntegrationsServer    *IntegrationsServer `tfsdk:"integrations_server"`
+	EnterpriseSearch      *EnterpriseSearch   `tfsdk:"enterprise_search"`
+	Observability         *Observability      `tfsdk:"observability"`
 }
 
 var (
@@ -125,11 +125,13 @@ func readDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteRes
 	}
 	dep.Version = version
 
-	if dep.Elasticsearch, err = readElasticsearches(res.Resources.Elasticsearch, remotes); err != nil {
+	dep.Elasticsearch, err = readElasticsearch(res.Resources.Elasticsearch[0], remotes)
+	if err != nil {
 		return nil, err
 	}
 
-	if dep.Kibana, err = readKibanas(res.Resources.Kibana); err != nil {
+	dep.Kibana, err = readKibanas(res.Resources.Kibana)
+	if err != nil {
 		return nil, err
 	}
 
@@ -153,7 +155,7 @@ func readDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteRes
 		return nil, err
 	}
 
-	if dep.Observability, err = ReadObservability(res.Settings); err != nil {
+	if dep.Observability, err = readObservability(res.Settings); err != nil {
 		return nil, err
 	}
 
@@ -195,48 +197,70 @@ func (dep DeploymentTF) CreateRequest(ctx context.Context, client *api.API) (*mo
 		return nil, diagsnostics
 	}
 
-	esRes, diags := elasticsearchPayload(ctx, dep.Elasticsearch, template, dtID, version, useNodeRoles, false)
+	elasticsearchPayload, diags := elasticsearchPayload(ctx, dep.Elasticsearch, template, dtID, version, useNodeRoles, false)
 
 	if diags.HasError() {
 		diagsnostics.Append(diags...)
 	}
-	result.Resources.Elasticsearch = append(result.Resources.Elasticsearch, esRes...)
 
-	kibanaRes, diags := kibanaPayload(ctx, template, dep.Kibana)
+	if elasticsearchPayload != nil {
+		result.Resources.Elasticsearch = []*models.ElasticsearchPayload{elasticsearchPayload}
+	}
+
+	kibanaPayload, diags := kibanaPayload(ctx, dep.Kibana, template)
+
 	if diags.HasError() {
 		diagsnostics.Append(diags...)
 	}
-	result.Resources.Kibana = append(result.Resources.Kibana, kibanaRes...)
 
-	apms, diags := apmsPayload(ctx, template, dep.Apm)
+	if kibanaPayload != nil {
+		result.Resources.Kibana = []*models.KibanaPayload{kibanaPayload}
+	}
+
+	apmPayload, diags := apmPayload(ctx, dep.Apm, template)
+
 	if diags.HasError() {
 		diagsnostics.Append(diags...)
 	}
-	result.Resources.Apm = append(result.Resources.Apm, apms...)
 
-	integrationsServerRes, diags := integrationsServerPayload(ctx, template, dep.IntegrationsServer)
+	if apmPayload != nil {
+		result.Resources.Apm = []*models.ApmPayload{apmPayload}
+	}
+
+	integrationsServerPayload, diags := integrationsServerPayload(ctx, dep.IntegrationsServer, template)
+
 	if diags.HasError() {
 		diagsnostics.Append(diags...)
 	}
-	result.Resources.IntegrationsServer = append(result.Resources.IntegrationsServer, integrationsServerRes...)
 
-	enterpriseSearchRes, diags := enterpriseSearchesPayload(ctx, template, dep.EnterpriseSearch)
+	if integrationsServerPayload != nil {
+		result.Resources.IntegrationsServer = []*models.IntegrationsServerPayload{integrationsServerPayload}
+	}
+
+	enterpriseSearchPayload, diags := enterpriseSearchesPayload(ctx, dep.EnterpriseSearch, template)
+
 	if diags.HasError() {
 		diagsnostics.Append(diags...)
 	}
-	result.Resources.EnterpriseSearch = append(result.Resources.EnterpriseSearch, enterpriseSearchRes...)
+
+	if enterpriseSearchPayload != nil {
+		result.Resources.EnterpriseSearch = []*models.EnterpriseSearchPayload{enterpriseSearchPayload}
+	}
 
 	if diags := trafficFilterToModel(ctx, dep.TrafficFilter, &result); diags.HasError() {
 		diagsnostics.Append(diags...)
 	}
 
-	observability, diags := observabilityPayload(ctx, client, dep.Observability)
+	observabilityPayload, diags := observabilityPayload(ctx, dep.Observability, client)
+
 	if diags.HasError() {
 		diagsnostics.Append(diags...)
 	}
-	result.Settings.Observability = observability
+
+	result.Settings.Observability = observabilityPayload
 
 	result.Metadata.Tags, diags = converters.TFmapToTags(ctx, dep.Tags)
+
 	if diags.HasError() {
 		diagsnostics.Append(diags...)
 	}
@@ -364,54 +388,69 @@ func (plan DeploymentTF) UpdateRequest(ctx context.Context, client *api.API, cur
 	}
 	useNodeRoles = useNodeRoles && convertLegacy
 
-	esRes, diags := elasticsearchPayload(ctx, plan.Elasticsearch, template, dtID, version, useNodeRoles, skipEStopologies)
+	elasticsearchPayload, diags := elasticsearchPayload(ctx, plan.Elasticsearch, template, dtID, version, useNodeRoles, skipEStopologies)
 
 	if diags.HasError() {
 		diagsnostics.Append(diags...)
 	}
-	result.Resources.Elasticsearch = append(result.Resources.Elasticsearch, esRes...)
 
-	// if the restore snapshot operation has been specified, the snapshot restore
-	// can't be full once the cluster has been created, so the Strategy must be set
-	// to "partial".
-	ensurePartialSnapshotStrategy(esRes)
+	if elasticsearchPayload != nil {
+		// if the restore snapshot operation has been specified, the snapshot restore
+		// can't be full once the cluster has been created, so the Strategy must be set
+		// to "partial".
+		ensurePartialSnapshotStrategy(elasticsearchPayload)
 
-	kibanaRes, diags := kibanaPayload(ctx, template, plan.Kibana)
+		result.Resources.Elasticsearch = append(result.Resources.Elasticsearch, elasticsearchPayload)
+	}
+
+	kibanaPayload, diags := kibanaPayload(ctx, plan.Kibana, template)
 	if diags.HasError() {
 		diagsnostics.Append(diags...)
 	}
-	result.Resources.Kibana = append(result.Resources.Kibana, kibanaRes...)
 
-	apms, diags := apmsPayload(ctx, template, plan.Apm)
+	if kibanaPayload != nil {
+		result.Resources.Kibana = append(result.Resources.Kibana, kibanaPayload)
+	}
+
+	apmPayload, diags := apmPayload(ctx, plan.Apm, template)
 	if diags.HasError() {
 		diagsnostics.Append(diags...)
 	}
-	result.Resources.Apm = append(result.Resources.Apm, apms...)
 
-	integrationsServerRes, diags := integrationsServerPayload(ctx, template, plan.IntegrationsServer)
+	if apmPayload != nil {
+		result.Resources.Apm = append(result.Resources.Apm, apmPayload)
+	}
+
+	integrationsServerPayload, diags := integrationsServerPayload(ctx, plan.IntegrationsServer, template)
 	if diags.HasError() {
 		diagsnostics.Append(diags...)
 	}
-	result.Resources.IntegrationsServer = append(result.Resources.IntegrationsServer, integrationsServerRes...)
 
-	enterpriseSearchRes, diags := enterpriseSearchesPayload(ctx, template, plan.EnterpriseSearch)
+	if integrationsServerPayload != nil {
+		result.Resources.IntegrationsServer = append(result.Resources.IntegrationsServer, integrationsServerPayload)
+	}
+
+	enterpriseSearchPayload, diags := enterpriseSearchesPayload(ctx, plan.EnterpriseSearch, template)
 	if diags.HasError() {
 		diagsnostics.Append(diags...)
 	}
-	result.Resources.EnterpriseSearch = append(result.Resources.EnterpriseSearch, enterpriseSearchRes...)
 
-	observability, diags := observabilityPayload(ctx, client, plan.Observability)
+	if enterpriseSearchPayload != nil {
+		result.Resources.EnterpriseSearch = append(result.Resources.EnterpriseSearch, enterpriseSearchPayload)
+	}
+
+	observabilityPayload, diags := observabilityPayload(ctx, plan.Observability, client)
 	if diags.HasError() {
 		diagsnostics.Append(diags...)
 	}
-	result.Settings.Observability = observability
+	result.Settings.Observability = observabilityPayload
 
 	// In order to stop shipping logs and metrics, an empty Observability
 	// object must be passed, as opposed to a nil object when creating a
 	// deployment without observability settings.
-	if plan.Observability.IsNull() && !curState.Observability.IsNull() {
-		result.Settings.Observability = &models.DeploymentObservabilitySettings{}
-	}
+	// if plan.Observability.IsNull() && !curState.Observability.IsNull() {
+	// 	result.Settings.Observability = &models.DeploymentObservabilitySettings{}
+	// }
 
 	result.Metadata.Tags, diags = converters.TFmapToTags(ctx, plan.Tags)
 	if diags.HasError() {
@@ -460,7 +499,7 @@ func (plan DeploymentTF) legacyToNodeRoles(ctx context.Context, curState Deploym
 	// which is not permitted by the API.
 	var hasNodeTypeSet bool
 	var es ElasticsearchTF
-	if diags := tfsdk.ValueAs(ctx, plan.Elasticsearch.Elems[0], &es); diags.HasError() {
+	if diags := tfsdk.ValueAs(ctx, plan.Elasticsearch, &es); diags.HasError() {
 		return false, diags
 	}
 
@@ -483,12 +522,10 @@ func (plan DeploymentTF) legacyToNodeRoles(ctx context.Context, curState Deploym
 	return true, nil
 }
 
-func ensurePartialSnapshotStrategy(ess []*models.ElasticsearchPayload) {
-	for _, es := range ess {
-		transient := es.Plan.Transient
-		if transient == nil || transient.RestoreSnapshot == nil {
-			continue
-		}
-		transient.RestoreSnapshot.Strategy = "partial"
+func ensurePartialSnapshotStrategy(es *models.ElasticsearchPayload) {
+	transient := es.Plan.Transient
+	if transient == nil || transient.RestoreSnapshot == nil {
+		return
 	}
+	transient.RestoreSnapshot.Strategy = "partial"
 }

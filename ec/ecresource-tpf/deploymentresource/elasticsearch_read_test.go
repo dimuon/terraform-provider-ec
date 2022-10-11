@@ -35,7 +35,6 @@ import (
 func Test_readElasticsearch(t *testing.T) {
 	type args struct {
 		in      []*models.ElasticsearchResourceInfo
-		name    string
 		remotes models.RemoteResources
 	}
 	tests := []struct {
@@ -238,13 +237,11 @@ func Test_readElasticsearch(t *testing.T) {
 					Region:        ec.String("some-region"),
 					HttpEndpoint:  ec.String("http://othercluster.cloud.elastic.co:9200"),
 					HttpsEndpoint: ec.String("https://othercluster.cloud.elastic.co:9243"),
-					Config: ElasticsearchConfigs{
-						{
-							UserSettingsYaml:         ec.String("some.setting: value"),
-							UserSettingsOverrideYaml: ec.String("some.setting: value2"),
-							UserSettingsJson:         ec.String("{\"some.setting\":\"value\"}"),
-							UserSettingsOverrideJson: ec.String("{\"some.setting\":\"value2\"}"),
-						},
+					Config: &ElasticsearchConfig{
+						UserSettingsYaml:         ec.String("some.setting: value"),
+						UserSettingsOverrideYaml: ec.String("some.setting: value2"),
+						UserSettingsJson:         ec.String("{\"some.setting\":\"value\"}"),
+						UserSettingsOverrideJson: ec.String("{\"some.setting\":\"value2\"}"),
 					},
 					Topology: ElasticsearchTopologies{
 						{
@@ -269,8 +266,8 @@ func Test_readElasticsearch(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Equal(t, tt.want, got)
 
-			var essTF types.List
-			diags := tfsdk.ValueFrom(context.Background(), got, elasticsearch().Type(), &essTF)
+			var esObj types.Object
+			diags := tfsdk.ValueFrom(context.Background(), got, elasticsearchAttribute().FrameworkType(), &esObj)
 			if tt.diags.HasError() {
 				assert.Equal(t, tt.diags, diags)
 			}
@@ -416,28 +413,26 @@ func Test_readElasticsearchConfig(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want ElasticsearchConfigs
+		want *ElasticsearchConfig
 	}{
 		{
 			name: "read plugins allowlist",
 			args: args{cfg: &models.ElasticsearchConfiguration{
 				EnabledBuiltInPlugins: []string{"some-allowed-plugin"},
 			}},
-			want: ElasticsearchConfigs{
-				{
-					Plugins: []string{"some-allowed-plugin"},
-				},
+			want: &ElasticsearchConfig{
+				Plugins: []string{"some-allowed-plugin"},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := readElasticsearchConfigs(tt.args.cfg)
+			got, err := readElasticsearchConfig(tt.args.cfg)
 			assert.Nil(t, err)
 			assert.Equal(t, tt.want, got)
 
-			var configsTF types.List
-			diags := tfsdk.ValueFrom(context.Background(), got, elasticsearchConfig().Type(), &configsTF)
+			var config types.Object
+			diags := tfsdk.ValueFrom(context.Background(), got, elasticsearchConfig().FrameworkType(), &config)
 			assert.Nil(t, diags)
 		})
 	}

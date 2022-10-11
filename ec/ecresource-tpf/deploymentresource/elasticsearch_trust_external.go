@@ -32,8 +32,6 @@ type ElasticsearchTrustExternalTF struct {
 	TrustAllowlist types.Set    `tfsdk:"trust_allowlist"`
 }
 
-type ElasticsearchTrustExternalsTF types.Set
-
 type ElasticsearchTrustExternal struct {
 	RelationshipId *string  `tfsdk:"relationship_id"`
 	TrustAll       *bool    `tfsdk:"trust_all"`
@@ -60,7 +58,7 @@ func readElasticsearchTrustExternals(in *models.ElasticsearchClusterSettings) (E
 	return externals, nil
 }
 
-func (externals ElasticsearchTrustExternalsTF) Payload(ctx context.Context, model *models.ElasticsearchClusterSettings) (*models.ElasticsearchClusterSettings, diag.Diagnostics) {
+func elasticsearchTrustExternalPayload(ctx context.Context, externals types.Set, model *models.ElasticsearchClusterSettings) (*models.ElasticsearchClusterSettings, diag.Diagnostics) {
 	payloads := make([]*models.ExternalTrustRelationship, 0, len(externals.Elems))
 
 	for _, elem := range externals.Elems {
@@ -82,7 +80,7 @@ func (externals ElasticsearchTrustExternalsTF) Payload(ctx context.Context, mode
 	}
 
 	if len(payloads) == 0 {
-		return nil, nil
+		return model, nil
 	}
 
 	if model == nil {

@@ -26,6 +26,7 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi/trafficfilterapi"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 )
 
 func (r Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -86,32 +87,32 @@ func (r Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *
 }
 
 func handleTrafficFilterChange(ctx context.Context, client *api.API, plan, state DeploymentTF) diag.Diagnostics {
-	if plan.TrafficFilter.IsNull() || plan.TrafficFilter.Equal(state.TrafficFilter) {
-		return nil
-	}
+	// if plan.TrafficFilter.IsNull() || plan.TrafficFilter.Equal(state.TrafficFilter) {
+	// 	return nil
+	// }
 
-	var planRules, stateRules ruleSet
-	if diags := plan.TrafficFilter.ElementsAs(ctx, &planRules, true); diags.HasError() {
-		return diags
-	}
+	// var planRules, stateRules ruleSet
+	// if diags := plan.TrafficFilter.ElementsAs(ctx, &planRules, true); diags.HasError() {
+	// 	return diags
+	// }
 
-	if diags := state.TrafficFilter.ElementsAs(ctx, &stateRules, true); diags.HasError() {
-		return diags
-	}
+	// if diags := state.TrafficFilter.ElementsAs(ctx, &stateRules, true); diags.HasError() {
+	// 	return diags
+	// }
 
 	var rulesToAdd, rulesToDelete []string
 
-	for _, rule := range planRules {
-		if !stateRules.exist(rule) {
-			rulesToAdd = append(rulesToAdd, rule)
-		}
-	}
+	// for _, rule := range planRules {
+	// 	if !stateRules.exist(rule) {
+	// 		rulesToAdd = append(rulesToAdd, rule)
+	// 	}
+	// }
 
-	for _, rule := range stateRules {
-		if !planRules.exist(rule) {
-			rulesToDelete = append(rulesToDelete, rule)
-		}
-	}
+	// for _, rule := range stateRules {
+	// 	if !planRules.exist(rule) {
+	// 		rulesToDelete = append(rulesToDelete, rule)
+	// 	}
+	// }
 
 	var diags diag.Diagnostics
 	for _, rule := range rulesToAdd {
@@ -165,24 +166,24 @@ func associateRule(ruleID, deploymentID string, client *api.API) error {
 }
 
 func handleRemoteClusters(ctx context.Context, client *api.API, plan, state DeploymentTF) diag.Diagnostics {
-	if len(plan.Elasticsearch.Elems) == 0 {
-		return nil
-	}
+	// if len(plan.Elasticsearch.Elems) == 0 {
+	// 	return nil
+	// }
 
 	if plan.Elasticsearch.Equal(state.Elasticsearch) {
 		return nil
 	}
 
-	var ess []ElasticsearchTF
-	if diags := plan.Elasticsearch.ElementsAs(ctx, &ess, true); diags.HasError() {
+	var ess ElasticsearchTF
+	if diags := tfsdk.ValueAs(ctx, plan.Elasticsearch, &ess); diags.HasError() {
 		return diags
 	}
 
-	if len(ess[0].RemoteCluster.Elems) == 0 {
+	if len(ess.RemoteCluster.Elems) == 0 {
 		return nil
 	}
 
-	remoteRes, diags := elasticsearchRemoteClustersPayload(ctx, ess[0].RemoteCluster)
+	remoteRes, diags := elasticsearchRemoteClustersPayload(ctx, ess.RemoteCluster)
 	if diags.HasError() {
 		return diags
 	}
@@ -190,7 +191,7 @@ func handleRemoteClusters(ctx context.Context, client *api.API, plan, state Depl
 	if err := esremoteclustersapi.Update(esremoteclustersapi.UpdateParams{
 		API:             client,
 		DeploymentID:    plan.Id.Value,
-		RefID:           ess[0].RefId.Value,
+		RefID:           ess.RefId.Value,
 		RemoteResources: remoteRes,
 	}); err != nil {
 		diags.AddError("cannot update remote clusters", err.Error())

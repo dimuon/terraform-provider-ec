@@ -34,13 +34,13 @@ import (
 
 func Test_enterpriseSearchPayload(t *testing.T) {
 	type args struct {
-		ess      EnterpriseSearches
+		es       EnterpriseSearch
 		template *models.DeploymentTemplateInfoV2
 	}
 	tests := []struct {
 		name  string
 		args  args
-		want  []*models.EnterpriseSearchPayload
+		want  *models.EnterpriseSearchPayload
 		diags diag.Diagnostics
 	}{
 		{
@@ -50,58 +50,56 @@ func Test_enterpriseSearchPayload(t *testing.T) {
 			name: "parses an enterprise_search resource with explicit topology",
 			args: args{
 				template: testutil.ParseDeploymentTemplate(t, "testdata/template-aws-io-optimized-v2.json"),
-				ess: EnterpriseSearches{
-					{
-						RefId:                     ec.String("main-enterprise_search"),
-						ResourceId:                ec.String(mock.ValidClusterID),
-						Region:                    ec.String("some-region"),
-						ElasticsearchClusterRefId: ec.String("somerefid"),
-						Topology: EnterpriseSearchTopologies{
-							{
-								InstanceConfigurationId: ec.String("aws.enterprisesearch.m5d"),
-								Size:                    ec.String("2g"),
-								ZoneCount:               1,
-							},
+				es: EnterpriseSearch{
+					RefId:                     ec.String("main-enterprise_search"),
+					ResourceId:                ec.String(mock.ValidClusterID),
+					Region:                    ec.String("some-region"),
+					ElasticsearchClusterRefId: ec.String("somerefid"),
+					Topology: EnterpriseSearchTopologies{
+						{
+							InstanceConfigurationId: ec.String("aws.enterprisesearch.m5d"),
+							Size:                    ec.String("2g"),
+							ZoneCount:               1,
 						},
 					},
 				},
 			},
-			want: []*models.EnterpriseSearchPayload{{
+			want: &models.EnterpriseSearchPayload{
 				ElasticsearchClusterRefID: ec.String("somerefid"),
 				Region:                    ec.String("some-region"),
 				RefID:                     ec.String("main-enterprise_search"),
 				Plan: &models.EnterpriseSearchPlan{
 					EnterpriseSearch: &models.EnterpriseSearchConfiguration{},
-					ClusterTopology: []*models.EnterpriseSearchTopologyElement{{
-						ZoneCount:               1,
-						InstanceConfigurationID: "aws.enterprisesearch.m5d",
-						Size: &models.TopologySize{
-							Resource: ec.String("memory"),
-							Value:    ec.Int32(2048),
+					ClusterTopology: []*models.EnterpriseSearchTopologyElement{
+						{
+							ZoneCount:               1,
+							InstanceConfigurationID: "aws.enterprisesearch.m5d",
+							Size: &models.TopologySize{
+								Resource: ec.String("memory"),
+								Value:    ec.Int32(2048),
+							},
+							NodeType: &models.EnterpriseSearchNodeTypes{
+								Appserver: ec.Bool(true),
+								Connector: ec.Bool(true),
+								Worker:    ec.Bool(true),
+							},
 						},
-						NodeType: &models.EnterpriseSearchNodeTypes{
-							Appserver: ec.Bool(true),
-							Connector: ec.Bool(true),
-							Worker:    ec.Bool(true),
-						},
-					}},
+					},
 				},
-			}},
+			},
 		},
 		{
 			name: "parses an enterprise_search resource with no topology takes the minimum size",
 			args: args{
 				template: testutil.ParseDeploymentTemplate(t, "testdata/template-aws-io-optimized-v2.json"),
-				ess: EnterpriseSearches{
-					{
-						RefId:                     ec.String("main-enterprise_search"),
-						ResourceId:                ec.String(mock.ValidClusterID),
-						Region:                    ec.String("some-region"),
-						ElasticsearchClusterRefId: ec.String("somerefid"),
-					},
+				es: EnterpriseSearch{
+					RefId:                     ec.String("main-enterprise_search"),
+					ResourceId:                ec.String(mock.ValidClusterID),
+					Region:                    ec.String("some-region"),
+					ElasticsearchClusterRefId: ec.String("somerefid"),
 				},
 			},
-			want: []*models.EnterpriseSearchPayload{{
+			want: &models.EnterpriseSearchPayload{
 				ElasticsearchClusterRefID: ec.String("somerefid"),
 				Region:                    ec.String("some-region"),
 				RefID:                     ec.String("main-enterprise_search"),
@@ -121,27 +119,25 @@ func Test_enterpriseSearchPayload(t *testing.T) {
 						},
 					}},
 				},
-			}},
+			},
 		},
 		{
 			name: "parses an enterprise_search resource with topology but no instance_configuration_id",
 			args: args{
 				template: testutil.ParseDeploymentTemplate(t, "testdata/template-aws-io-optimized-v2.json"),
-				ess: EnterpriseSearches{
-					{
-						RefId:                     ec.String("main-enterprise_search"),
-						ResourceId:                ec.String(mock.ValidClusterID),
-						Region:                    ec.String("some-region"),
-						ElasticsearchClusterRefId: ec.String("somerefid"),
-						Topology: EnterpriseSearchTopologies{
-							{
-								Size: ec.String("4g"),
-							},
+				es: EnterpriseSearch{
+					RefId:                     ec.String("main-enterprise_search"),
+					ResourceId:                ec.String(mock.ValidClusterID),
+					Region:                    ec.String("some-region"),
+					ElasticsearchClusterRefId: ec.String("somerefid"),
+					Topology: EnterpriseSearchTopologies{
+						{
+							Size: ec.String("4g"),
 						},
 					},
 				},
 			},
-			want: []*models.EnterpriseSearchPayload{{
+			want: &models.EnterpriseSearchPayload{
 				ElasticsearchClusterRefID: ec.String("somerefid"),
 				Region:                    ec.String("some-region"),
 				RefID:                     ec.String("main-enterprise_search"),
@@ -161,27 +157,25 @@ func Test_enterpriseSearchPayload(t *testing.T) {
 						},
 					}},
 				},
-			}},
+			},
 		},
 		{
 			name: "parses an enterprise_search resource with topology but instance_configuration_id",
 			args: args{
 				template: testutil.ParseDeploymentTemplate(t, "testdata/template-aws-io-optimized-v2.json"),
-				ess: EnterpriseSearches{
-					{
-						RefId:                     ec.String("main-enterprise_search"),
-						ResourceId:                ec.String(mock.ValidClusterID),
-						Region:                    ec.String("some-region"),
-						ElasticsearchClusterRefId: ec.String("somerefid"),
-						Topology: EnterpriseSearchTopologies{
-							{
-								InstanceConfigurationId: ec.String("aws.enterprisesearch.m5d"),
-							},
+				es: EnterpriseSearch{
+					RefId:                     ec.String("main-enterprise_search"),
+					ResourceId:                ec.String(mock.ValidClusterID),
+					Region:                    ec.String("some-region"),
+					ElasticsearchClusterRefId: ec.String("somerefid"),
+					Topology: EnterpriseSearchTopologies{
+						{
+							InstanceConfigurationId: ec.String("aws.enterprisesearch.m5d"),
 						},
 					},
 				},
 			},
-			want: []*models.EnterpriseSearchPayload{{
+			want: &models.EnterpriseSearchPayload{
 				ElasticsearchClusterRefID: ec.String("somerefid"),
 				Region:                    ec.String("some-region"),
 				RefID:                     ec.String("main-enterprise_search"),
@@ -201,27 +195,25 @@ func Test_enterpriseSearchPayload(t *testing.T) {
 						},
 					}},
 				},
-			}},
+			},
 		},
 		{
 			name: "parses an enterprise_search resource with topology and zone_count",
 			args: args{
 				template: testutil.ParseDeploymentTemplate(t, "testdata/template-aws-io-optimized-v2.json"),
-				ess: EnterpriseSearches{
-					{
-						RefId:                     ec.String("main-enterprise_search"),
-						ResourceId:                ec.String(mock.ValidClusterID),
-						Region:                    ec.String("some-region"),
-						ElasticsearchClusterRefId: ec.String("somerefid"),
-						Topology: EnterpriseSearchTopologies{
-							{
-								ZoneCount: 1,
-							},
+				es: EnterpriseSearch{
+					RefId:                     ec.String("main-enterprise_search"),
+					ResourceId:                ec.String(mock.ValidClusterID),
+					Region:                    ec.String("some-region"),
+					ElasticsearchClusterRefId: ec.String("somerefid"),
+					Topology: EnterpriseSearchTopologies{
+						{
+							ZoneCount: 1,
 						},
 					},
 				},
 			},
-			want: []*models.EnterpriseSearchPayload{{
+			want: &models.EnterpriseSearchPayload{
 				ElasticsearchClusterRefID: ec.String("somerefid"),
 				Region:                    ec.String("some-region"),
 				RefID:                     ec.String("main-enterprise_search"),
@@ -241,40 +233,36 @@ func Test_enterpriseSearchPayload(t *testing.T) {
 						},
 					}},
 				},
-			}},
+			},
 		},
 		{
 			name: "parses an enterprise_search resource with explicit topology and config",
 			args: args{
 				template: testutil.ParseDeploymentTemplate(t, "testdata/template-aws-io-optimized-v2.json"),
-				ess: EnterpriseSearches{
-					{
-						RefId:                     ec.String("secondary-enterprise_search"),
-						ResourceId:                ec.String(mock.ValidClusterID),
-						Region:                    ec.String("some-region"),
-						ElasticsearchClusterRefId: ec.String("somerefid"),
-						Config: EnterpriseSearchConfigs{
-							{
-								UserSettingsYaml:         ec.String("some.setting: value"),
-								UserSettingsOverrideYaml: ec.String("some.setting: override"),
-								UserSettingsJson:         ec.String(`{"some.setting":"value"}`),
-								UserSettingsOverrideJson: ec.String(`{"some.setting":"override"}`),
-							},
-						},
-						Topology: EnterpriseSearchTopologies{
-							{
-								InstanceConfigurationId: ec.String("aws.enterprisesearch.m5d"),
-								Size:                    ec.String("4g"),
-								ZoneCount:               1,
-								NodeTypeAppserver:       ec.Bool(true),
-								NodeTypeConnector:       ec.Bool(true),
-								NodeTypeWorker:          ec.Bool(true),
-							},
+				es: EnterpriseSearch{
+					RefId:                     ec.String("secondary-enterprise_search"),
+					ResourceId:                ec.String(mock.ValidClusterID),
+					Region:                    ec.String("some-region"),
+					ElasticsearchClusterRefId: ec.String("somerefid"),
+					Config: &EnterpriseSearchConfig{
+						UserSettingsYaml:         ec.String("some.setting: value"),
+						UserSettingsOverrideYaml: ec.String("some.setting: override"),
+						UserSettingsJson:         ec.String(`{"some.setting":"value"}`),
+						UserSettingsOverrideJson: ec.String(`{"some.setting":"override"}`),
+					},
+					Topology: EnterpriseSearchTopologies{
+						{
+							InstanceConfigurationId: ec.String("aws.enterprisesearch.m5d"),
+							Size:                    ec.String("4g"),
+							ZoneCount:               1,
+							NodeTypeAppserver:       ec.Bool(true),
+							NodeTypeConnector:       ec.Bool(true),
+							NodeTypeWorker:          ec.Bool(true),
 						},
 					},
 				},
 			},
-			want: []*models.EnterpriseSearchPayload{{
+			want: &models.EnterpriseSearchPayload{
 				ElasticsearchClusterRefID: ec.String("somerefid"),
 				Region:                    ec.String("some-region"),
 				RefID:                     ec.String("secondary-enterprise_search"),
@@ -303,31 +291,29 @@ func Test_enterpriseSearchPayload(t *testing.T) {
 						},
 					}},
 				},
-			}},
+			},
 		},
 		{
 			name: "parses an enterprise_search resource with invalid instance_configuration_id",
 			args: args{
 				template: testutil.ParseDeploymentTemplate(t, "testdata/template-aws-io-optimized-v2.json"),
-				ess: EnterpriseSearches{
-					{
-						RefId:                     ec.String("main-enterprise_search"),
-						ResourceId:                ec.String(mock.ValidClusterID),
-						Region:                    ec.String("some-region"),
-						ElasticsearchClusterRefId: ec.String("somerefid"),
-						Topology: EnterpriseSearchTopologies{
-							{
-								InstanceConfigurationId: ec.String("aws.enterprisesearch.m5"),
-								Size:                    ec.String("2g"),
-								ZoneCount:               1,
-							},
+				es: EnterpriseSearch{
+					RefId:                     ec.String("main-enterprise_search"),
+					ResourceId:                ec.String(mock.ValidClusterID),
+					Region:                    ec.String("some-region"),
+					ElasticsearchClusterRefId: ec.String("somerefid"),
+					Topology: EnterpriseSearchTopologies{
+						{
+							InstanceConfigurationId: ec.String("aws.enterprisesearch.m5"),
+							Size:                    ec.String("2g"),
+							ZoneCount:               1,
 						},
 					},
 				},
 			},
 			diags: func() diag.Diagnostics {
 				var diags diag.Diagnostics
-				diags.AddError("enterprise_search payload create error", `invalid instance_configuration_id: "aws.enterprisesearch.m5" doesn't match any of the deployment template instance configurations`)
+				diags.AddError("cannot match enterprise search topology", `invalid instance_configuration_id: "aws.enterprisesearch.m5" doesn't match any of the deployment template instance configurations`)
 				return diags
 			}(),
 		},
@@ -335,27 +321,23 @@ func Test_enterpriseSearchPayload(t *testing.T) {
 			name: "tries to parse an enterprise_search resource when the template doesn't have an Enterprise Search instance set.",
 			args: args{
 				template: nil,
-				ess: EnterpriseSearches{
-					{
-						RefId:                     ec.String("tertiary-enterprise_search"),
-						ResourceId:                ec.String(mock.ValidClusterID),
-						Region:                    ec.String("some-region"),
-						ElasticsearchClusterRefId: ec.String("somerefid"),
-						Config: EnterpriseSearchConfigs{
-							{
-								UserSettingsYaml:         ec.String("some.setting: value"),
-								UserSettingsOverrideYaml: ec.String("some.setting: value2"),
-								UserSettingsJson:         ec.String(`{"some.setting": "value"}`),
-								UserSettingsOverrideJson: ec.String(`{"some.setting": "value2"}`),
-							},
-						},
-						Topology: EnterpriseSearchTopologies{
-							{
-								InstanceConfigurationId: ec.String("aws.enterprisesearch.m5d"),
-								Size:                    ec.String("4g"),
-								SizeResource:            ec.String("memory"),
-								ZoneCount:               1,
-							},
+				es: EnterpriseSearch{
+					RefId:                     ec.String("tertiary-enterprise_search"),
+					ResourceId:                ec.String(mock.ValidClusterID),
+					Region:                    ec.String("some-region"),
+					ElasticsearchClusterRefId: ec.String("somerefid"),
+					Config: &EnterpriseSearchConfig{
+						UserSettingsYaml:         ec.String("some.setting: value"),
+						UserSettingsOverrideYaml: ec.String("some.setting: value2"),
+						UserSettingsJson:         ec.String(`{"some.setting": "value"}`),
+						UserSettingsOverrideJson: ec.String(`{"some.setting": "value2"}`),
+					},
+					Topology: EnterpriseSearchTopologies{
+						{
+							InstanceConfigurationId: ec.String("aws.enterprisesearch.m5d"),
+							Size:                    ec.String("4g"),
+							SizeResource:            ec.String("memory"),
+							ZoneCount:               1,
 						},
 					},
 				},
@@ -369,11 +351,11 @@ func Test_enterpriseSearchPayload(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var essTF types.List
-			diags := tfsdk.ValueFrom(context.Background(), tt.args.ess, enterpriseSearch().Type(), &essTF)
+			var esObj types.Object
+			diags := tfsdk.ValueFrom(context.Background(), &tt.args.es, enterpriseSearchAttribute().FrameworkType(), &esObj)
 			assert.Nil(t, diags)
 
-			got, diags := enterpriseSearchesPayload(context.Background(), tt.args.template, essTF)
+			got, diags := enterpriseSearchesPayload(context.Background(), esObj, tt.args.template)
 			if tt.diags != nil {
 				assert.Equal(t, tt.diags, diags)
 			}

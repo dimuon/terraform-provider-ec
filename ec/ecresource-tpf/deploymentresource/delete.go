@@ -59,7 +59,7 @@ func (r Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *
 	}
 
 	var rules []string
-	diags = state.TrafficFilter.ElementsAs(ctx, &rules, true)
+	// diags = state.TrafficFilter.ElementsAs(ctx, &rules, true)
 	resp.Diagnostics.Append(diags...)
 	if !diags.HasError() {
 		for _, rule := range rules {

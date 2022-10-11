@@ -36,7 +36,7 @@ type IntegrationsServerTF struct {
 	HttpEndpoint              types.String `tfsdk:"http_endpoint"`
 	HttpsEndpoint             types.String `tfsdk:"https_endpoint"`
 	Topology                  types.List   `tfsdk:"topology"`
-	Config                    types.List   `tfsdk:"config"`
+	Config                    types.Object `tfsdk:"config"`
 }
 
 type IntegrationsServer struct {
@@ -47,17 +47,14 @@ type IntegrationsServer struct {
 	HttpEndpoint              *string                   `tfsdk:"http_endpoint"`
 	HttpsEndpoint             *string                   `tfsdk:"https_endpoint"`
 	Topology                  Topologies                `tfsdk:"topology"`
-	Config                    IntegrationsServerConfigs `tfsdk:"config"`
+	Config                    *IntegrationsServerConfig `tfsdk:"config"`
 }
 
-type IntegrationsServers []IntegrationsServer
-
-func readIntegrationsServers(in []*models.IntegrationsServerResourceInfo) (IntegrationsServers, error) {
+func readIntegrationsServers(in []*models.IntegrationsServerResourceInfo) (*IntegrationsServer, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}
 
-	srvs := make(IntegrationsServers, 0, len(in))
 	for _, model := range in {
 		if util.IsCurrentIntegrationsServerPlanEmpty(model) || isIntegrationsServerResourceStopped(model) {
 			continue
@@ -67,10 +64,11 @@ func readIntegrationsServers(in []*models.IntegrationsServerResourceInfo) (Integ
 		if err != nil {
 			return nil, err
 		}
-		srvs = append(srvs, *srv)
+
+		return srv, nil
 	}
 
-	return srvs, nil
+	return nil, nil
 }
 
 func readIntegrationsServer(in *models.IntegrationsServerResourceInfo) (*IntegrationsServer, error) {
@@ -115,7 +113,7 @@ func (srv IntegrationsServerTF) Payload(ctx context.Context, payload models.Inte
 		payload.Region = &srv.Region.Value
 	}
 
-	if diags := payloadIntegrationsServerConfig(ctx, payload.Plan.IntegrationsServer, &srv.Config); diags.HasError() {
+	if diags := payloadIntegrationsServerConfig(ctx, srv.Config, payload.Plan.IntegrationsServer); diags.HasError() {
 		return nil, diags
 	}
 
@@ -128,8 +126,8 @@ func (srv IntegrationsServerTF) Payload(ctx context.Context, payload models.Inte
 	return &payload, nil
 }
 
-func integrationsServerPayload(ctx context.Context, template *models.DeploymentTemplateInfoV2, srvs types.List) ([]*models.IntegrationsServerPayload, diag.Diagnostics) {
-	if len(srvs.Elems) == 0 {
+func integrationsServerPayload(ctx context.Context, srvObj types.Object, template *models.DeploymentTemplateInfoV2) (*models.IntegrationsServerPayload, diag.Diagnostics) {
+	if srvObj.IsNull() {
 		return nil, nil
 	}
 
@@ -142,20 +140,19 @@ func integrationsServerPayload(ctx context.Context, template *models.DeploymentT
 		return nil, diags
 	}
 
-	payloads := make([]*models.IntegrationsServerPayload, 0, len(srvs.Elems))
-	for _, elem := range srvs.Elems {
-		var srv IntegrationsServerTF
-		if diags := tfsdk.ValueAs(ctx, elem, &srv); diags.HasError() {
-			return nil, diags
-		}
-		payload, diags := srv.Payload(ctx, *templatePayload)
-		if diags.HasError() {
-			return nil, diags
-		}
-		payloads = append(payloads, payload)
+	var srv IntegrationsServerTF
+
+	if diags := tfsdk.ValueAs(ctx, srvObj, &srv); diags.HasError() {
+		return nil, diags
 	}
 
-	return payloads, nil
+	payload, diags := srv.Payload(ctx, *templatePayload)
+
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	return payload, nil
 }
 
 // IntegrationsServerResource returns the IntegrationsServerPayload from a deployment

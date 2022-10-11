@@ -39,13 +39,13 @@ func Test_readApm(t *testing.T) {
 	tests := []struct {
 		name  string
 		args  args
-		want  Apms
+		want  *Apm
 		diags diag.Diagnostics
 	}{
 		{
 			name:  "empty resource list returns empty list",
 			args:  args{in: []*models.ApmResourceInfo{}},
-			want:  []Apm{},
+			want:  nil,
 			diags: nil,
 		},
 		{
@@ -59,7 +59,7 @@ func Test_readApm(t *testing.T) {
 					},
 				},
 			}},
-			want:  []Apm{},
+			want:  nil,
 			diags: nil,
 		},
 		{
@@ -101,21 +101,20 @@ func Test_readApm(t *testing.T) {
 					},
 				},
 			}},
-			want: []Apm{
-				{
-					ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-					RefId:                     ec.String("main-apm"),
-					ResourceId:                &mock.ValidClusterID,
-					Region:                    ec.String("some-region"),
-					HttpEndpoint:              ec.String("http://apmresource.cloud.elastic.co:9200"),
-					HttpsEndpoint:             ec.String("https://apmresource.cloud.elastic.co:9243"),
-					Topology: []Topology{{
-						InstanceConfigurationId: ec.String("aws.apm.r4"),
-						Size:                    ec.String("1g"),
-						SizeResource:            ec.String("memory"),
-						ZoneCount:               1,
-					}},
+			want: &Apm{
+				ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+				RefId:                     ec.String("main-apm"),
+				ResourceId:                &mock.ValidClusterID,
+				Region:                    ec.String("some-region"),
+				HttpEndpoint:              ec.String("http://apmresource.cloud.elastic.co:9200"),
+				HttpsEndpoint:             ec.String("https://apmresource.cloud.elastic.co:9243"),
+				Topology: []Topology{{
+					InstanceConfigurationId: ec.String("aws.apm.r4"),
+					Size:                    ec.String("1g"),
+					SizeResource:            ec.String("memory"),
+					ZoneCount:               1,
 				}},
+			},
 		},
 		{
 			name: "parses the apm resource with config overrides, ignoring a stopped resource",
@@ -209,7 +208,7 @@ func Test_readApm(t *testing.T) {
 					},
 				},
 			}},
-			want: Apms{{
+			want: &Apm{
 				ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
 				RefId:                     ec.String("main-apm"),
 				ResourceId:                &mock.ValidClusterID,
@@ -222,13 +221,13 @@ func Test_readApm(t *testing.T) {
 					SizeResource:            ec.String("memory"),
 					ZoneCount:               1,
 				}},
-				Config: ApmConfigs{{
+				Config: &ApmConfig{
 					UserSettingsYaml:         ec.String("some.setting: value"),
 					UserSettingsOverrideYaml: ec.String("some.setting: value2"),
 					UserSettingsJson:         ec.String("{\"some.setting\":\"value\"}"),
 					UserSettingsOverrideJson: ec.String("{\"some.setting\":\"value2\"}"),
-				}},
-			}},
+				},
+			},
 		},
 		{
 			name: "parses the apm resource with config overrides and system settings",
@@ -280,7 +279,7 @@ func Test_readApm(t *testing.T) {
 					},
 				},
 			}},
-			want: Apms{{
+			want: &Apm{
 				ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
 				RefId:                     ec.String("main-apm"),
 				ResourceId:                &mock.ValidClusterID,
@@ -293,24 +292,24 @@ func Test_readApm(t *testing.T) {
 					SizeResource:            ec.String("memory"),
 					ZoneCount:               1,
 				}},
-				Config: ApmConfigs{{
+				Config: &ApmConfig{
 					UserSettingsYaml:         ec.String("some.setting: value"),
 					UserSettingsOverrideYaml: ec.String("some.setting: value2"),
 					UserSettingsJson:         ec.String("{\"some.setting\":\"value\"}"),
 					UserSettingsOverrideJson: ec.String("{\"some.setting\":\"value2\"}"),
 					DebugEnabled:             ec.Bool(true),
-				}},
-			}},
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			apms, err := readApms(tt.args.in)
+			apm, err := readApms(tt.args.in)
 			assert.Nil(t, err)
-			assert.Equal(t, tt.want, apms)
+			assert.Equal(t, tt.want, apm)
 
-			var apmsTF types.List
-			diags := tfsdk.ValueFrom(context.Background(), apms, apm().Type(), &apmsTF)
+			var apmsTF types.Object
+			diags := tfsdk.ValueFrom(context.Background(), apm, apmAttribute().FrameworkType(), &apmsTF)
 			assert.Nil(t, diags)
 		})
 	}

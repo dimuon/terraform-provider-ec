@@ -60,7 +60,7 @@ func readElasticsearchTrustAccounts(in *models.ElasticsearchClusterSettings) (El
 	return accounts, nil
 }
 
-func (accounts ElasticsearchTrustAccountsTF) Payload(ctx context.Context, model *models.ElasticsearchClusterSettings) (*models.ElasticsearchClusterSettings, diag.Diagnostics) {
+func elasticsearchTrustAccountPayload(ctx context.Context, accounts types.Set, model *models.ElasticsearchClusterSettings) (*models.ElasticsearchClusterSettings, diag.Diagnostics) {
 	payloads := make([]*models.AccountTrustRelationship, 0, len(accounts.Elems))
 
 	for _, elem := range accounts.Elems {
@@ -82,7 +82,7 @@ func (accounts ElasticsearchTrustAccountsTF) Payload(ctx context.Context, model 
 	}
 
 	if len(payloads) == 0 {
-		return nil, nil
+		return model, nil
 	}
 
 	if model == nil {

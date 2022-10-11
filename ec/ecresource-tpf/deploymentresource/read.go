@@ -32,17 +32,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 )
 
-func (r Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	if !r.ready(&resp.Diagnostics) {
+func (r Resource) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
+	if !r.ready(&response.Diagnostics) {
 		return
 	}
 
 	var curState DeploymentTF
 
-	diags := req.State.Get(ctx, &curState)
-	resp.Diagnostics.Append(diags...)
+	diags := request.State.Get(ctx, &curState)
+	response.Diagnostics.Append(diags...)
 
-	if resp.Diagnostics.HasError() {
+	if response.Diagnostics.HasError() {
 		return
 	}
 
@@ -50,18 +50,18 @@ func (r Resource) Read(ctx context.Context, req resource.ReadRequest, resp *reso
 	var err error
 
 	if newState, diags = r.read(ctx, curState.Id.Value, curState, nil); err != nil {
-		resp.Diagnostics.Append(diags...)
+		response.Diagnostics.Append(diags...)
 	}
 
 	if newState == nil {
-		resp.State.RemoveResource(ctx)
+		response.State.RemoveResource(ctx)
 	}
 
 	if newState != nil {
-		diags = resp.State.Set(ctx, newState)
+		diags = response.State.Set(ctx, newState)
 	}
 
-	resp.Diagnostics.Append(diags...)
+	response.Diagnostics.Append(diags...)
 }
 
 func (r Resource) read(ctx context.Context, id string, current DeploymentTF, deploymentResources []*models.DeploymentResource) (*DeploymentTF, diag.Diagnostics) {
@@ -89,7 +89,7 @@ func (r Resource) read(ctx context.Context, id string, current DeploymentTF, dep
 	}
 
 	var elasticsearch ElasticsearchTF
-	if diags := tfsdk.ValueAs(ctx, current.Elasticsearch.Elems[0], &elasticsearch); diags.HasError() {
+	if diags := tfsdk.ValueAs(ctx, current.Elasticsearch, &elasticsearch); diags.HasError() {
 		return nil, diags
 	}
 
@@ -112,6 +112,18 @@ func (r Resource) read(ctx context.Context, id string, current DeploymentTF, dep
 	}
 
 	deployment.RequestId = current.RequestId.Value
+
+	if current.ElasticsearchPassword.Value != "" {
+		deployment.ElasticsearchPassword = current.ElasticsearchPassword.Value
+	}
+
+	if current.ElasticsearchUsername.Value != "" {
+		deployment.ElasticsearchUsername = current.ElasticsearchUsername.Value
+	}
+
+	if current.ApmSecretToken.Value != "" {
+		deployment.ApmSecretToken = current.ApmSecretToken.Value
+	}
 
 	var deploymentTF DeploymentTF
 	schema, diags := r.GetSchema(ctx)
