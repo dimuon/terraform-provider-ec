@@ -22,7 +22,6 @@ import (
 	"fmt"
 
 	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi"
-	"github.com/elastic/cloud-sdk-go/pkg/multierror"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
@@ -66,16 +65,12 @@ func (r Resource) Create(ctx context.Context, req resource.CreateRequest, resp *
 	})
 
 	if err != nil {
-		merr := multierror.NewPrefixed("", err)
-		merr.Append(newCreationError(requestId))
-		resp.Diagnostics.AddError("failed creating deployment", merr.Error())
+		resp.Diagnostics.AddError("failed creating deployment", newCreationError(requestId).Error())
 		return
 	}
 
 	if err := WaitForPlanCompletion(r.client, *res.ID); err != nil {
-		merr := multierror.NewPrefixed("", err)
-		merr.Append(newCreationError(requestId))
-		resp.Diagnostics.AddError("failed tracking create progress", merr.Error())
+		resp.Diagnostics.AddError("failed tracking create progress", newCreationError(requestId).Error())
 		return
 	}
 

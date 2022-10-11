@@ -134,13 +134,13 @@ func readTestData(t *testing.T, filename string) io.ReadCloser {
 func createDeployment(t *testing.T, expectedRequestJson, responseJson []byte, requestId string) mock.Response {
 	t.Helper()
 	var expectedRequest *models.DeploymentCreateRequest
-	err := json.Unmarshal([]byte(expectedRequestJson), &expectedRequest)
+	err := json.Unmarshal(expectedRequestJson, &expectedRequest)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
 
 	var response *models.DeploymentCreateResponse
-	err = json.Unmarshal([]byte(responseJson), &response)
+	err = json.Unmarshal(responseJson, &response)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}

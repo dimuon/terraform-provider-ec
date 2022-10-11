@@ -87,32 +87,32 @@ func (r Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *
 }
 
 func handleTrafficFilterChange(ctx context.Context, client *api.API, plan, state DeploymentTF) diag.Diagnostics {
-	// if plan.TrafficFilter.IsNull() || plan.TrafficFilter.Equal(state.TrafficFilter) {
-	// 	return nil
-	// }
+	if plan.TrafficFilter.IsNull() || plan.TrafficFilter.Equal(state.TrafficFilter) {
+		return nil
+	}
 
-	// var planRules, stateRules ruleSet
-	// if diags := plan.TrafficFilter.ElementsAs(ctx, &planRules, true); diags.HasError() {
-	// 	return diags
-	// }
+	var planRules, stateRules ruleSet
+	if diags := plan.TrafficFilter.ElementsAs(ctx, &planRules, true); diags.HasError() {
+		return diags
+	}
 
-	// if diags := state.TrafficFilter.ElementsAs(ctx, &stateRules, true); diags.HasError() {
-	// 	return diags
-	// }
+	if diags := state.TrafficFilter.ElementsAs(ctx, &stateRules, true); diags.HasError() {
+		return diags
+	}
 
 	var rulesToAdd, rulesToDelete []string
 
-	// for _, rule := range planRules {
-	// 	if !stateRules.exist(rule) {
-	// 		rulesToAdd = append(rulesToAdd, rule)
-	// 	}
-	// }
+	for _, rule := range planRules {
+		if !stateRules.exist(rule) {
+			rulesToAdd = append(rulesToAdd, rule)
+		}
+	}
 
-	// for _, rule := range stateRules {
-	// 	if !planRules.exist(rule) {
-	// 		rulesToDelete = append(rulesToDelete, rule)
-	// 	}
-	// }
+	for _, rule := range stateRules {
+		if !planRules.exist(rule) {
+			rulesToDelete = append(rulesToDelete, rule)
+		}
+	}
 
 	var diags diag.Diagnostics
 	for _, rule := range rulesToAdd {
