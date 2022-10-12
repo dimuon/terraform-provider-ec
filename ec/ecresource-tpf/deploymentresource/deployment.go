@@ -352,15 +352,15 @@ func (plan DeploymentTF) UpdateRequest(ctx context.Context, client *api.API, cur
 
 	dtID := plan.DeploymentTemplateId.Value
 	version := plan.Version.Value
+
+	var diagsnostics diag.Diagnostics
+
 	template, err := deptemplateapi.Get(deptemplateapi.GetParams{
 		API:                        client,
 		TemplateID:                 dtID,
 		Region:                     plan.Region.Value,
 		HideInstanceConfigurations: true,
 	})
-
-	var diagsnostics diag.Diagnostics
-
 	if err != nil {
 		diagsnostics.AddError("Deployment template get error", err.Error())
 		return nil, diagsnostics
@@ -448,9 +448,9 @@ func (plan DeploymentTF) UpdateRequest(ctx context.Context, client *api.API, cur
 	// In order to stop shipping logs and metrics, an empty Observability
 	// object must be passed, as opposed to a nil object when creating a
 	// deployment without observability settings.
-	// if plan.Observability.IsNull() && !curState.Observability.IsNull() {
-	// 	result.Settings.Observability = &models.DeploymentObservabilitySettings{}
-	// }
+	if plan.Observability.IsNull() && !curState.Observability.IsNull() {
+		result.Settings.Observability = &models.DeploymentObservabilitySettings{}
+	}
 
 	result.Metadata.Tags, diags = converters.TFmapToTags(ctx, plan.Tags)
 	if diags.HasError() {

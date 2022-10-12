@@ -26,7 +26,9 @@ import (
 	"github.com/elastic/terraform-provider-ec/ec/internal/planmodifier"
 	"github.com/elastic/terraform-provider-ec/ec/internal/validators"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -233,6 +235,9 @@ func elasticsearchAttribute() tfsdk.Attribute {
 				Computed:    true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
 					resource.UseStateForUnknown(),
+					resource.RequiresReplaceIf(func(ctx context.Context, state, config attr.Value, path path.Path) (bool, diag.Diagnostics) {
+						return true, nil
+					}, "", ""),
 				},
 			},
 			"http_endpoint": {
