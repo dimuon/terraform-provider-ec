@@ -70,11 +70,7 @@ type Elasticsearch struct {
 
 type ElasticsearchesTF []*ElasticsearchTF
 
-type Elasticsearches []Elasticsearch
-
-func readElasticsearches(in []*models.ElasticsearchResourceInfo, remotes *models.RemoteResources) (Elasticsearches, error) {
-	ess := make([]Elasticsearch, 0, len(in))
-
+func readElasticsearches(in []*models.ElasticsearchResourceInfo, remotes *models.RemoteResources) (*Elasticsearch, error) {
 	for _, model := range in {
 		if util.IsCurrentEsPlanEmpty(model) || isEsResourceStopped(model) {
 			continue
@@ -83,10 +79,10 @@ func readElasticsearches(in []*models.ElasticsearchResourceInfo, remotes *models
 		if err != nil {
 			return nil, err
 		}
-		ess = append(ess, *es)
+		return es, nil
 	}
 
-	return ess, nil
+	return nil, nil
 }
 
 func elasticsearchPayload(ctx context.Context, esObj types.Object, template *models.DeploymentTemplateInfoV2, dtID, version string, useNodeRoles bool, skipTopologies bool) (*models.ElasticsearchPayload, diag.Diagnostics) {

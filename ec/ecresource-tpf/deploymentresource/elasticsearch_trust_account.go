@@ -29,7 +29,7 @@ import (
 type ElasticsearchTrustAccountTF struct {
 	AccountId      types.String `tfsdk:"account_id"`
 	TrustAll       types.Bool   `tfsdk:"trust_all"`
-	TrustAllowlist types.List   `tfsdk:"trust_allowlist"`
+	TrustAllowlist types.Set    `tfsdk:"trust_allowlist"`
 }
 
 type ElasticsearchTrustAccountsTF types.Set
@@ -61,13 +61,21 @@ func readElasticsearchTrustAccounts(in *models.ElasticsearchClusterSettings) (El
 }
 
 func elasticsearchTrustAccountPayload(ctx context.Context, accounts types.Set, model *models.ElasticsearchClusterSettings) (*models.ElasticsearchClusterSettings, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
 	payloads := make([]*models.AccountTrustRelationship, 0, len(accounts.Elems))
 
 	for _, elem := range accounts.Elems {
 		var account ElasticsearchTrustAccountTF
-		if diags := tfsdk.ValueAs(ctx, elem, &account); diags.HasError() {
-			return nil, diags
+
+		ds := tfsdk.ValueAs(ctx, elem, &account)
+
+		diags = append(diags, ds...)
+
+		if ds.HasError() {
+			continue
 		}
+
 		id := account.AccountId.Value
 		all := account.TrustAll.Value
 
@@ -75,10 +83,16 @@ func elasticsearchTrustAccountPayload(ctx context.Context, accounts types.Set, m
 			AccountID: &id,
 			TrustAll:  &all,
 		}
-		payloads = append(payloads, payload)
-		if diags := tfsdk.ValueAs(ctx, account.TrustAllowlist, payload.TrustAllowlist); diags.HasError() {
-			return nil, diags
+
+		ds = account.TrustAllowlist.ElementsAs(ctx, &payload.TrustAllowlist, true)
+
+		diags = append(diags, ds...)
+
+		if ds.HasError() {
+			continue
 		}
+
+		payloads = append(payloads, payload)
 	}
 
 	if len(payloads) == 0 {

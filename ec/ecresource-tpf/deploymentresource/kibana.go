@@ -136,7 +136,7 @@ func kibanaPayload(ctx context.Context, kibana types.Object, template *models.De
 	var diags diag.Diagnostics
 
 	if templatePlayload == nil {
-		diags.AddError("Kibana payload error", "kibana specified but deployment template is not configured for it. Use a different template if you wish to add kibana")
+		diags.AddError("kibana payload error", "kibana specified but deployment template is not configured for it. Use a different template if you wish to add kibana")
 	}
 
 	var kibanaTF KibanaTF

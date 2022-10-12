@@ -59,13 +59,21 @@ func readElasticsearchTrustExternals(in *models.ElasticsearchClusterSettings) (E
 }
 
 func elasticsearchTrustExternalPayload(ctx context.Context, externals types.Set, model *models.ElasticsearchClusterSettings) (*models.ElasticsearchClusterSettings, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
 	payloads := make([]*models.ExternalTrustRelationship, 0, len(externals.Elems))
 
 	for _, elem := range externals.Elems {
 		var external ElasticsearchTrustExternalTF
-		if diags := tfsdk.ValueAs(ctx, elem, &external); diags.HasError() {
-			return nil, diags
+
+		ds := tfsdk.ValueAs(ctx, elem, &external)
+
+		diags = append(diags, ds...)
+
+		if diags.HasError() {
+			continue
 		}
+
 		id := external.RelationshipId.Value
 		all := external.TrustAll.Value
 
@@ -73,9 +81,15 @@ func elasticsearchTrustExternalPayload(ctx context.Context, externals types.Set,
 			TrustRelationshipID: &id,
 			TrustAll:            &all,
 		}
-		if diags := tfsdk.ValueAs(ctx, external.TrustAllowlist, payload.TrustAllowlist); diags.HasError() {
-			return nil, diags
+
+		ds = external.TrustAllowlist.ElementsAs(ctx, &payload.TrustAllowlist, true)
+
+		diags = append(diags, ds...)
+
+		if ds.HasError() {
+			continue
 		}
+
 		payloads = append(payloads, payload)
 	}
 

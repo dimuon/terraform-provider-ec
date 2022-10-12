@@ -50,12 +50,12 @@ type ElasticsearchConfig struct {
 func (config *ElasticsearchConfigTF) Payload(ctx context.Context, model *models.ElasticsearchConfiguration) (*models.ElasticsearchConfiguration, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
-	if config == nil {
-		return model, nil
-	}
-
 	if model == nil {
 		model = &models.ElasticsearchConfiguration{}
+	}
+
+	if config == nil {
+		return model, nil
 	}
 
 	if config.UserSettingsJson.Value != "" {

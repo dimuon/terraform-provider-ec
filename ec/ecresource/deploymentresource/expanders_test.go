@@ -167,18 +167,6 @@ func Test_createResourceToModel(t *testing.T) {
 				d: deploymentNodeRolesRD,
 				client: api.NewMock(
 					mock.New200Response(hotWarmTpl()),
-					// mock.New200Response(
-					// 	mock.NewStructBody(models.DeploymentGetResponse{
-					// 		Healthy: ec.Bool(true),
-					// 		ID:      ec.String(mock.ValidClusterID),
-					// 		Resources: &models.DeploymentResources{
-					// 			Elasticsearch: []*models.ElasticsearchResourceInfo{{
-					// 				ID:    ec.String(mock.ValidClusterID),
-					// 				RefID: ec.String("main-elasticsearch"),
-					// 			}},
-					// 		},
-					// 	}),
-					// ),
 				),
 			},
 			want: &models.DeploymentCreateRequest{
@@ -365,18 +353,6 @@ func Test_createResourceToModel(t *testing.T) {
 				d: deploymentRD,
 				client: api.NewMock(
 					mock.New200Response(ioOptimizedTpl()),
-					// mock.New200Response(
-					// 	mock.NewStructBody(models.DeploymentGetResponse{
-					// 		Healthy: ec.Bool(true),
-					// 		ID:      ec.String(mock.ValidClusterID),
-					// 		Resources: &models.DeploymentResources{
-					// 			Elasticsearch: []*models.ElasticsearchResourceInfo{{
-					// 				ID:    ec.String(mock.ValidClusterID),
-					// 				RefID: ec.String("main-elasticsearch"),
-					// 			}},
-					// 		},
-					// 	}),
-					// ),
 				),
 			},
 			want: &models.DeploymentCreateRequest{

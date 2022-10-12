@@ -141,8 +141,8 @@ func enterpriseSearchesPayload(ctx context.Context, esObj types.Object, template
 
 	if templatePayload == nil {
 		diags.AddError(
-			"enterprise_search payload create error",
-			"deployment template is not configured for Enterprise Search. Use a different template if you wish to add enterprise_search",
+			"enterprise_search payload error",
+			"deployment template is not configured for enterprise_search. Use a different template if you wish to add enterprise_search",
 		)
 		return nil, diags
 	}

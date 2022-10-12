@@ -145,7 +145,7 @@ func apmPayload(ctx context.Context, apmObj types.Object, template *models.Deplo
 	var diags diag.Diagnostics
 
 	if templatePayload == nil {
-		diags.AddError("Apm reading error", "apm specified but deployment template is not configured for it. Use a different template if you wish to add apm")
+		diags.AddError("apm payload error", "apm specified but deployment template is not configured for it. Use a different template if you wish to add apm")
 		return nil, diags
 	}
 

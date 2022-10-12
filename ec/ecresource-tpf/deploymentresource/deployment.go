@@ -125,7 +125,7 @@ func readDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteRes
 	}
 	dep.Version = version
 
-	dep.Elasticsearch, err = readElasticsearch(res.Resources.Elasticsearch[0], remotes)
+	dep.Elasticsearch, err = readElasticsearches(res.Resources.Elasticsearch, remotes)
 	if err != nil {
 		return nil, err
 	}
