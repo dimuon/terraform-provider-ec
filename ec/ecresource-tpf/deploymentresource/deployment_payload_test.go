@@ -3115,417 +3115,542 @@ func Test_createRequest(t *testing.T) {
 }
 
 /*
-func Test_updateResourceToModel(t *testing.T) {
-	deploymentRD := util.NewResourceData(t, util.ResDataParams{
-		ID:     mock.ValidClusterID,
-		State:  newSampleLegacyDeployment(),
-		Schema: newSchema(),
-	})
-	var ioOptimizedTpl = func() io.ReadCloser {
-		return fileAsResponseBody(t, "testdata/template-aws-io-optimized-v2.json")
-	}
-	deploymentEmptyRD := util.NewResourceData(t, util.ResDataParams{
-		ID:     mock.ValidClusterID,
-		State:  newSampleDeploymentEmptyRD(),
-		Schema: newSchema(),
-	})
-	deploymentOverrideRd := util.NewResourceData(t, util.ResDataParams{
-		ID:     mock.ValidClusterID,
-		State:  newSampleDeploymentOverrides(),
-		Schema: newSchema(),
-	})
+	func Test_updateResourceToModel(t *testing.T) {
+		deploymentRD := util.NewResourceData(t, util.ResDataParams{
+			ID:     mock.ValidClusterID,
+			State:  newSampleLegacyDeployment(),
+			Schema: newSchema(),
+		})
+		var ioOptimizedTpl = func() io.ReadCloser {
+			return fileAsResponseBody(t, "testdata/template-aws-io-optimized-v2.json")
+		}
+		deploymentEmptyRD := util.NewResourceData(t, util.ResDataParams{
+			ID:     mock.ValidClusterID,
+			State:  newSampleDeploymentEmptyRD(),
+			Schema: newSchema(),
+		})
+		deploymentOverrideRd := util.NewResourceData(t, util.ResDataParams{
+			ID:     mock.ValidClusterID,
+			State:  newSampleDeploymentOverrides(),
+			Schema: newSchema(),
+		})
 
-	hotWarmTpl := func() io.ReadCloser {
-		return fileAsResponseBody(t, "testdata/template-aws-hot-warm-v2.json")
-	}
-	deploymentHotWarm := util.NewResourceData(t, util.ResDataParams{
-		ID:     mock.ValidClusterID,
-		Schema: newSchema(),
-		State: map[string]interface{}{
-			"name":                   "my_deployment_name",
-			"deployment_template_id": "aws-hot-warm-v2",
-			"region":                 "us-east-1",
-			"version":                "7.9.2",
-			"elasticsearch":          []interface{}{map[string]interface{}{}},
-			"kibana":                 []interface{}{map[string]interface{}{}},
-		},
-	})
-
-	ccsTpl := func() io.ReadCloser {
-		return fileAsResponseBody(t, "testdata/template-aws-cross-cluster-search-v2.json")
-	}
-	deploymentEmptyRDWithTemplateChange := util.NewResourceData(t, util.ResDataParams{
-		ID:    mock.ValidClusterID,
-		State: newSampleLegacyDeployment(),
-		Change: map[string]interface{}{
-			"name":                   "my_deployment_name",
-			"deployment_template_id": "aws-cross-cluster-search-v2",
-			"region":                 "us-east-1",
-			"version":                "7.9.2",
-			"elasticsearch":          []interface{}{map[string]interface{}{}},
-			"kibana":                 []interface{}{map[string]interface{}{}},
-		},
-		Schema: newSchema(),
-	})
-
-	deploymentEmptyRDWithTemplateChangeWithDiffSize := util.NewResourceData(t, util.ResDataParams{
-		ID: mock.ValidClusterID,
-		State: map[string]interface{}{
-			"name":                   "my_deployment_name",
-			"deployment_template_id": "aws-io-optimized-v2",
-			"region":                 "us-east-1",
-			"version":                "7.9.2",
-			"elasticsearch": []interface{}{
-				map[string]interface{}{
-					"topology": []interface{}{map[string]interface{}{
-						"id":   "hot_content",
-						"size": "16g",
-					}},
-				},
-				map[string]interface{}{
-					"topology": []interface{}{map[string]interface{}{
-						"id":   "coordinating",
-						"size": "16g",
-					}},
-				},
+		hotWarmTpl := func() io.ReadCloser {
+			return fileAsResponseBody(t, "testdata/template-aws-hot-warm-v2.json")
+		}
+		deploymentHotWarm := util.NewResourceData(t, util.ResDataParams{
+			ID:     mock.ValidClusterID,
+			Schema: newSchema(),
+			State: map[string]interface{}{
+				"name":                   "my_deployment_name",
+				"deployment_template_id": "aws-hot-warm-v2",
+				"region":                 "us-east-1",
+				"version":                "7.9.2",
+				"elasticsearch":          []interface{}{map[string]interface{}{}},
+				"kibana":                 []interface{}{map[string]interface{}{}},
 			},
-			"kibana": []interface{}{map[string]interface{}{
-				"topology": []interface{}{map[string]interface{}{
-					"size": "2g",
-				}},
-			}},
-			"apm": []interface{}{map[string]interface{}{
-				"topology": []interface{}{map[string]interface{}{
-					"size": "1g",
-				}},
-			}},
-			"enterprise_search": []interface{}{map[string]interface{}{
-				"topology": []interface{}{map[string]interface{}{
-					"size": "2g",
-				}},
-			}},
-		},
-		Change: map[string]interface{}{
-			"name":                   "my_deployment_name",
-			"deployment_template_id": "aws-cross-cluster-search-v2",
-			"region":                 "us-east-1",
-			"version":                "7.9.2",
-			"elasticsearch":          []interface{}{map[string]interface{}{}},
-			"kibana":                 []interface{}{map[string]interface{}{}},
-		},
-		Schema: newSchema(),
-	})
+		})
 
-	emptyTpl := func() io.ReadCloser {
-		return fileAsResponseBody(t, "testdata/template-empty.json")
-	}
-	deploymentChangeFromExplicitSizingToEmpty := util.NewResourceData(t, util.ResDataParams{
-		ID: mock.ValidClusterID,
-		State: map[string]interface{}{
-			"name":                   "my_deployment_name",
-			"deployment_template_id": "aws-io-optimized-v2",
-			"region":                 "us-east-1",
-			"version":                "7.9.2",
-			"elasticsearch": []interface{}{
-				map[string]interface{}{
-					"topology": []interface{}{map[string]interface{}{
-						"id":   "hot_content",
-						"size": "16g",
-					}},
-				},
-				map[string]interface{}{
-					"topology": []interface{}{map[string]interface{}{
-						"id":   "coordinating",
-						"size": "16g",
-					}},
-				},
+		ccsTpl := func() io.ReadCloser {
+			return fileAsResponseBody(t, "testdata/template-aws-cross-cluster-search-v2.json")
+		}
+		deploymentEmptyRDWithTemplateChange := util.NewResourceData(t, util.ResDataParams{
+			ID:    mock.ValidClusterID,
+			State: newSampleLegacyDeployment(),
+			Change: map[string]interface{}{
+				"name":                   "my_deployment_name",
+				"deployment_template_id": "aws-cross-cluster-search-v2",
+				"region":                 "us-east-1",
+				"version":                "7.9.2",
+				"elasticsearch":          []interface{}{map[string]interface{}{}},
+				"kibana":                 []interface{}{map[string]interface{}{}},
 			},
-			"kibana": []interface{}{map[string]interface{}{
-				"topology": []interface{}{map[string]interface{}{
-					"size": "2g",
-				}},
-			}},
-			"apm": []interface{}{map[string]interface{}{
-				"topology": []interface{}{map[string]interface{}{
-					"size": "1g",
-				}},
-			}},
-			"enterprise_search": []interface{}{map[string]interface{}{
-				"topology": []interface{}{map[string]interface{}{
-					"size": "8g",
-				}},
-			}},
-		},
-		Change: map[string]interface{}{
-			"name":                   "my_deployment_name",
-			"deployment_template_id": "aws-io-optimized-v2",
-			"region":                 "us-east-1",
-			"version":                "7.9.2",
-			"elasticsearch":          []interface{}{map[string]interface{}{}},
-			"kibana":                 []interface{}{map[string]interface{}{}},
-			"apm":                    []interface{}{map[string]interface{}{}},
-			"enterprise_search":      []interface{}{map[string]interface{}{}},
-		},
-		Schema: newSchema(),
-	})
+			Schema: newSchema(),
+		})
 
-	deploymentChangeToEmptyDT := util.NewResourceData(t, util.ResDataParams{
-		ID: mock.ValidClusterID,
-		State: map[string]interface{}{
-			"name":                   "my_deployment_name",
-			"deployment_template_id": "aws-io-optimized-v2",
-			"region":                 "us-east-1",
-			"version":                "7.9.2",
-			"elasticsearch": []interface{}{
-				map[string]interface{}{
-					"topology": []interface{}{map[string]interface{}{
-						"id":   "hot_content",
-						"size": "16g",
-					}},
+		deploymentEmptyRDWithTemplateChangeWithDiffSize := util.NewResourceData(t, util.ResDataParams{
+			ID: mock.ValidClusterID,
+			State: map[string]interface{}{
+				"name":                   "my_deployment_name",
+				"deployment_template_id": "aws-io-optimized-v2",
+				"region":                 "us-east-1",
+				"version":                "7.9.2",
+				"elasticsearch": []interface{}{
+					map[string]interface{}{
+						"topology": []interface{}{map[string]interface{}{
+							"id":   "hot_content",
+							"size": "16g",
+						}},
+					},
+					map[string]interface{}{
+						"topology": []interface{}{map[string]interface{}{
+							"id":   "coordinating",
+							"size": "16g",
+						}},
+					},
 				},
-				map[string]interface{}{
+				"kibana": []interface{}{map[string]interface{}{
 					"topology": []interface{}{map[string]interface{}{
-						"id":   "coordinating",
-						"size": "16g",
+						"size": "2g",
 					}},
-				},
+				}},
+				"apm": []interface{}{map[string]interface{}{
+					"topology": []interface{}{map[string]interface{}{
+						"size": "1g",
+					}},
+				}},
+				"enterprise_search": []interface{}{map[string]interface{}{
+					"topology": []interface{}{map[string]interface{}{
+						"size": "2g",
+					}},
+				}},
 			},
-			"kibana": []interface{}{map[string]interface{}{
-				"topology": []interface{}{map[string]interface{}{
-					"size": "2g",
-				}},
-			}},
-			"apm": []interface{}{map[string]interface{}{
-				"topology": []interface{}{map[string]interface{}{
-					"size": "1g",
-				}},
-			}},
-			"enterprise_search": []interface{}{map[string]interface{}{
-				"topology": []interface{}{map[string]interface{}{
-					"size": "8g",
-				}},
-			}},
-		},
-		Change: map[string]interface{}{
-			"name":                   "my_deployment_name",
-			"deployment_template_id": "empty-deployment-template",
-			"region":                 "us-east-1",
-			"version":                "7.9.2",
-			"elasticsearch":          []interface{}{map[string]interface{}{}},
-			"kibana":                 []interface{}{map[string]interface{}{}},
-			"apm":                    []interface{}{map[string]interface{}{}},
-			"enterprise_search":      []interface{}{map[string]interface{}{}},
-		},
-		Schema: newSchema(),
-	})
+			Change: map[string]interface{}{
+				"name":                   "my_deployment_name",
+				"deployment_template_id": "aws-cross-cluster-search-v2",
+				"region":                 "us-east-1",
+				"version":                "7.9.2",
+				"elasticsearch":          []interface{}{map[string]interface{}{}},
+				"kibana":                 []interface{}{map[string]interface{}{}},
+			},
+			Schema: newSchema(),
+		})
 
-	deploymentWithTags := util.NewResourceData(t, util.ResDataParams{
-		ID: mock.ValidClusterID,
-		State: map[string]interface{}{
-			"name":                   "my_deployment_name",
-			"deployment_template_id": "aws-io-optimized-v2",
-			"region":                 "us-east-1",
-			"version":                "7.10.1",
-			"elasticsearch": []interface{}{
-				map[string]interface{}{
-					"version": "7.10.1",
+		emptyTpl := func() io.ReadCloser {
+			return fileAsResponseBody(t, "testdata/template-empty.json")
+		}
+		deploymentChangeFromExplicitSizingToEmpty := util.NewResourceData(t, util.ResDataParams{
+			ID: mock.ValidClusterID,
+			State: map[string]interface{}{
+				"name":                   "my_deployment_name",
+				"deployment_template_id": "aws-io-optimized-v2",
+				"region":                 "us-east-1",
+				"version":                "7.9.2",
+				"elasticsearch": []interface{}{
+					map[string]interface{}{
+						"topology": []interface{}{map[string]interface{}{
+							"id":   "hot_content",
+							"size": "16g",
+						}},
+					},
+					map[string]interface{}{
+						"topology": []interface{}{map[string]interface{}{
+							"id":   "coordinating",
+							"size": "16g",
+						}},
+					},
+				},
+				"kibana": []interface{}{map[string]interface{}{
 					"topology": []interface{}{map[string]interface{}{
-						"id":   "hot_content",
+						"size": "2g",
+					}},
+				}},
+				"apm": []interface{}{map[string]interface{}{
+					"topology": []interface{}{map[string]interface{}{
+						"size": "1g",
+					}},
+				}},
+				"enterprise_search": []interface{}{map[string]interface{}{
+					"topology": []interface{}{map[string]interface{}{
 						"size": "8g",
 					}},
-				},
+				}},
 			},
-		},
-		Change: map[string]interface{}{
-			"name":                   "my_deployment_name",
-			"deployment_template_id": "aws-io-optimized-v2",
-			"region":                 "us-east-1",
-			"version":                "7.10.1",
-			"elasticsearch": []interface{}{
-				map[string]interface{}{
-					"version": "7.10.1",
+			Change: map[string]interface{}{
+				"name":                   "my_deployment_name",
+				"deployment_template_id": "aws-io-optimized-v2",
+				"region":                 "us-east-1",
+				"version":                "7.9.2",
+				"elasticsearch":          []interface{}{map[string]interface{}{}},
+				"kibana":                 []interface{}{map[string]interface{}{}},
+				"apm":                    []interface{}{map[string]interface{}{}},
+				"enterprise_search":      []interface{}{map[string]interface{}{}},
+			},
+			Schema: newSchema(),
+		})
+
+		deploymentChangeToEmptyDT := util.NewResourceData(t, util.ResDataParams{
+			ID: mock.ValidClusterID,
+			State: map[string]interface{}{
+				"name":                   "my_deployment_name",
+				"deployment_template_id": "aws-io-optimized-v2",
+				"region":                 "us-east-1",
+				"version":                "7.9.2",
+				"elasticsearch": []interface{}{
+					map[string]interface{}{
+						"topology": []interface{}{map[string]interface{}{
+							"id":   "hot_content",
+							"size": "16g",
+						}},
+					},
+					map[string]interface{}{
+						"topology": []interface{}{map[string]interface{}{
+							"id":   "coordinating",
+							"size": "16g",
+						}},
+					},
+				},
+				"kibana": []interface{}{map[string]interface{}{
 					"topology": []interface{}{map[string]interface{}{
-						"id":   "hot_content",
+						"size": "2g",
+					}},
+				}},
+				"apm": []interface{}{map[string]interface{}{
+					"topology": []interface{}{map[string]interface{}{
+						"size": "1g",
+					}},
+				}},
+				"enterprise_search": []interface{}{map[string]interface{}{
+					"topology": []interface{}{map[string]interface{}{
 						"size": "8g",
 					}},
+				}},
+			},
+			Change: map[string]interface{}{
+				"name":                   "my_deployment_name",
+				"deployment_template_id": "empty-deployment-template",
+				"region":                 "us-east-1",
+				"version":                "7.9.2",
+				"elasticsearch":          []interface{}{map[string]interface{}{}},
+				"kibana":                 []interface{}{map[string]interface{}{}},
+				"apm":                    []interface{}{map[string]interface{}{}},
+				"enterprise_search":      []interface{}{map[string]interface{}{}},
+			},
+			Schema: newSchema(),
+		})
+
+		deploymentWithTags := util.NewResourceData(t, util.ResDataParams{
+			ID: mock.ValidClusterID,
+			State: map[string]interface{}{
+				"name":                   "my_deployment_name",
+				"deployment_template_id": "aws-io-optimized-v2",
+				"region":                 "us-east-1",
+				"version":                "7.10.1",
+				"elasticsearch": []interface{}{
+					map[string]interface{}{
+						"version": "7.10.1",
+						"topology": []interface{}{map[string]interface{}{
+							"id":   "hot_content",
+							"size": "8g",
+						}},
+					},
 				},
 			},
-			"tags": map[string]interface{}{
-				"aaa":         "bbb",
-				"owner":       "elastic",
-				"cost-center": "rnd",
+			Change: map[string]interface{}{
+				"name":                   "my_deployment_name",
+				"deployment_template_id": "aws-io-optimized-v2",
+				"region":                 "us-east-1",
+				"version":                "7.10.1",
+				"elasticsearch": []interface{}{
+					map[string]interface{}{
+						"version": "7.10.1",
+						"topology": []interface{}{map[string]interface{}{
+							"id":   "hot_content",
+							"size": "8g",
+						}},
+					},
+				},
+				"tags": map[string]interface{}{
+					"aaa":         "bbb",
+					"owner":       "elastic",
+					"cost-center": "rnd",
+				},
 			},
-		},
-		Schema: newSchema(),
-	})
+			Schema: newSchema(),
+		})
 
-	type args struct {
-		d      *schema.ResourceData
-		client *api.API
-	}
-	tests := []struct {
-		name string
-		args args
-		want *models.DeploymentUpdateRequest
-		err  error
-	}{
-		{
-			name: "parses the resources",
-			args: args{
-				d: deploymentRD,
-				client: api.NewMock(
-					mock.New200Response(ioOptimizedTpl()),
-					mock.New200Response(
-						mock.NewStructBody(models.DeploymentGetResponse{
-							Healthy: ec.Bool(true),
-							ID:      ec.String(mock.ValidClusterID),
-							Resources: &models.DeploymentResources{
-								Elasticsearch: []*models.ElasticsearchResourceInfo{{
-									ID:    ec.String(mock.ValidClusterID),
-									RefID: ec.String("main-elasticsearch"),
+		type args struct {
+			d      *schema.ResourceData
+			client *api.API
+		}
+		tests := []struct {
+			name string
+			args args
+			want *models.DeploymentUpdateRequest
+			err  error
+		}{
+			{
+				name: "parses the resources",
+				args: args{
+					d: deploymentRD,
+					client: api.NewMock(
+						mock.New200Response(ioOptimizedTpl()),
+						mock.New200Response(
+							mock.NewStructBody(models.DeploymentGetResponse{
+								Healthy: ec.Bool(true),
+								ID:      ec.String(mock.ValidClusterID),
+								Resources: &models.DeploymentResources{
+									Elasticsearch: []*models.ElasticsearchResourceInfo{{
+										ID:    ec.String(mock.ValidClusterID),
+										RefID: ec.String("main-elasticsearch"),
+									}},
+								},
+							}),
+						),
+					),
+				},
+				want: &models.DeploymentUpdateRequest{
+					Name:         "my_deployment_name",
+					Alias:        "my-deployment",
+					PruneOrphans: ec.Bool(true),
+					Settings: &models.DeploymentUpdateSettings{
+						Observability: &models.DeploymentObservabilitySettings{
+							Logging: &models.DeploymentLoggingSettings{
+								Destination: &models.ObservabilityAbsoluteDeployment{
+									DeploymentID: &mock.ValidClusterID,
+									RefID:        "main-elasticsearch",
+								},
+							},
+							Metrics: &models.DeploymentMetricsSettings{
+								Destination: &models.ObservabilityAbsoluteDeployment{
+									DeploymentID: &mock.ValidClusterID,
+									RefID:        "main-elasticsearch",
+								},
+							},
+						},
+					},
+					Metadata: &models.DeploymentUpdateMetadata{
+						Tags: []*models.MetadataItem{},
+					},
+					Resources: &models.DeploymentUpdateResources{
+						Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ioOptimizedTpl(), false), &models.ElasticsearchPayload{
+							Region: ec.String("us-east-1"),
+							RefID:  ec.String("main-elasticsearch"),
+							Settings: &models.ElasticsearchClusterSettings{
+								DedicatedMastersThreshold: 6,
+							},
+							Plan: &models.ElasticsearchClusterPlan{
+								AutoscalingEnabled: ec.Bool(false),
+								Elasticsearch: &models.ElasticsearchConfiguration{
+									Version:                  "7.7.0",
+									UserSettingsYaml:         `some.setting: value`,
+									UserSettingsOverrideYaml: `some.setting: value2`,
+									UserSettingsJSON: map[string]interface{}{
+										"some.setting": "value",
+									},
+									UserSettingsOverrideJSON: map[string]interface{}{
+										"some.setting": "value2",
+									},
+								},
+								DeploymentTemplate: &models.DeploymentTemplateReference{
+									ID: ec.String("aws-io-optimized-v2"),
+								},
+								ClusterTopology: []*models.ElasticsearchClusterTopologyElement{{
+									ID: "hot_content",
+									Elasticsearch: &models.ElasticsearchConfiguration{
+										NodeAttributes: map[string]string{"data": "hot"},
+									},
+									ZoneCount:               1,
+									InstanceConfigurationID: "aws.data.highio.i3",
+									Size: &models.TopologySize{
+										Resource: ec.String("memory"),
+										Value:    ec.Int32(2048),
+									},
+									NodeType: &models.ElasticsearchNodeType{
+										Data:   ec.Bool(true),
+										Ingest: ec.Bool(true),
+										Master: ec.Bool(true),
+										Ml:     ec.Bool(false),
+									},
+									TopologyElementControl: &models.TopologyElementControl{
+										Min: &models.TopologySize{
+											Resource: ec.String("memory"),
+											Value:    ec.Int32(1024),
+										},
+									},
+									AutoscalingMax: &models.TopologySize{
+										Value:    ec.Int32(118784),
+										Resource: ec.String("memory"),
+									},
 								}},
 							},
 						}),
-					),
-				),
-			},
-			want: &models.DeploymentUpdateRequest{
-				Name:         "my_deployment_name",
-				Alias:        "my-deployment",
-				PruneOrphans: ec.Bool(true),
-				Settings: &models.DeploymentUpdateSettings{
-					Observability: &models.DeploymentObservabilitySettings{
-						Logging: &models.DeploymentLoggingSettings{
-							Destination: &models.ObservabilityAbsoluteDeployment{
-								DeploymentID: &mock.ValidClusterID,
-								RefID:        "main-elasticsearch",
+						Kibana: []*models.KibanaPayload{
+							{
+								ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
+								Region:                    ec.String("us-east-1"),
+								RefID:                     ec.String("main-kibana"),
+								Plan: &models.KibanaClusterPlan{
+									Kibana: &models.KibanaConfiguration{},
+									ClusterTopology: []*models.KibanaClusterTopologyElement{
+										{
+											ZoneCount:               1,
+											InstanceConfigurationID: "aws.kibana.r5d",
+											Size: &models.TopologySize{
+												Resource: ec.String("memory"),
+												Value:    ec.Int32(1024),
+											},
+										},
+									},
+								},
 							},
 						},
-						Metrics: &models.DeploymentMetricsSettings{
-							Destination: &models.ObservabilityAbsoluteDeployment{
-								DeploymentID: &mock.ValidClusterID,
-								RefID:        "main-elasticsearch",
+						Apm: []*models.ApmPayload{
+							{
+								ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
+								Region:                    ec.String("us-east-1"),
+								RefID:                     ec.String("main-apm"),
+								Plan: &models.ApmPlan{
+									Apm: &models.ApmConfiguration{
+										SystemSettings: &models.ApmSystemSettings{
+											DebugEnabled: ec.Bool(false),
+										},
+									},
+									ClusterTopology: []*models.ApmTopologyElement{{
+										ZoneCount:               1,
+										InstanceConfigurationID: "aws.apm.r5d",
+										Size: &models.TopologySize{
+											Resource: ec.String("memory"),
+											Value:    ec.Int32(512),
+										},
+									}},
+								},
+							},
+						},
+						EnterpriseSearch: []*models.EnterpriseSearchPayload{
+							{
+								ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
+								Region:                    ec.String("us-east-1"),
+								RefID:                     ec.String("main-enterprise_search"),
+								Plan: &models.EnterpriseSearchPlan{
+									EnterpriseSearch: &models.EnterpriseSearchConfiguration{},
+									ClusterTopology: []*models.EnterpriseSearchTopologyElement{
+										{
+											ZoneCount:               1,
+											InstanceConfigurationID: "aws.enterprisesearch.m5d",
+											Size: &models.TopologySize{
+												Resource: ec.String("memory"),
+												Value:    ec.Int32(2048),
+											},
+											NodeType: &models.EnterpriseSearchNodeTypes{
+												Appserver: ec.Bool(true),
+												Connector: ec.Bool(true),
+												Worker:    ec.Bool(true),
+											},
+										},
+									},
+								},
 							},
 						},
 					},
 				},
-				Metadata: &models.DeploymentUpdateMetadata{
-					Tags: []*models.MetadataItem{},
+			},
+			{
+				name: "parses the resources with empty declarations",
+				args: args{
+					d:      deploymentEmptyRD,
+					client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
 				},
-				Resources: &models.DeploymentUpdateResources{
-					Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ioOptimizedTpl(), false), &models.ElasticsearchPayload{
-						Region: ec.String("us-east-1"),
-						RefID:  ec.String("main-elasticsearch"),
-						Settings: &models.ElasticsearchClusterSettings{
-							DedicatedMastersThreshold: 6,
-						},
-						Plan: &models.ElasticsearchClusterPlan{
-							AutoscalingEnabled: ec.Bool(false),
-							Elasticsearch: &models.ElasticsearchConfiguration{
-								Version:                  "7.7.0",
-								UserSettingsYaml:         `some.setting: value`,
-								UserSettingsOverrideYaml: `some.setting: value2`,
-								UserSettingsJSON: map[string]interface{}{
-									"some.setting": "value",
-								},
-								UserSettingsOverrideJSON: map[string]interface{}{
-									"some.setting": "value2",
-								},
+				want: &models.DeploymentUpdateRequest{
+					Name:         "my_deployment_name",
+					Alias:        "my-deployment",
+					PruneOrphans: ec.Bool(true),
+					Settings:     &models.DeploymentUpdateSettings{},
+					Metadata: &models.DeploymentUpdateMetadata{
+						Tags: []*models.MetadataItem{},
+					},
+					Resources: &models.DeploymentUpdateResources{
+						Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ioOptimizedTpl(), false), &models.ElasticsearchPayload{
+							Region: ec.String("us-east-1"),
+							RefID:  ec.String("main-elasticsearch"),
+							Settings: &models.ElasticsearchClusterSettings{
+								DedicatedMastersThreshold: 6,
 							},
-							DeploymentTemplate: &models.DeploymentTemplateReference{
-								ID: ec.String("aws-io-optimized-v2"),
-							},
-							ClusterTopology: []*models.ElasticsearchClusterTopologyElement{{
-								ID: "hot_content",
+							Plan: &models.ElasticsearchClusterPlan{
+								AutoscalingEnabled: ec.Bool(false),
 								Elasticsearch: &models.ElasticsearchConfiguration{
-									NodeAttributes: map[string]string{"data": "hot"},
+									Version: "7.7.0",
 								},
-								ZoneCount:               1,
-								InstanceConfigurationID: "aws.data.highio.i3",
-								Size: &models.TopologySize{
-									Resource: ec.String("memory"),
-									Value:    ec.Int32(2048),
+								DeploymentTemplate: &models.DeploymentTemplateReference{
+									ID: ec.String("aws-io-optimized-v2"),
 								},
-								NodeType: &models.ElasticsearchNodeType{
-									Data:   ec.Bool(true),
-									Ingest: ec.Bool(true),
-									Master: ec.Bool(true),
-									Ml:     ec.Bool(false),
-								},
-								TopologyElementControl: &models.TopologyElementControl{
-									Min: &models.TopologySize{
-										Resource: ec.String("memory"),
-										Value:    ec.Int32(1024),
+								ClusterTopology: []*models.ElasticsearchClusterTopologyElement{{
+									ID: "hot_content",
+									Elasticsearch: &models.ElasticsearchConfiguration{
+										NodeAttributes: map[string]string{"data": "hot"},
 									},
-								},
-								AutoscalingMax: &models.TopologySize{
-									Value:    ec.Int32(118784),
-									Resource: ec.String("memory"),
-								},
-							}},
-						},
-					}),
-					Kibana: []*models.KibanaPayload{
-						{
-							ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
-							Region:                    ec.String("us-east-1"),
-							RefID:                     ec.String("main-kibana"),
-							Plan: &models.KibanaClusterPlan{
-								Kibana: &models.KibanaConfiguration{},
-								ClusterTopology: []*models.KibanaClusterTopologyElement{
-									{
-										ZoneCount:               1,
-										InstanceConfigurationID: "aws.kibana.r5d",
-										Size: &models.TopologySize{
+									ZoneCount:               2,
+									InstanceConfigurationID: "aws.data.highio.i3",
+									Size: &models.TopologySize{
+										Resource: ec.String("memory"),
+										Value:    ec.Int32(8192),
+									},
+									NodeType: &models.ElasticsearchNodeType{
+										Data:   ec.Bool(true),
+										Ingest: ec.Bool(true),
+										Master: ec.Bool(true),
+									},
+									TopologyElementControl: &models.TopologyElementControl{
+										Min: &models.TopologySize{
 											Resource: ec.String("memory"),
 											Value:    ec.Int32(1024),
 										},
 									},
-								},
-							},
-						},
-					},
-					Apm: []*models.ApmPayload{
-						{
-							ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
-							Region:                    ec.String("us-east-1"),
-							RefID:                     ec.String("main-apm"),
-							Plan: &models.ApmPlan{
-								Apm: &models.ApmConfiguration{
-									SystemSettings: &models.ApmSystemSettings{
-										DebugEnabled: ec.Bool(false),
-									},
-								},
-								ClusterTopology: []*models.ApmTopologyElement{{
-									ZoneCount:               1,
-									InstanceConfigurationID: "aws.apm.r5d",
-									Size: &models.TopologySize{
+									AutoscalingMax: &models.TopologySize{
+										Value:    ec.Int32(118784),
 										Resource: ec.String("memory"),
-										Value:    ec.Int32(512),
 									},
 								}},
 							},
+						}),
+						Kibana: []*models.KibanaPayload{
+							{
+								ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
+								Region:                    ec.String("us-east-1"),
+								RefID:                     ec.String("main-kibana"),
+								Plan: &models.KibanaClusterPlan{
+									Kibana: &models.KibanaConfiguration{},
+									ClusterTopology: []*models.KibanaClusterTopologyElement{
+										{
+											ZoneCount:               1,
+											InstanceConfigurationID: "aws.kibana.r5d",
+											Size: &models.TopologySize{
+												Resource: ec.String("memory"),
+												Value:    ec.Int32(1024),
+											},
+										},
+									},
+								},
+							},
 						},
-					},
-					EnterpriseSearch: []*models.EnterpriseSearchPayload{
-						{
-							ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
-							Region:                    ec.String("us-east-1"),
-							RefID:                     ec.String("main-enterprise_search"),
-							Plan: &models.EnterpriseSearchPlan{
-								EnterpriseSearch: &models.EnterpriseSearchConfiguration{},
-								ClusterTopology: []*models.EnterpriseSearchTopologyElement{
-									{
+						Apm: []*models.ApmPayload{
+							{
+								ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
+								Region:                    ec.String("us-east-1"),
+								RefID:                     ec.String("main-apm"),
+								Plan: &models.ApmPlan{
+									Apm: &models.ApmConfiguration{},
+									ClusterTopology: []*models.ApmTopologyElement{{
 										ZoneCount:               1,
-										InstanceConfigurationID: "aws.enterprisesearch.m5d",
+										InstanceConfigurationID: "aws.apm.r5d",
 										Size: &models.TopologySize{
 											Resource: ec.String("memory"),
-											Value:    ec.Int32(2048),
+											Value:    ec.Int32(512),
 										},
-										NodeType: &models.EnterpriseSearchNodeTypes{
-											Appserver: ec.Bool(true),
-											Connector: ec.Bool(true),
-											Worker:    ec.Bool(true),
+									}},
+								},
+							},
+						},
+						EnterpriseSearch: []*models.EnterpriseSearchPayload{
+							{
+								ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
+								Region:                    ec.String("us-east-1"),
+								RefID:                     ec.String("main-enterprise_search"),
+								Plan: &models.EnterpriseSearchPlan{
+									EnterpriseSearch: &models.EnterpriseSearchConfiguration{},
+									ClusterTopology: []*models.EnterpriseSearchTopologyElement{
+										{
+											ZoneCount:               2,
+											InstanceConfigurationID: "aws.enterprisesearch.m5d",
+											Size: &models.TopologySize{
+												Resource: ec.String("memory"),
+												Value:    ec.Int32(2048),
+											},
+											NodeType: &models.EnterpriseSearchNodeTypes{
+												Appserver: ec.Bool(true),
+												Connector: ec.Bool(true),
+												Worker:    ec.Bool(true),
+											},
 										},
 									},
 								},
@@ -3534,288 +3659,40 @@ func Test_updateResourceToModel(t *testing.T) {
 					},
 				},
 			},
-		},
-		{
-			name: "parses the resources with empty declarations",
-			args: args{
-				d:      deploymentEmptyRD,
-				client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
-			},
-			want: &models.DeploymentUpdateRequest{
-				Name:         "my_deployment_name",
-				Alias:        "my-deployment",
-				PruneOrphans: ec.Bool(true),
-				Settings:     &models.DeploymentUpdateSettings{},
-				Metadata: &models.DeploymentUpdateMetadata{
-					Tags: []*models.MetadataItem{},
+			{
+				name: "parses the resources with topology overrides",
+				args: args{
+					d:      deploymentOverrideRd,
+					client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
 				},
-				Resources: &models.DeploymentUpdateResources{
-					Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ioOptimizedTpl(), false), &models.ElasticsearchPayload{
-						Region: ec.String("us-east-1"),
-						RefID:  ec.String("main-elasticsearch"),
-						Settings: &models.ElasticsearchClusterSettings{
-							DedicatedMastersThreshold: 6,
-						},
-						Plan: &models.ElasticsearchClusterPlan{
-							AutoscalingEnabled: ec.Bool(false),
-							Elasticsearch: &models.ElasticsearchConfiguration{
-								Version: "7.7.0",
+				want: &models.DeploymentUpdateRequest{
+					Name:         "my_deployment_name",
+					Alias:        "my-deployment",
+					PruneOrphans: ec.Bool(true),
+					Settings:     &models.DeploymentUpdateSettings{},
+					Metadata: &models.DeploymentUpdateMetadata{
+						Tags: []*models.MetadataItem{},
+					},
+					Resources: &models.DeploymentUpdateResources{
+						Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ioOptimizedTpl(), false), &models.ElasticsearchPayload{
+							Region: ec.String("us-east-1"),
+							RefID:  ec.String("main-elasticsearch"),
+							Settings: &models.ElasticsearchClusterSettings{
+								DedicatedMastersThreshold: 6,
 							},
-							DeploymentTemplate: &models.DeploymentTemplateReference{
-								ID: ec.String("aws-io-optimized-v2"),
-							},
-							ClusterTopology: []*models.ElasticsearchClusterTopologyElement{{
-								ID: "hot_content",
+							Plan: &models.ElasticsearchClusterPlan{
+								AutoscalingEnabled: ec.Bool(false),
 								Elasticsearch: &models.ElasticsearchConfiguration{
-									NodeAttributes: map[string]string{"data": "hot"},
+									Version: "7.7.0",
 								},
-								ZoneCount:               2,
-								InstanceConfigurationID: "aws.data.highio.i3",
-								Size: &models.TopologySize{
-									Resource: ec.String("memory"),
-									Value:    ec.Int32(8192),
+								DeploymentTemplate: &models.DeploymentTemplateReference{
+									ID: ec.String("aws-io-optimized-v2"),
 								},
-								NodeType: &models.ElasticsearchNodeType{
-									Data:   ec.Bool(true),
-									Ingest: ec.Bool(true),
-									Master: ec.Bool(true),
-								},
-								TopologyElementControl: &models.TopologyElementControl{
-									Min: &models.TopologySize{
-										Resource: ec.String("memory"),
-										Value:    ec.Int32(1024),
+								ClusterTopology: []*models.ElasticsearchClusterTopologyElement{{
+									ID: "hot_content",
+									Elasticsearch: &models.ElasticsearchConfiguration{
+										NodeAttributes: map[string]string{"data": "hot"},
 									},
-								},
-								AutoscalingMax: &models.TopologySize{
-									Value:    ec.Int32(118784),
-									Resource: ec.String("memory"),
-								},
-							}},
-						},
-					}),
-					Kibana: []*models.KibanaPayload{
-						{
-							ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
-							Region:                    ec.String("us-east-1"),
-							RefID:                     ec.String("main-kibana"),
-							Plan: &models.KibanaClusterPlan{
-								Kibana: &models.KibanaConfiguration{},
-								ClusterTopology: []*models.KibanaClusterTopologyElement{
-									{
-										ZoneCount:               1,
-										InstanceConfigurationID: "aws.kibana.r5d",
-										Size: &models.TopologySize{
-											Resource: ec.String("memory"),
-											Value:    ec.Int32(1024),
-										},
-									},
-								},
-							},
-						},
-					},
-					Apm: []*models.ApmPayload{
-						{
-							ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
-							Region:                    ec.String("us-east-1"),
-							RefID:                     ec.String("main-apm"),
-							Plan: &models.ApmPlan{
-								Apm: &models.ApmConfiguration{},
-								ClusterTopology: []*models.ApmTopologyElement{{
-									ZoneCount:               1,
-									InstanceConfigurationID: "aws.apm.r5d",
-									Size: &models.TopologySize{
-										Resource: ec.String("memory"),
-										Value:    ec.Int32(512),
-									},
-								}},
-							},
-						},
-					},
-					EnterpriseSearch: []*models.EnterpriseSearchPayload{
-						{
-							ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
-							Region:                    ec.String("us-east-1"),
-							RefID:                     ec.String("main-enterprise_search"),
-							Plan: &models.EnterpriseSearchPlan{
-								EnterpriseSearch: &models.EnterpriseSearchConfiguration{},
-								ClusterTopology: []*models.EnterpriseSearchTopologyElement{
-									{
-										ZoneCount:               2,
-										InstanceConfigurationID: "aws.enterprisesearch.m5d",
-										Size: &models.TopologySize{
-											Resource: ec.String("memory"),
-											Value:    ec.Int32(2048),
-										},
-										NodeType: &models.EnterpriseSearchNodeTypes{
-											Appserver: ec.Bool(true),
-											Connector: ec.Bool(true),
-											Worker:    ec.Bool(true),
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			name: "parses the resources with topology overrides",
-			args: args{
-				d:      deploymentOverrideRd,
-				client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
-			},
-			want: &models.DeploymentUpdateRequest{
-				Name:         "my_deployment_name",
-				Alias:        "my-deployment",
-				PruneOrphans: ec.Bool(true),
-				Settings:     &models.DeploymentUpdateSettings{},
-				Metadata: &models.DeploymentUpdateMetadata{
-					Tags: []*models.MetadataItem{},
-				},
-				Resources: &models.DeploymentUpdateResources{
-					Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ioOptimizedTpl(), false), &models.ElasticsearchPayload{
-						Region: ec.String("us-east-1"),
-						RefID:  ec.String("main-elasticsearch"),
-						Settings: &models.ElasticsearchClusterSettings{
-							DedicatedMastersThreshold: 6,
-						},
-						Plan: &models.ElasticsearchClusterPlan{
-							AutoscalingEnabled: ec.Bool(false),
-							Elasticsearch: &models.ElasticsearchConfiguration{
-								Version: "7.7.0",
-							},
-							DeploymentTemplate: &models.DeploymentTemplateReference{
-								ID: ec.String("aws-io-optimized-v2"),
-							},
-							ClusterTopology: []*models.ElasticsearchClusterTopologyElement{{
-								ID: "hot_content",
-								Elasticsearch: &models.ElasticsearchConfiguration{
-									NodeAttributes: map[string]string{"data": "hot"},
-								},
-								ZoneCount:               2,
-								InstanceConfigurationID: "aws.data.highio.i3",
-								Size: &models.TopologySize{
-									Resource: ec.String("memory"),
-									Value:    ec.Int32(4096),
-								},
-								NodeType: &models.ElasticsearchNodeType{
-									Data:   ec.Bool(true),
-									Ingest: ec.Bool(true),
-									Master: ec.Bool(true),
-								},
-								TopologyElementControl: &models.TopologyElementControl{
-									Min: &models.TopologySize{
-										Resource: ec.String("memory"),
-										Value:    ec.Int32(1024),
-									},
-								},
-								AutoscalingMax: &models.TopologySize{
-									Value:    ec.Int32(118784),
-									Resource: ec.String("memory"),
-								},
-							}},
-						},
-					}),
-					Kibana: []*models.KibanaPayload{
-						{
-							ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
-							Region:                    ec.String("us-east-1"),
-							RefID:                     ec.String("main-kibana"),
-							Plan: &models.KibanaClusterPlan{
-								Kibana: &models.KibanaConfiguration{},
-								ClusterTopology: []*models.KibanaClusterTopologyElement{
-									{
-										ZoneCount:               1,
-										InstanceConfigurationID: "aws.kibana.r5d",
-										Size: &models.TopologySize{
-											Resource: ec.String("memory"),
-											Value:    ec.Int32(2048),
-										},
-									},
-								},
-							},
-						},
-					},
-					Apm: []*models.ApmPayload{
-						{
-							ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
-							Region:                    ec.String("us-east-1"),
-							RefID:                     ec.String("main-apm"),
-							Plan: &models.ApmPlan{
-								Apm: &models.ApmConfiguration{},
-								ClusterTopology: []*models.ApmTopologyElement{{
-									ZoneCount:               1,
-									InstanceConfigurationID: "aws.apm.r5d",
-									Size: &models.TopologySize{
-										Resource: ec.String("memory"),
-										Value:    ec.Int32(1024),
-									},
-								}},
-							},
-						},
-					},
-					EnterpriseSearch: []*models.EnterpriseSearchPayload{
-						{
-							ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
-							Region:                    ec.String("us-east-1"),
-							RefID:                     ec.String("main-enterprise_search"),
-							Plan: &models.EnterpriseSearchPlan{
-								EnterpriseSearch: &models.EnterpriseSearchConfiguration{},
-								ClusterTopology: []*models.EnterpriseSearchTopologyElement{
-									{
-										ZoneCount:               2,
-										InstanceConfigurationID: "aws.enterprisesearch.m5d",
-										Size: &models.TopologySize{
-											Resource: ec.String("memory"),
-											Value:    ec.Int32(4096),
-										},
-										NodeType: &models.EnterpriseSearchNodeTypes{
-											Appserver: ec.Bool(true),
-											Connector: ec.Bool(true),
-											Worker:    ec.Bool(true),
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			name: "parses the resources with empty declarations (Hot Warm)",
-			args: args{
-				d:      deploymentHotWarm,
-				client: api.NewMock(mock.New200Response(hotWarmTpl())),
-			},
-			want: &models.DeploymentUpdateRequest{
-				Name:         "my_deployment_name",
-				PruneOrphans: ec.Bool(true),
-				Settings:     &models.DeploymentUpdateSettings{},
-				Metadata: &models.DeploymentUpdateMetadata{
-					Tags: []*models.MetadataItem{},
-				},
-				Resources: &models.DeploymentUpdateResources{
-					Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, hotWarmTpl(), false), &models.ElasticsearchPayload{
-						Region: ec.String("us-east-1"),
-						RefID:  ec.String("main-elasticsearch"),
-						Settings: &models.ElasticsearchClusterSettings{
-							DedicatedMastersThreshold: 6,
-							Curation:                  nil,
-						},
-						Plan: &models.ElasticsearchClusterPlan{
-							AutoscalingEnabled: ec.Bool(false),
-							Elasticsearch: &models.ElasticsearchConfiguration{
-								Version:  "7.9.2",
-								Curation: nil,
-							},
-							DeploymentTemplate: &models.DeploymentTemplateReference{
-								ID: ec.String("aws-hot-warm-v2"),
-							},
-							ClusterTopology: []*models.ElasticsearchClusterTopologyElement{
-								{
-									ID:                      "hot_content",
 									ZoneCount:               2,
 									InstanceConfigurationID: "aws.data.highio.i3",
 									Size: &models.TopologySize{
@@ -3827,9 +3704,6 @@ func Test_updateResourceToModel(t *testing.T) {
 										Ingest: ec.Bool(true),
 										Master: ec.Bool(true),
 									},
-									Elasticsearch: &models.ElasticsearchConfiguration{
-										NodeAttributes: map[string]string{"data": "hot"},
-									},
 									TopologyElementControl: &models.TopologyElementControl{
 										Min: &models.TopologySize{
 											Resource: ec.String("memory"),
@@ -3840,39 +3714,237 @@ func Test_updateResourceToModel(t *testing.T) {
 										Value:    ec.Int32(118784),
 										Resource: ec.String("memory"),
 									},
-								},
-								{
-									ID:                      "warm",
-									ZoneCount:               2,
-									InstanceConfigurationID: "aws.data.highstorage.d2",
-									Size: &models.TopologySize{
-										Resource: ec.String("memory"),
-										Value:    ec.Int32(4096),
-									},
-									NodeType: &models.ElasticsearchNodeType{
-										Data:   ec.Bool(true),
-										Ingest: ec.Bool(true),
-										Master: ec.Bool(false),
-									},
-									Elasticsearch: &models.ElasticsearchConfiguration{
-										NodeAttributes: map[string]string{"data": "warm"},
-									},
-									TopologyElementControl: &models.TopologyElementControl{
-										Min: &models.TopologySize{
-											Resource: ec.String("memory"),
-											Value:    ec.Int32(0),
+								}},
+							},
+						}),
+						Kibana: []*models.KibanaPayload{
+							{
+								ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
+								Region:                    ec.String("us-east-1"),
+								RefID:                     ec.String("main-kibana"),
+								Plan: &models.KibanaClusterPlan{
+									Kibana: &models.KibanaConfiguration{},
+									ClusterTopology: []*models.KibanaClusterTopologyElement{
+										{
+											ZoneCount:               1,
+											InstanceConfigurationID: "aws.kibana.r5d",
+											Size: &models.TopologySize{
+												Resource: ec.String("memory"),
+												Value:    ec.Int32(2048),
+											},
 										},
-									},
-									AutoscalingMax: &models.TopologySize{
-										Value:    ec.Int32(118784),
-										Resource: ec.String("memory"),
 									},
 								},
 							},
 						},
-					}),
-					Kibana: []*models.KibanaPayload{
-						{
+						Apm: []*models.ApmPayload{
+							{
+								ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
+								Region:                    ec.String("us-east-1"),
+								RefID:                     ec.String("main-apm"),
+								Plan: &models.ApmPlan{
+									Apm: &models.ApmConfiguration{},
+									ClusterTopology: []*models.ApmTopologyElement{{
+										ZoneCount:               1,
+										InstanceConfigurationID: "aws.apm.r5d",
+										Size: &models.TopologySize{
+											Resource: ec.String("memory"),
+											Value:    ec.Int32(1024),
+										},
+									}},
+								},
+							},
+						},
+						EnterpriseSearch: []*models.EnterpriseSearchPayload{
+							{
+								ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
+								Region:                    ec.String("us-east-1"),
+								RefID:                     ec.String("main-enterprise_search"),
+								Plan: &models.EnterpriseSearchPlan{
+									EnterpriseSearch: &models.EnterpriseSearchConfiguration{},
+									ClusterTopology: []*models.EnterpriseSearchTopologyElement{
+										{
+											ZoneCount:               2,
+											InstanceConfigurationID: "aws.enterprisesearch.m5d",
+											Size: &models.TopologySize{
+												Resource: ec.String("memory"),
+												Value:    ec.Int32(4096),
+											},
+											NodeType: &models.EnterpriseSearchNodeTypes{
+												Appserver: ec.Bool(true),
+												Connector: ec.Bool(true),
+												Worker:    ec.Bool(true),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			{
+				name: "parses the resources with empty declarations (Hot Warm)",
+				args: args{
+					d:      deploymentHotWarm,
+					client: api.NewMock(mock.New200Response(hotWarmTpl())),
+				},
+				want: &models.DeploymentUpdateRequest{
+					Name:         "my_deployment_name",
+					PruneOrphans: ec.Bool(true),
+					Settings:     &models.DeploymentUpdateSettings{},
+					Metadata: &models.DeploymentUpdateMetadata{
+						Tags: []*models.MetadataItem{},
+					},
+					Resources: &models.DeploymentUpdateResources{
+						Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, hotWarmTpl(), false), &models.ElasticsearchPayload{
+							Region: ec.String("us-east-1"),
+							RefID:  ec.String("main-elasticsearch"),
+							Settings: &models.ElasticsearchClusterSettings{
+								DedicatedMastersThreshold: 6,
+								Curation:                  nil,
+							},
+							Plan: &models.ElasticsearchClusterPlan{
+								AutoscalingEnabled: ec.Bool(false),
+								Elasticsearch: &models.ElasticsearchConfiguration{
+									Version:  "7.9.2",
+									Curation: nil,
+								},
+								DeploymentTemplate: &models.DeploymentTemplateReference{
+									ID: ec.String("aws-hot-warm-v2"),
+								},
+								ClusterTopology: []*models.ElasticsearchClusterTopologyElement{
+									{
+										ID:                      "hot_content",
+										ZoneCount:               2,
+										InstanceConfigurationID: "aws.data.highio.i3",
+										Size: &models.TopologySize{
+											Resource: ec.String("memory"),
+											Value:    ec.Int32(4096),
+										},
+										NodeType: &models.ElasticsearchNodeType{
+											Data:   ec.Bool(true),
+											Ingest: ec.Bool(true),
+											Master: ec.Bool(true),
+										},
+										Elasticsearch: &models.ElasticsearchConfiguration{
+											NodeAttributes: map[string]string{"data": "hot"},
+										},
+										TopologyElementControl: &models.TopologyElementControl{
+											Min: &models.TopologySize{
+												Resource: ec.String("memory"),
+												Value:    ec.Int32(1024),
+											},
+										},
+										AutoscalingMax: &models.TopologySize{
+											Value:    ec.Int32(118784),
+											Resource: ec.String("memory"),
+										},
+									},
+									{
+										ID:                      "warm",
+										ZoneCount:               2,
+										InstanceConfigurationID: "aws.data.highstorage.d2",
+										Size: &models.TopologySize{
+											Resource: ec.String("memory"),
+											Value:    ec.Int32(4096),
+										},
+										NodeType: &models.ElasticsearchNodeType{
+											Data:   ec.Bool(true),
+											Ingest: ec.Bool(true),
+											Master: ec.Bool(false),
+										},
+										Elasticsearch: &models.ElasticsearchConfiguration{
+											NodeAttributes: map[string]string{"data": "warm"},
+										},
+										TopologyElementControl: &models.TopologyElementControl{
+											Min: &models.TopologySize{
+												Resource: ec.String("memory"),
+												Value:    ec.Int32(0),
+											},
+										},
+										AutoscalingMax: &models.TopologySize{
+											Value:    ec.Int32(118784),
+											Resource: ec.String("memory"),
+										},
+									},
+								},
+							},
+						}),
+						Kibana: []*models.KibanaPayload{
+							{
+								ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
+								Region:                    ec.String("us-east-1"),
+								RefID:                     ec.String("main-kibana"),
+								Plan: &models.KibanaClusterPlan{
+									Kibana: &models.KibanaConfiguration{},
+									ClusterTopology: []*models.KibanaClusterTopologyElement{
+										{
+											ZoneCount:               1,
+											InstanceConfigurationID: "aws.kibana.r5d",
+											Size: &models.TopologySize{
+												Resource: ec.String("memory"),
+												Value:    ec.Int32(1024),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			{
+				name: "toplogy change from hot / warm to cross cluster search",
+				args: args{
+					d:      deploymentEmptyRDWithTemplateChange,
+					client: api.NewMock(mock.New200Response(ccsTpl())),
+				},
+				want: &models.DeploymentUpdateRequest{
+					Name:         "my_deployment_name",
+					Alias:        "my-deployment",
+					PruneOrphans: ec.Bool(true),
+					Settings: &models.DeploymentUpdateSettings{
+						Observability: &models.DeploymentObservabilitySettings{},
+					},
+					Metadata: &models.DeploymentUpdateMetadata{
+						Tags: []*models.MetadataItem{},
+					},
+					Resources: &models.DeploymentUpdateResources{
+						Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ccsTpl(), false), &models.ElasticsearchPayload{
+							Region:   ec.String("us-east-1"),
+							RefID:    ec.String("main-elasticsearch"),
+							Settings: &models.ElasticsearchClusterSettings{},
+							Plan: &models.ElasticsearchClusterPlan{
+								Elasticsearch: &models.ElasticsearchConfiguration{
+									Version: "7.9.2",
+								},
+								DeploymentTemplate: &models.DeploymentTemplateReference{
+									ID: ec.String("aws-cross-cluster-search-v2"),
+								},
+								ClusterTopology: []*models.ElasticsearchClusterTopologyElement{{
+									ID:                      "hot_content",
+									ZoneCount:               1,
+									InstanceConfigurationID: "aws.ccs.r5d",
+									Size: &models.TopologySize{
+										Resource: ec.String("memory"),
+										Value:    ec.Int32(1024),
+									},
+									NodeType: &models.ElasticsearchNodeType{
+										Data:   ec.Bool(true),
+										Ingest: ec.Bool(true),
+										Master: ec.Bool(true),
+									},
+									TopologyElementControl: &models.TopologyElementControl{
+										Min: &models.TopologySize{
+											Resource: ec.String("memory"),
+											Value:    ec.Int32(1024),
+										},
+									},
+								}},
+							},
+						}),
+						Kibana: []*models.KibanaPayload{{
 							ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
 							Region:                    ec.String("us-east-1"),
 							RefID:                     ec.String("main-kibana"),
@@ -3889,436 +3961,267 @@ func Test_updateResourceToModel(t *testing.T) {
 									},
 								},
 							},
-						},
+						}},
 					},
 				},
 			},
-		},
-		{
-			name: "toplogy change from hot / warm to cross cluster search",
-			args: args{
-				d:      deploymentEmptyRDWithTemplateChange,
-				client: api.NewMock(mock.New200Response(ccsTpl())),
-			},
-			want: &models.DeploymentUpdateRequest{
-				Name:         "my_deployment_name",
-				Alias:        "my-deployment",
-				PruneOrphans: ec.Bool(true),
-				Settings: &models.DeploymentUpdateSettings{
-					Observability: &models.DeploymentObservabilitySettings{},
+			// The behavior of this change should be:
+			// * Resets the Elasticsearch topology: from 16g (due to unsetTopology call on DT change).
+			// * Keeps the kibana toplogy size to 2g even though the topology element has been removed (saved value persists).
+			// * Removes all other non present resources
+			{
+				name: "topology change with sizes not default from io optimized to cross cluster search",
+				args: args{
+					d:      deploymentEmptyRDWithTemplateChangeWithDiffSize,
+					client: api.NewMock(mock.New200Response(ccsTpl())),
 				},
-				Metadata: &models.DeploymentUpdateMetadata{
-					Tags: []*models.MetadataItem{},
-				},
-				Resources: &models.DeploymentUpdateResources{
-					Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ccsTpl(), false), &models.ElasticsearchPayload{
-						Region:   ec.String("us-east-1"),
-						RefID:    ec.String("main-elasticsearch"),
-						Settings: &models.ElasticsearchClusterSettings{},
-						Plan: &models.ElasticsearchClusterPlan{
-							Elasticsearch: &models.ElasticsearchConfiguration{
-								Version: "7.9.2",
-							},
-							DeploymentTemplate: &models.DeploymentTemplateReference{
-								ID: ec.String("aws-cross-cluster-search-v2"),
-							},
-							ClusterTopology: []*models.ElasticsearchClusterTopologyElement{{
-								ID:                      "hot_content",
-								ZoneCount:               1,
-								InstanceConfigurationID: "aws.ccs.r5d",
-								Size: &models.TopologySize{
-									Resource: ec.String("memory"),
-									Value:    ec.Int32(1024),
-								},
-								NodeType: &models.ElasticsearchNodeType{
-									Data:   ec.Bool(true),
-									Ingest: ec.Bool(true),
-									Master: ec.Bool(true),
-								},
-								TopologyElementControl: &models.TopologyElementControl{
-									Min: &models.TopologySize{
-										Resource: ec.String("memory"),
-										Value:    ec.Int32(1024),
-									},
-								},
-							}},
-						},
-					}),
-					Kibana: []*models.KibanaPayload{{
-						ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
-						Region:                    ec.String("us-east-1"),
-						RefID:                     ec.String("main-kibana"),
-						Plan: &models.KibanaClusterPlan{
-							Kibana: &models.KibanaConfiguration{},
-							ClusterTopology: []*models.KibanaClusterTopologyElement{
-								{
-									ZoneCount:               1,
-									InstanceConfigurationID: "aws.kibana.r5d",
-									Size: &models.TopologySize{
-										Resource: ec.String("memory"),
-										Value:    ec.Int32(1024),
-									},
-								},
-							},
-						},
-					}},
-				},
-			},
-		},
-		// The behavior of this change should be:
-		// * Resets the Elasticsearch topology: from 16g (due to unsetTopology call on DT change).
-		// * Keeps the kibana toplogy size to 2g even though the topology element has been removed (saved value persists).
-		// * Removes all other non present resources
-		{
-			name: "topology change with sizes not default from io optimized to cross cluster search",
-			args: args{
-				d:      deploymentEmptyRDWithTemplateChangeWithDiffSize,
-				client: api.NewMock(mock.New200Response(ccsTpl())),
-			},
-			want: &models.DeploymentUpdateRequest{
-				Name:         "my_deployment_name",
-				PruneOrphans: ec.Bool(true),
-				Settings:     &models.DeploymentUpdateSettings{},
-				Metadata: &models.DeploymentUpdateMetadata{
-					Tags: []*models.MetadataItem{},
-				},
-				Resources: &models.DeploymentUpdateResources{
-					Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ccsTpl(), false), &models.ElasticsearchPayload{
-						Region:   ec.String("us-east-1"),
-						RefID:    ec.String("main-elasticsearch"),
-						Settings: &models.ElasticsearchClusterSettings{},
-						Plan: &models.ElasticsearchClusterPlan{
-							Elasticsearch: &models.ElasticsearchConfiguration{
-								Version: "7.9.2",
-							},
-							DeploymentTemplate: &models.DeploymentTemplateReference{
-								ID: ec.String("aws-cross-cluster-search-v2"),
-							},
-							ClusterTopology: []*models.ElasticsearchClusterTopologyElement{{
-								ID:                      "hot_content",
-								ZoneCount:               1,
-								InstanceConfigurationID: "aws.ccs.r5d",
-								Size: &models.TopologySize{
-									Resource: ec.String("memory"),
-									// This field's value is reset.
-									Value: ec.Int32(1024),
-								},
-								NodeType: &models.ElasticsearchNodeType{
-									Data:   ec.Bool(true),
-									Ingest: ec.Bool(true),
-									Master: ec.Bool(true),
-								},
-								TopologyElementControl: &models.TopologyElementControl{
-									Min: &models.TopologySize{
-										Resource: ec.String("memory"),
-										Value:    ec.Int32(1024),
-									},
-								},
-							}},
-						},
-					}),
-					Kibana: []*models.KibanaPayload{{
-						ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
-						Region:                    ec.String("us-east-1"),
-						RefID:                     ec.String("main-kibana"),
-						Plan: &models.KibanaClusterPlan{
-							Kibana: &models.KibanaConfiguration{},
-							ClusterTopology: []*models.KibanaClusterTopologyElement{
-								{
-									ZoneCount:               1,
-									InstanceConfigurationID: "aws.kibana.r5d",
-									Size: &models.TopologySize{
-										Resource: ec.String("memory"),
-										Value:    ec.Int32(2048),
-									},
-								},
-							},
-						},
-					}},
-				},
-			},
-		},
-		// The behavior of this change should be:
-		// * Keeps all topology sizes as they were defined (saved value persists).
-		{
-			name: "topology change with sizes not default from explicit value to empty",
-			args: args{
-				d:      deploymentChangeFromExplicitSizingToEmpty,
-				client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
-			},
-			want: &models.DeploymentUpdateRequest{
-				Name:         "my_deployment_name",
-				PruneOrphans: ec.Bool(true),
-				Settings:     &models.DeploymentUpdateSettings{},
-				Metadata: &models.DeploymentUpdateMetadata{
-					Tags: []*models.MetadataItem{},
-				},
-				Resources: &models.DeploymentUpdateResources{
-					Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ioOptimizedTpl(), false), &models.ElasticsearchPayload{
-						Region: ec.String("us-east-1"),
-						RefID:  ec.String("main-elasticsearch"),
-						Settings: &models.ElasticsearchClusterSettings{
-							DedicatedMastersThreshold: 6,
-						},
-						Plan: &models.ElasticsearchClusterPlan{
-							AutoscalingEnabled: ec.Bool(false),
-							Elasticsearch: &models.ElasticsearchConfiguration{
-								Version: "7.9.2",
-							},
-							DeploymentTemplate: &models.DeploymentTemplateReference{
-								ID: ec.String("aws-io-optimized-v2"),
-							},
-							ClusterTopology: []*models.ElasticsearchClusterTopologyElement{{
-								ID: "hot_content",
+				want: &models.DeploymentUpdateRequest{
+					Name:         "my_deployment_name",
+					PruneOrphans: ec.Bool(true),
+					Settings:     &models.DeploymentUpdateSettings{},
+					Metadata: &models.DeploymentUpdateMetadata{
+						Tags: []*models.MetadataItem{},
+					},
+					Resources: &models.DeploymentUpdateResources{
+						Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ccsTpl(), false), &models.ElasticsearchPayload{
+							Region:   ec.String("us-east-1"),
+							RefID:    ec.String("main-elasticsearch"),
+							Settings: &models.ElasticsearchClusterSettings{},
+							Plan: &models.ElasticsearchClusterPlan{
 								Elasticsearch: &models.ElasticsearchConfiguration{
-									NodeAttributes: map[string]string{"data": "hot"},
+									Version: "7.9.2",
 								},
-								ZoneCount:               2,
-								InstanceConfigurationID: "aws.data.highio.i3",
-								Size: &models.TopologySize{
-									Resource: ec.String("memory"),
-									Value:    ec.Int32(16384),
+								DeploymentTemplate: &models.DeploymentTemplateReference{
+									ID: ec.String("aws-cross-cluster-search-v2"),
 								},
-								NodeType: &models.ElasticsearchNodeType{
-									Data:   ec.Bool(true),
-									Ingest: ec.Bool(true),
-									Master: ec.Bool(true),
-								},
-								TopologyElementControl: &models.TopologyElementControl{
-									Min: &models.TopologySize{
-										Resource: ec.String("memory"),
-										Value:    ec.Int32(1024),
-									},
-								},
-								AutoscalingMax: &models.TopologySize{
-									Value:    ec.Int32(118784),
-									Resource: ec.String("memory"),
-								},
-							},
-							},
-						},
-					}),
-					Kibana: []*models.KibanaPayload{{
-						ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
-						Region:                    ec.String("us-east-1"),
-						RefID:                     ec.String("main-kibana"),
-						Plan: &models.KibanaClusterPlan{
-							Kibana: &models.KibanaConfiguration{},
-							ClusterTopology: []*models.KibanaClusterTopologyElement{
-								{
+								ClusterTopology: []*models.ElasticsearchClusterTopologyElement{{
+									ID:                      "hot_content",
 									ZoneCount:               1,
-									InstanceConfigurationID: "aws.kibana.r5d",
+									InstanceConfigurationID: "aws.ccs.r5d",
 									Size: &models.TopologySize{
 										Resource: ec.String("memory"),
-										Value:    ec.Int32(2048),
+										// This field's value is reset.
+										Value: ec.Int32(1024),
+									},
+									NodeType: &models.ElasticsearchNodeType{
+										Data:   ec.Bool(true),
+										Ingest: ec.Bool(true),
+										Master: ec.Bool(true),
+									},
+									TopologyElementControl: &models.TopologyElementControl{
+										Min: &models.TopologySize{
+											Resource: ec.String("memory"),
+											Value:    ec.Int32(1024),
+										},
+									},
+								}},
+							},
+						}),
+						Kibana: []*models.KibanaPayload{{
+							ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
+							Region:                    ec.String("us-east-1"),
+							RefID:                     ec.String("main-kibana"),
+							Plan: &models.KibanaClusterPlan{
+								Kibana: &models.KibanaConfiguration{},
+								ClusterTopology: []*models.KibanaClusterTopologyElement{
+									{
+										ZoneCount:               1,
+										InstanceConfigurationID: "aws.kibana.r5d",
+										Size: &models.TopologySize{
+											Resource: ec.String("memory"),
+											Value:    ec.Int32(2048),
+										},
 									},
 								},
 							},
-						},
-					}},
-					Apm: []*models.ApmPayload{{
-						ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
-						Region:                    ec.String("us-east-1"),
-						RefID:                     ec.String("main-apm"),
-						Plan: &models.ApmPlan{
-							Apm: &models.ApmConfiguration{},
-							ClusterTopology: []*models.ApmTopologyElement{{
-								ZoneCount:               1,
-								InstanceConfigurationID: "aws.apm.r5d",
-								Size: &models.TopologySize{
-									Resource: ec.String("memory"),
-									Value:    ec.Int32(1024),
+						}},
+					},
+				},
+			},
+			// The behavior of this change should be:
+			// * Keeps all topology sizes as they were defined (saved value persists).
+			{
+				name: "topology change with sizes not default from explicit value to empty",
+				args: args{
+					d:      deploymentChangeFromExplicitSizingToEmpty,
+					client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
+				},
+				want: &models.DeploymentUpdateRequest{
+					Name:         "my_deployment_name",
+					PruneOrphans: ec.Bool(true),
+					Settings:     &models.DeploymentUpdateSettings{},
+					Metadata: &models.DeploymentUpdateMetadata{
+						Tags: []*models.MetadataItem{},
+					},
+					Resources: &models.DeploymentUpdateResources{
+						Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ioOptimizedTpl(), false), &models.ElasticsearchPayload{
+							Region: ec.String("us-east-1"),
+							RefID:  ec.String("main-elasticsearch"),
+							Settings: &models.ElasticsearchClusterSettings{
+								DedicatedMastersThreshold: 6,
+							},
+							Plan: &models.ElasticsearchClusterPlan{
+								AutoscalingEnabled: ec.Bool(false),
+								Elasticsearch: &models.ElasticsearchConfiguration{
+									Version: "7.9.2",
 								},
-							}},
-						},
-					}},
-					EnterpriseSearch: []*models.EnterpriseSearchPayload{{
-						ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
-						Region:                    ec.String("us-east-1"),
-						RefID:                     ec.String("main-enterprise_search"),
-						Plan: &models.EnterpriseSearchPlan{
-							EnterpriseSearch: &models.EnterpriseSearchConfiguration{},
-							ClusterTopology: []*models.EnterpriseSearchTopologyElement{
-								{
+								DeploymentTemplate: &models.DeploymentTemplateReference{
+									ID: ec.String("aws-io-optimized-v2"),
+								},
+								ClusterTopology: []*models.ElasticsearchClusterTopologyElement{{
+									ID: "hot_content",
+									Elasticsearch: &models.ElasticsearchConfiguration{
+										NodeAttributes: map[string]string{"data": "hot"},
+									},
 									ZoneCount:               2,
-									InstanceConfigurationID: "aws.enterprisesearch.m5d",
+									InstanceConfigurationID: "aws.data.highio.i3",
 									Size: &models.TopologySize{
 										Resource: ec.String("memory"),
-										Value:    ec.Int32(8192),
+										Value:    ec.Int32(16384),
 									},
-									NodeType: &models.EnterpriseSearchNodeTypes{
-										Appserver: ec.Bool(true),
-										Connector: ec.Bool(true),
-										Worker:    ec.Bool(true),
+									NodeType: &models.ElasticsearchNodeType{
+										Data:   ec.Bool(true),
+										Ingest: ec.Bool(true),
+										Master: ec.Bool(true),
+									},
+									TopologyElementControl: &models.TopologyElementControl{
+										Min: &models.TopologySize{
+											Resource: ec.String("memory"),
+											Value:    ec.Int32(1024),
+										},
+									},
+									AutoscalingMax: &models.TopologySize{
+										Value:    ec.Int32(118784),
+										Resource: ec.String("memory"),
+									},
+								},
+								},
+							},
+						}),
+						Kibana: []*models.KibanaPayload{{
+							ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
+							Region:                    ec.String("us-east-1"),
+							RefID:                     ec.String("main-kibana"),
+							Plan: &models.KibanaClusterPlan{
+								Kibana: &models.KibanaConfiguration{},
+								ClusterTopology: []*models.KibanaClusterTopologyElement{
+									{
+										ZoneCount:               1,
+										InstanceConfigurationID: "aws.kibana.r5d",
+										Size: &models.TopologySize{
+											Resource: ec.String("memory"),
+											Value:    ec.Int32(2048),
+										},
 									},
 								},
 							},
-						},
-					}},
-				},
-			},
-		},
-		{
-			name: "does not migrate node_type to node_role on version upgrade that's lower than 7.10.0",
-			args: args{
-				d: util.NewResourceData(t, util.ResDataParams{
-					ID: mock.ValidClusterID,
-					State: map[string]interface{}{
-						"name":                   "my_deployment_name",
-						"deployment_template_id": "aws-io-optimized-v2",
-						"region":                 "us-east-1",
-						"version":                "7.9.1",
-						"elasticsearch": []interface{}{map[string]interface{}{
-							"topology": []interface{}{map[string]interface{}{
-								"id":               "hot_content",
-								"size":             "16g",
-								"node_type_data":   "true",
-								"node_type_ingest": "true",
-								"node_type_master": "true",
-								"node_type_ml":     "false",
-							}},
 						}},
-					},
-					Change: map[string]interface{}{
-						"name":                   "my_deployment_name",
-						"deployment_template_id": "aws-io-optimized-v2",
-						"region":                 "us-east-1",
-						"version":                "7.11.1",
-						"elasticsearch": []interface{}{map[string]interface{}{
-							"topology": []interface{}{map[string]interface{}{
-								"id":               "hot_content",
-								"size":             "16g",
-								"node_type_data":   "true",
-								"node_type_ingest": "true",
-								"node_type_master": "true",
-								"node_type_ml":     "false",
-							}},
-						}},
-					},
-					Schema: newSchema(),
-				}),
-				client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
-			},
-			want: &models.DeploymentUpdateRequest{
-				Name:         "my_deployment_name",
-				PruneOrphans: ec.Bool(true),
-				Settings:     &models.DeploymentUpdateSettings{},
-				Metadata: &models.DeploymentUpdateMetadata{
-					Tags: []*models.MetadataItem{},
-				},
-				Resources: &models.DeploymentUpdateResources{
-					Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ioOptimizedTpl(), false), &models.ElasticsearchPayload{
-						Region: ec.String("us-east-1"),
-						RefID:  ec.String("main-elasticsearch"),
-						Settings: &models.ElasticsearchClusterSettings{
-							DedicatedMastersThreshold: 6,
-						},
-						Plan: &models.ElasticsearchClusterPlan{
-							AutoscalingEnabled: ec.Bool(false),
-							Elasticsearch: &models.ElasticsearchConfiguration{
-								Version: "7.11.1",
-							},
-							DeploymentTemplate: &models.DeploymentTemplateReference{
-								ID: ec.String("aws-io-optimized-v2"),
-							},
-							ClusterTopology: []*models.ElasticsearchClusterTopologyElement{{
-								ID: "hot_content",
-								Elasticsearch: &models.ElasticsearchConfiguration{
-									NodeAttributes: map[string]string{"data": "hot"},
-								},
-								ZoneCount:               2,
-								InstanceConfigurationID: "aws.data.highio.i3",
-								Size: &models.TopologySize{
-									Resource: ec.String("memory"),
-									Value:    ec.Int32(16384),
-								},
-								NodeType: &models.ElasticsearchNodeType{
-									Data:   ec.Bool(true),
-									Ingest: ec.Bool(true),
-									Master: ec.Bool(true),
-									Ml:     ec.Bool(false),
-								},
-								TopologyElementControl: &models.TopologyElementControl{
-									Min: &models.TopologySize{
+						Apm: []*models.ApmPayload{{
+							ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
+							Region:                    ec.String("us-east-1"),
+							RefID:                     ec.String("main-apm"),
+							Plan: &models.ApmPlan{
+								Apm: &models.ApmConfiguration{},
+								ClusterTopology: []*models.ApmTopologyElement{{
+									ZoneCount:               1,
+									InstanceConfigurationID: "aws.apm.r5d",
+									Size: &models.TopologySize{
 										Resource: ec.String("memory"),
 										Value:    ec.Int32(1024),
 									},
+								}},
+							},
+						}},
+						EnterpriseSearch: []*models.EnterpriseSearchPayload{{
+							ElasticsearchClusterRefID: ec.String("main-elasticsearch"),
+							Region:                    ec.String("us-east-1"),
+							RefID:                     ec.String("main-enterprise_search"),
+							Plan: &models.EnterpriseSearchPlan{
+								EnterpriseSearch: &models.EnterpriseSearchConfiguration{},
+								ClusterTopology: []*models.EnterpriseSearchTopologyElement{
+									{
+										ZoneCount:               2,
+										InstanceConfigurationID: "aws.enterprisesearch.m5d",
+										Size: &models.TopologySize{
+											Resource: ec.String("memory"),
+											Value:    ec.Int32(8192),
+										},
+										NodeType: &models.EnterpriseSearchNodeTypes{
+											Appserver: ec.Bool(true),
+											Connector: ec.Bool(true),
+											Worker:    ec.Bool(true),
+										},
+									},
 								},
-								AutoscalingMax: &models.TopologySize{
-									Value:    ec.Int32(118784),
-									Resource: ec.String("memory"),
-								},
+							},
+						}},
+					},
+				},
+			},
+			{
+				name: "does not migrate node_type to node_role on version upgrade that's lower than 7.10.0",
+				args: args{
+					d: util.NewResourceData(t, util.ResDataParams{
+						ID: mock.ValidClusterID,
+						State: map[string]interface{}{
+							"name":                   "my_deployment_name",
+							"deployment_template_id": "aws-io-optimized-v2",
+							"region":                 "us-east-1",
+							"version":                "7.9.1",
+							"elasticsearch": []interface{}{map[string]interface{}{
+								"topology": []interface{}{map[string]interface{}{
+									"id":               "hot_content",
+									"size":             "16g",
+									"node_type_data":   "true",
+									"node_type_ingest": "true",
+									"node_type_master": "true",
+									"node_type_ml":     "false",
+								}},
 							}},
 						},
+						Change: map[string]interface{}{
+							"name":                   "my_deployment_name",
+							"deployment_template_id": "aws-io-optimized-v2",
+							"region":                 "us-east-1",
+							"version":                "7.11.1",
+							"elasticsearch": []interface{}{map[string]interface{}{
+								"topology": []interface{}{map[string]interface{}{
+									"id":               "hot_content",
+									"size":             "16g",
+									"node_type_data":   "true",
+									"node_type_ingest": "true",
+									"node_type_master": "true",
+									"node_type_ml":     "false",
+								}},
+							}},
+						},
+						Schema: newSchema(),
 					}),
+					client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
 				},
-			},
-		},
-		{
-			name: "does not migrate node_type to node_role on version upgrade that's higher than 7.10.0",
-			args: args{
-				d: util.NewResourceData(t, util.ResDataParams{
-					ID: mock.ValidClusterID,
-					State: map[string]interface{}{
-						"name":                   "my_deployment_name",
-						"deployment_template_id": "aws-io-optimized-v2",
-						"region":                 "us-east-1",
-						"version":                "7.10.1",
-						"elasticsearch": []interface{}{map[string]interface{}{
-							"topology": []interface{}{map[string]interface{}{
-								"id":               "hot_content",
-								"size":             "16g",
-								"node_type_data":   "true",
-								"node_type_ingest": "true",
-								"node_type_master": "true",
-								"node_type_ml":     "false",
-							}},
-						}},
+				want: &models.DeploymentUpdateRequest{
+					Name:         "my_deployment_name",
+					PruneOrphans: ec.Bool(true),
+					Settings:     &models.DeploymentUpdateSettings{},
+					Metadata: &models.DeploymentUpdateMetadata{
+						Tags: []*models.MetadataItem{},
 					},
-					Change: map[string]interface{}{
-						"name":                   "my_deployment_name",
-						"deployment_template_id": "aws-io-optimized-v2",
-						"region":                 "us-east-1",
-						"version":                "7.11.1",
-						"elasticsearch": []interface{}{map[string]interface{}{
-							"topology": []interface{}{map[string]interface{}{
-								"id":               "hot_content",
-								"size":             "16g",
-								"node_type_data":   "true",
-								"node_type_ingest": "true",
-								"node_type_master": "true",
-								"node_type_ml":     "false",
-							}},
-						}},
-					},
-					Schema: newSchema(),
-				}),
-				client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
-			},
-			want: &models.DeploymentUpdateRequest{
-				Name:         "my_deployment_name",
-				PruneOrphans: ec.Bool(true),
-				Settings:     &models.DeploymentUpdateSettings{},
-				Metadata: &models.DeploymentUpdateMetadata{
-					Tags: []*models.MetadataItem{},
-				},
-				Resources: &models.DeploymentUpdateResources{
-					Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ioOptimizedTpl(), false), &models.ElasticsearchPayload{
-						Region: ec.String("us-east-1"),
-						RefID:  ec.String("main-elasticsearch"),
-						Settings: &models.ElasticsearchClusterSettings{
-							DedicatedMastersThreshold: 6,
-						},
-						Plan: &models.ElasticsearchClusterPlan{
-							AutoscalingEnabled: ec.Bool(false),
-							Elasticsearch: &models.ElasticsearchConfiguration{
-								Version: "7.11.1",
+					Resources: &models.DeploymentUpdateResources{
+						Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ioOptimizedTpl(), false), &models.ElasticsearchPayload{
+							Region: ec.String("us-east-1"),
+							RefID:  ec.String("main-elasticsearch"),
+							Settings: &models.ElasticsearchClusterSettings{
+								DedicatedMastersThreshold: 6,
 							},
-							DeploymentTemplate: &models.DeploymentTemplateReference{
-								ID: ec.String("aws-io-optimized-v2"),
-							},
-							ClusterTopology: []*models.ElasticsearchClusterTopologyElement{
-								{
+							Plan: &models.ElasticsearchClusterPlan{
+								AutoscalingEnabled: ec.Bool(false),
+								Elasticsearch: &models.ElasticsearchConfiguration{
+									Version: "7.11.1",
+								},
+								DeploymentTemplate: &models.DeploymentTemplateReference{
+									ID: ec.String("aws-io-optimized-v2"),
+								},
+								ClusterTopology: []*models.ElasticsearchClusterTopologyElement{{
 									ID: "hot_content",
 									Elasticsearch: &models.ElasticsearchConfiguration{
 										NodeAttributes: map[string]string{"data": "hot"},
@@ -4345,182 +4248,174 @@ func Test_updateResourceToModel(t *testing.T) {
 										Value:    ec.Int32(118784),
 										Resource: ec.String("memory"),
 									},
-								},
+								}},
 							},
-						},
-					}),
+						}),
+					},
 				},
 			},
-		},
-		{
-			name: "migrates node_type to node_role when the existing topology element size is updated",
-			args: args{
-				d: util.NewResourceData(t, util.ResDataParams{
-					ID: mock.ValidClusterID,
-					State: map[string]interface{}{
-						"name":                   "my_deployment_name",
-						"deployment_template_id": "aws-io-optimized-v2",
-						"region":                 "us-east-1",
-						"version":                "7.10.1",
-						"elasticsearch": []interface{}{map[string]interface{}{
-							"topology": []interface{}{map[string]interface{}{
-								"id":               "hot_content",
-								"size":             "16g",
-								"node_type_data":   "true",
-								"node_type_ingest": "true",
-								"node_type_master": "true",
-								"node_type_ml":     "false",
-							}},
-						}},
-					},
-					Change: map[string]interface{}{
-						"name":                   "my_deployment_name",
-						"deployment_template_id": "aws-io-optimized-v2",
-						"region":                 "us-east-1",
-						"version":                "7.10.1",
-						"elasticsearch": []interface{}{map[string]interface{}{
-							"topology": []interface{}{map[string]interface{}{
-								"id":               "hot_content",
-								"size":             "32g",
-								"node_type_data":   "true",
-								"node_type_ingest": "true",
-								"node_type_master": "true",
-								"node_type_ml":     "false",
-							}},
-						}},
-					},
-					Schema: newSchema(),
-				}),
-				client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
-			},
-			want: &models.DeploymentUpdateRequest{
-				Name:         "my_deployment_name",
-				PruneOrphans: ec.Bool(true),
-				Settings:     &models.DeploymentUpdateSettings{},
-				Metadata: &models.DeploymentUpdateMetadata{
-					Tags: []*models.MetadataItem{},
-				},
-				Resources: &models.DeploymentUpdateResources{
-					Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ioOptimizedTpl(), true), &models.ElasticsearchPayload{
-						Region: ec.String("us-east-1"),
-						RefID:  ec.String("main-elasticsearch"),
-						Settings: &models.ElasticsearchClusterSettings{
-							DedicatedMastersThreshold: 6,
-						},
-						Plan: &models.ElasticsearchClusterPlan{
-							AutoscalingEnabled: ec.Bool(false),
-							Elasticsearch: &models.ElasticsearchConfiguration{
-								Version: "7.10.1",
-							},
-							DeploymentTemplate: &models.DeploymentTemplateReference{
-								ID: ec.String("aws-io-optimized-v2"),
-							},
-							ClusterTopology: []*models.ElasticsearchClusterTopologyElement{{
-								ID: "hot_content",
-								Elasticsearch: &models.ElasticsearchConfiguration{
-									NodeAttributes: map[string]string{"data": "hot"},
-								},
-								ZoneCount:               2,
-								InstanceConfigurationID: "aws.data.highio.i3",
-								Size: &models.TopologySize{
-									Resource: ec.String("memory"),
-									Value:    ec.Int32(32768),
-								},
-								NodeRoles: []string{
-									"master",
-									"ingest",
-									"remote_cluster_client",
-									"data_hot",
-									"transform",
-									"data_content",
-								},
-								TopologyElementControl: &models.TopologyElementControl{
-									Min: &models.TopologySize{
-										Resource: ec.String("memory"),
-										Value:    ec.Int32(1024),
-									},
-								},
-								AutoscalingMax: &models.TopologySize{
-									Value:    ec.Int32(118784),
-									Resource: ec.String("memory"),
-								},
-							}},
-						},
-					}),
-				},
-			},
-		},
-		{
-			name: "migrates node_type to node_role when the existing topology element size is updated and adds warm tier",
-			args: args{
-				d: util.NewResourceData(t, util.ResDataParams{
-					ID: mock.ValidClusterID,
-					State: map[string]interface{}{
-						"name":                   "my_deployment_name",
-						"deployment_template_id": "aws-io-optimized-v2",
-						"region":                 "us-east-1",
-						"version":                "7.10.1",
-						"elasticsearch": []interface{}{map[string]interface{}{
-							"topology": []interface{}{map[string]interface{}{
-								"id":               "hot_content",
-								"size":             "16g",
-								"node_type_data":   "true",
-								"node_type_ingest": "true",
-								"node_type_master": "true",
-								"node_type_ml":     "false",
-							}},
-						}},
-					},
-					Change: map[string]interface{}{
-						"name":                   "my_deployment_name",
-						"deployment_template_id": "aws-io-optimized-v2",
-						"region":                 "us-east-1",
-						"version":                "7.10.1",
-						"elasticsearch": []interface{}{map[string]interface{}{
-							"topology": []interface{}{
-								map[string]interface{}{
+			{
+				name: "does not migrate node_type to node_role on version upgrade that's higher than 7.10.0",
+				args: args{
+					d: util.NewResourceData(t, util.ResDataParams{
+						ID: mock.ValidClusterID,
+						State: map[string]interface{}{
+							"name":                   "my_deployment_name",
+							"deployment_template_id": "aws-io-optimized-v2",
+							"region":                 "us-east-1",
+							"version":                "7.10.1",
+							"elasticsearch": []interface{}{map[string]interface{}{
+								"topology": []interface{}{map[string]interface{}{
 									"id":               "hot_content",
 									"size":             "16g",
 									"node_type_data":   "true",
 									"node_type_ingest": "true",
 									"node_type_master": "true",
 									"node_type_ml":     "false",
-								},
-								map[string]interface{}{
-									"id":   "warm",
-									"size": "8g",
-								},
-							},
-						}},
-					},
-					Schema: newSchema(),
-				}),
-				client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
-			},
-			want: &models.DeploymentUpdateRequest{
-				Name:         "my_deployment_name",
-				PruneOrphans: ec.Bool(true),
-				Settings:     &models.DeploymentUpdateSettings{},
-				Metadata: &models.DeploymentUpdateMetadata{
-					Tags: []*models.MetadataItem{},
-				},
-				Resources: &models.DeploymentUpdateResources{
-					Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ioOptimizedTpl(), true), &models.ElasticsearchPayload{
-						Region: ec.String("us-east-1"),
-						RefID:  ec.String("main-elasticsearch"),
-						Settings: &models.ElasticsearchClusterSettings{
-							DedicatedMastersThreshold: 6,
+								}},
+							}},
 						},
-						Plan: &models.ElasticsearchClusterPlan{
-							AutoscalingEnabled: ec.Bool(false),
-							Elasticsearch: &models.ElasticsearchConfiguration{
-								Version: "7.10.1",
+						Change: map[string]interface{}{
+							"name":                   "my_deployment_name",
+							"deployment_template_id": "aws-io-optimized-v2",
+							"region":                 "us-east-1",
+							"version":                "7.11.1",
+							"elasticsearch": []interface{}{map[string]interface{}{
+								"topology": []interface{}{map[string]interface{}{
+									"id":               "hot_content",
+									"size":             "16g",
+									"node_type_data":   "true",
+									"node_type_ingest": "true",
+									"node_type_master": "true",
+									"node_type_ml":     "false",
+								}},
+							}},
+						},
+						Schema: newSchema(),
+					}),
+					client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
+				},
+				want: &models.DeploymentUpdateRequest{
+					Name:         "my_deployment_name",
+					PruneOrphans: ec.Bool(true),
+					Settings:     &models.DeploymentUpdateSettings{},
+					Metadata: &models.DeploymentUpdateMetadata{
+						Tags: []*models.MetadataItem{},
+					},
+					Resources: &models.DeploymentUpdateResources{
+						Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ioOptimizedTpl(), false), &models.ElasticsearchPayload{
+							Region: ec.String("us-east-1"),
+							RefID:  ec.String("main-elasticsearch"),
+							Settings: &models.ElasticsearchClusterSettings{
+								DedicatedMastersThreshold: 6,
 							},
-							DeploymentTemplate: &models.DeploymentTemplateReference{
-								ID: ec.String("aws-io-optimized-v2"),
+							Plan: &models.ElasticsearchClusterPlan{
+								AutoscalingEnabled: ec.Bool(false),
+								Elasticsearch: &models.ElasticsearchConfiguration{
+									Version: "7.11.1",
+								},
+								DeploymentTemplate: &models.DeploymentTemplateReference{
+									ID: ec.String("aws-io-optimized-v2"),
+								},
+								ClusterTopology: []*models.ElasticsearchClusterTopologyElement{
+									{
+										ID: "hot_content",
+										Elasticsearch: &models.ElasticsearchConfiguration{
+											NodeAttributes: map[string]string{"data": "hot"},
+										},
+										ZoneCount:               2,
+										InstanceConfigurationID: "aws.data.highio.i3",
+										Size: &models.TopologySize{
+											Resource: ec.String("memory"),
+											Value:    ec.Int32(16384),
+										},
+										NodeType: &models.ElasticsearchNodeType{
+											Data:   ec.Bool(true),
+											Ingest: ec.Bool(true),
+											Master: ec.Bool(true),
+											Ml:     ec.Bool(false),
+										},
+										TopologyElementControl: &models.TopologyElementControl{
+											Min: &models.TopologySize{
+												Resource: ec.String("memory"),
+												Value:    ec.Int32(1024),
+											},
+										},
+										AutoscalingMax: &models.TopologySize{
+											Value:    ec.Int32(118784),
+											Resource: ec.String("memory"),
+										},
+									},
+								},
 							},
-							ClusterTopology: []*models.ElasticsearchClusterTopologyElement{
-								{
+						}),
+					},
+				},
+			},
+			{
+				name: "migrates node_type to node_role when the existing topology element size is updated",
+				args: args{
+					d: util.NewResourceData(t, util.ResDataParams{
+						ID: mock.ValidClusterID,
+						State: map[string]interface{}{
+							"name":                   "my_deployment_name",
+							"deployment_template_id": "aws-io-optimized-v2",
+							"region":                 "us-east-1",
+							"version":                "7.10.1",
+							"elasticsearch": []interface{}{map[string]interface{}{
+								"topology": []interface{}{map[string]interface{}{
+									"id":               "hot_content",
+									"size":             "16g",
+									"node_type_data":   "true",
+									"node_type_ingest": "true",
+									"node_type_master": "true",
+									"node_type_ml":     "false",
+								}},
+							}},
+						},
+						Change: map[string]interface{}{
+							"name":                   "my_deployment_name",
+							"deployment_template_id": "aws-io-optimized-v2",
+							"region":                 "us-east-1",
+							"version":                "7.10.1",
+							"elasticsearch": []interface{}{map[string]interface{}{
+								"topology": []interface{}{map[string]interface{}{
+									"id":               "hot_content",
+									"size":             "32g",
+									"node_type_data":   "true",
+									"node_type_ingest": "true",
+									"node_type_master": "true",
+									"node_type_ml":     "false",
+								}},
+							}},
+						},
+						Schema: newSchema(),
+					}),
+					client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
+				},
+				want: &models.DeploymentUpdateRequest{
+					Name:         "my_deployment_name",
+					PruneOrphans: ec.Bool(true),
+					Settings:     &models.DeploymentUpdateSettings{},
+					Metadata: &models.DeploymentUpdateMetadata{
+						Tags: []*models.MetadataItem{},
+					},
+					Resources: &models.DeploymentUpdateResources{
+						Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ioOptimizedTpl(), true), &models.ElasticsearchPayload{
+							Region: ec.String("us-east-1"),
+							RefID:  ec.String("main-elasticsearch"),
+							Settings: &models.ElasticsearchClusterSettings{
+								DedicatedMastersThreshold: 6,
+							},
+							Plan: &models.ElasticsearchClusterPlan{
+								AutoscalingEnabled: ec.Bool(false),
+								Elasticsearch: &models.ElasticsearchConfiguration{
+									Version: "7.10.1",
+								},
+								DeploymentTemplate: &models.DeploymentTemplateReference{
+									ID: ec.String("aws-io-optimized-v2"),
+								},
+								ClusterTopology: []*models.ElasticsearchClusterTopologyElement{{
 									ID: "hot_content",
 									Elasticsearch: &models.ElasticsearchConfiguration{
 										NodeAttributes: map[string]string{"data": "hot"},
@@ -4529,7 +4424,7 @@ func Test_updateResourceToModel(t *testing.T) {
 									InstanceConfigurationID: "aws.data.highio.i3",
 									Size: &models.TopologySize{
 										Resource: ec.String("memory"),
-										Value:    ec.Int32(16384),
+										Value:    ec.Int32(32768),
 									},
 									NodeRoles: []string{
 										"master",
@@ -4549,103 +4444,489 @@ func Test_updateResourceToModel(t *testing.T) {
 										Value:    ec.Int32(118784),
 										Resource: ec.String("memory"),
 									},
+								}},
+							},
+						}),
+					},
+				},
+			},
+			{
+				name: "migrates node_type to node_role when the existing topology element size is updated and adds warm tier",
+				args: args{
+					d: util.NewResourceData(t, util.ResDataParams{
+						ID: mock.ValidClusterID,
+						State: map[string]interface{}{
+							"name":                   "my_deployment_name",
+							"deployment_template_id": "aws-io-optimized-v2",
+							"region":                 "us-east-1",
+							"version":                "7.10.1",
+							"elasticsearch": []interface{}{map[string]interface{}{
+								"topology": []interface{}{map[string]interface{}{
+									"id":               "hot_content",
+									"size":             "16g",
+									"node_type_data":   "true",
+									"node_type_ingest": "true",
+									"node_type_master": "true",
+									"node_type_ml":     "false",
+								}},
+							}},
+						},
+						Change: map[string]interface{}{
+							"name":                   "my_deployment_name",
+							"deployment_template_id": "aws-io-optimized-v2",
+							"region":                 "us-east-1",
+							"version":                "7.10.1",
+							"elasticsearch": []interface{}{map[string]interface{}{
+								"topology": []interface{}{
+									map[string]interface{}{
+										"id":               "hot_content",
+										"size":             "16g",
+										"node_type_data":   "true",
+										"node_type_ingest": "true",
+										"node_type_master": "true",
+										"node_type_ml":     "false",
+									},
+									map[string]interface{}{
+										"id":   "warm",
+										"size": "8g",
+									},
 								},
-								{
-									ID: "warm",
-									Elasticsearch: &models.ElasticsearchConfiguration{
-										NodeAttributes: map[string]string{"data": "warm"},
-									},
-									ZoneCount:               2,
-									InstanceConfigurationID: "aws.data.highstorage.d3",
-									Size: &models.TopologySize{
-										Resource: ec.String("memory"),
-										Value:    ec.Int32(8192),
-									},
-									NodeRoles: []string{
-										"data_warm",
-										"remote_cluster_client",
-									},
-									TopologyElementControl: &models.TopologyElementControl{
-										Min: &models.TopologySize{
+							}},
+						},
+						Schema: newSchema(),
+					}),
+					client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
+				},
+				want: &models.DeploymentUpdateRequest{
+					Name:         "my_deployment_name",
+					PruneOrphans: ec.Bool(true),
+					Settings:     &models.DeploymentUpdateSettings{},
+					Metadata: &models.DeploymentUpdateMetadata{
+						Tags: []*models.MetadataItem{},
+					},
+					Resources: &models.DeploymentUpdateResources{
+						Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ioOptimizedTpl(), true), &models.ElasticsearchPayload{
+							Region: ec.String("us-east-1"),
+							RefID:  ec.String("main-elasticsearch"),
+							Settings: &models.ElasticsearchClusterSettings{
+								DedicatedMastersThreshold: 6,
+							},
+							Plan: &models.ElasticsearchClusterPlan{
+								AutoscalingEnabled: ec.Bool(false),
+								Elasticsearch: &models.ElasticsearchConfiguration{
+									Version: "7.10.1",
+								},
+								DeploymentTemplate: &models.DeploymentTemplateReference{
+									ID: ec.String("aws-io-optimized-v2"),
+								},
+								ClusterTopology: []*models.ElasticsearchClusterTopologyElement{
+									{
+										ID: "hot_content",
+										Elasticsearch: &models.ElasticsearchConfiguration{
+											NodeAttributes: map[string]string{"data": "hot"},
+										},
+										ZoneCount:               2,
+										InstanceConfigurationID: "aws.data.highio.i3",
+										Size: &models.TopologySize{
 											Resource: ec.String("memory"),
-											Value:    ec.Int32(0),
+											Value:    ec.Int32(16384),
+										},
+										NodeRoles: []string{
+											"master",
+											"ingest",
+											"remote_cluster_client",
+											"data_hot",
+											"transform",
+											"data_content",
+										},
+										TopologyElementControl: &models.TopologyElementControl{
+											Min: &models.TopologySize{
+												Resource: ec.String("memory"),
+												Value:    ec.Int32(1024),
+											},
+										},
+										AutoscalingMax: &models.TopologySize{
+											Value:    ec.Int32(118784),
+											Resource: ec.String("memory"),
 										},
 									},
-									AutoscalingMax: &models.TopologySize{
-										Value:    ec.Int32(118784),
-										Resource: ec.String("memory"),
+									{
+										ID: "warm",
+										Elasticsearch: &models.ElasticsearchConfiguration{
+											NodeAttributes: map[string]string{"data": "warm"},
+										},
+										ZoneCount:               2,
+										InstanceConfigurationID: "aws.data.highstorage.d3",
+										Size: &models.TopologySize{
+											Resource: ec.String("memory"),
+											Value:    ec.Int32(8192),
+										},
+										NodeRoles: []string{
+											"data_warm",
+											"remote_cluster_client",
+										},
+										TopologyElementControl: &models.TopologyElementControl{
+											Min: &models.TopologySize{
+												Resource: ec.String("memory"),
+												Value:    ec.Int32(0),
+											},
+										},
+										AutoscalingMax: &models.TopologySize{
+											Value:    ec.Int32(118784),
+											Resource: ec.String("memory"),
+										},
 									},
 								},
 							},
-						},
-					}),
+						}),
+					},
 				},
 			},
-		},
-		{
-			name: "enables autoscaling with the default policies",
-			args: args{
-				d: util.NewResourceData(t, util.ResDataParams{
-					ID: mock.ValidClusterID,
-					State: map[string]interface{}{
-						"name":                   "my_deployment_name",
-						"deployment_template_id": "aws-io-optimized-v2",
-						"region":                 "us-east-1",
-						"version":                "7.12.1",
-						"elasticsearch": []interface{}{map[string]interface{}{
-							"topology": []interface{}{map[string]interface{}{
-								"id":   "hot_content",
-								"size": "16g",
-							}},
-						}},
-					},
-					Change: map[string]interface{}{
-						"name":                   "my_deployment_name",
-						"deployment_template_id": "aws-io-optimized-v2",
-						"region":                 "us-east-1",
-						"version":                "7.12.1",
-						"elasticsearch": []interface{}{map[string]interface{}{
-							"autoscale": "true",
-							"topology": []interface{}{
-								map[string]interface{}{
+			{
+				name: "enables autoscaling with the default policies",
+				args: args{
+					d: util.NewResourceData(t, util.ResDataParams{
+						ID: mock.ValidClusterID,
+						State: map[string]interface{}{
+							"name":                   "my_deployment_name",
+							"deployment_template_id": "aws-io-optimized-v2",
+							"region":                 "us-east-1",
+							"version":                "7.12.1",
+							"elasticsearch": []interface{}{map[string]interface{}{
+								"topology": []interface{}{map[string]interface{}{
 									"id":   "hot_content",
 									"size": "16g",
+								}},
+							}},
+						},
+						Change: map[string]interface{}{
+							"name":                   "my_deployment_name",
+							"deployment_template_id": "aws-io-optimized-v2",
+							"region":                 "us-east-1",
+							"version":                "7.12.1",
+							"elasticsearch": []interface{}{map[string]interface{}{
+								"autoscale": "true",
+								"topology": []interface{}{
+									map[string]interface{}{
+										"id":   "hot_content",
+										"size": "16g",
+									},
+									map[string]interface{}{
+										"id":   "warm",
+										"size": "8g",
+									},
+								},
+							}},
+						},
+						Schema: newSchema(),
+					}),
+					client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
+				},
+				want: &models.DeploymentUpdateRequest{
+					Name:         "my_deployment_name",
+					PruneOrphans: ec.Bool(true),
+					Settings:     &models.DeploymentUpdateSettings{},
+					Metadata: &models.DeploymentUpdateMetadata{
+						Tags: []*models.MetadataItem{},
+					},
+					Resources: &models.DeploymentUpdateResources{
+						Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ioOptimizedTpl(), true), &models.ElasticsearchPayload{
+							Region: ec.String("us-east-1"),
+							RefID:  ec.String("main-elasticsearch"),
+							Settings: &models.ElasticsearchClusterSettings{
+								DedicatedMastersThreshold: 6,
+							},
+							Plan: &models.ElasticsearchClusterPlan{
+								AutoscalingEnabled: ec.Bool(true),
+								Elasticsearch: &models.ElasticsearchConfiguration{
+									Version: "7.12.1",
+								},
+								DeploymentTemplate: &models.DeploymentTemplateReference{
+									ID: ec.String("aws-io-optimized-v2"),
+								},
+								ClusterTopology: []*models.ElasticsearchClusterTopologyElement{
+									{
+										ID: "hot_content",
+										Elasticsearch: &models.ElasticsearchConfiguration{
+											NodeAttributes: map[string]string{"data": "hot"},
+										},
+										ZoneCount:               2,
+										InstanceConfigurationID: "aws.data.highio.i3",
+										Size: &models.TopologySize{
+											Resource: ec.String("memory"),
+											Value:    ec.Int32(16384),
+										},
+										NodeRoles: []string{
+											"master",
+											"ingest",
+											"remote_cluster_client",
+											"data_hot",
+											"transform",
+											"data_content",
+										},
+										TopologyElementControl: &models.TopologyElementControl{
+											Min: &models.TopologySize{
+												Resource: ec.String("memory"),
+												Value:    ec.Int32(1024),
+											},
+										},
+										AutoscalingMax: &models.TopologySize{
+											Value:    ec.Int32(118784),
+											Resource: ec.String("memory"),
+										},
+									},
+									{
+										ID: "warm",
+										Elasticsearch: &models.ElasticsearchConfiguration{
+											NodeAttributes: map[string]string{"data": "warm"},
+										},
+										ZoneCount:               2,
+										InstanceConfigurationID: "aws.data.highstorage.d3",
+										Size: &models.TopologySize{
+											Resource: ec.String("memory"),
+											Value:    ec.Int32(8192),
+										},
+										NodeRoles: []string{
+											"data_warm",
+											"remote_cluster_client",
+										},
+										TopologyElementControl: &models.TopologyElementControl{
+											Min: &models.TopologySize{
+												Resource: ec.String("memory"),
+												Value:    ec.Int32(0),
+											},
+										},
+										AutoscalingMax: &models.TopologySize{
+											Value:    ec.Int32(118784),
+											Resource: ec.String("memory"),
+										},
+									},
+								},
+							},
+						}),
+					},
+				},
+			},
+			{
+				name: "updates topologies configuration",
+				args: args{
+					d: util.NewResourceData(t, util.ResDataParams{
+						ID: mock.ValidClusterID,
+						State: map[string]interface{}{
+							"name":                   "my_deployment_name",
+							"deployment_template_id": "aws-io-optimized-v2",
+							"region":                 "us-east-1",
+							"version":                "7.12.1",
+							"elasticsearch": []interface{}{
+								map[string]interface{}{
+									"topology": []interface{}{map[string]interface{}{
+										"id":         "hot_content",
+										"size":       "16g",
+										"zone_count": 3,
+										"config": []interface{}{map[string]interface{}{
+											"user_settings_yaml": "setting: true",
+										}},
+									}},
 								},
 								map[string]interface{}{
-									"id":   "warm",
-									"size": "8g",
+									"topology": []interface{}{map[string]interface{}{
+										"id":         "master",
+										"size":       "1g",
+										"zone_count": 3,
+										"config": []interface{}{map[string]interface{}{
+											"user_settings_yaml": "setting: true",
+										}},
+									}},
+								},
+								map[string]interface{}{
+									"topology": []interface{}{map[string]interface{}{
+										"id":         "warm",
+										"size":       "8g",
+										"zone_count": 3,
+										"config": []interface{}{map[string]interface{}{
+											"user_settings_yaml": "setting: true",
+										}},
+									}},
 								},
 							},
-						}},
-					},
-					Schema: newSchema(),
-				}),
-				client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
-			},
-			want: &models.DeploymentUpdateRequest{
-				Name:         "my_deployment_name",
-				PruneOrphans: ec.Bool(true),
-				Settings:     &models.DeploymentUpdateSettings{},
-				Metadata: &models.DeploymentUpdateMetadata{
-					Tags: []*models.MetadataItem{},
-				},
-				Resources: &models.DeploymentUpdateResources{
-					Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ioOptimizedTpl(), true), &models.ElasticsearchPayload{
-						Region: ec.String("us-east-1"),
-						RefID:  ec.String("main-elasticsearch"),
-						Settings: &models.ElasticsearchClusterSettings{
-							DedicatedMastersThreshold: 6,
 						},
-						Plan: &models.ElasticsearchClusterPlan{
-							AutoscalingEnabled: ec.Bool(true),
-							Elasticsearch: &models.ElasticsearchConfiguration{
-								Version: "7.12.1",
+						Change: map[string]interface{}{
+							"name":                   "my_deployment_name",
+							"deployment_template_id": "aws-io-optimized-v2",
+							"region":                 "us-east-1",
+							"version":                "7.12.1",
+							"elasticsearch": []interface{}{map[string]interface{}{
+								"topology": []interface{}{
+									map[string]interface{}{
+										"id":         "hot_content",
+										"size":       "16g",
+										"zone_count": 3,
+										"config": []interface{}{map[string]interface{}{
+											"user_settings_yaml": "setting: false",
+										}},
+									},
+									map[string]interface{}{
+										"id":         "master",
+										"size":       "1g",
+										"zone_count": 3,
+										"config": []interface{}{map[string]interface{}{
+											"user_settings_yaml": "setting: false",
+										}},
+									},
+									map[string]interface{}{
+										"id":         "warm",
+										"size":       "8g",
+										"zone_count": 3,
+										"config": []interface{}{map[string]interface{}{
+											"user_settings_yaml": "setting: false",
+										}},
+									},
+								},
+							}},
+						},
+						Schema: newSchema(),
+					}),
+					client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
+				},
+				want: &models.DeploymentUpdateRequest{
+					Name:         "my_deployment_name",
+					PruneOrphans: ec.Bool(true),
+					Settings:     &models.DeploymentUpdateSettings{},
+					Metadata: &models.DeploymentUpdateMetadata{
+						Tags: []*models.MetadataItem{},
+					},
+					Resources: &models.DeploymentUpdateResources{
+						Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ioOptimizedTpl(), true), &models.ElasticsearchPayload{
+							Region: ec.String("us-east-1"),
+							RefID:  ec.String("main-elasticsearch"),
+							Settings: &models.ElasticsearchClusterSettings{
+								DedicatedMastersThreshold: 6,
 							},
-							DeploymentTemplate: &models.DeploymentTemplateReference{
-								ID: ec.String("aws-io-optimized-v2"),
+							Plan: &models.ElasticsearchClusterPlan{
+								AutoscalingEnabled: ec.Bool(false),
+								Elasticsearch: &models.ElasticsearchConfiguration{
+									Version: "7.12.1",
+								},
+								DeploymentTemplate: &models.DeploymentTemplateReference{
+									ID: ec.String("aws-io-optimized-v2"),
+								},
+								ClusterTopology: []*models.ElasticsearchClusterTopologyElement{
+									{
+										ID: "hot_content",
+										Elasticsearch: &models.ElasticsearchConfiguration{
+											NodeAttributes:   map[string]string{"data": "hot"},
+											UserSettingsYaml: "setting: false",
+										},
+										ZoneCount:               3,
+										InstanceConfigurationID: "aws.data.highio.i3",
+										Size: &models.TopologySize{
+											Resource: ec.String("memory"),
+											Value:    ec.Int32(16384),
+										},
+										NodeRoles: []string{
+											"ingest",
+											"remote_cluster_client",
+											"data_hot",
+											"transform",
+											"data_content",
+										},
+										TopologyElementControl: &models.TopologyElementControl{
+											Min: &models.TopologySize{
+												Resource: ec.String("memory"),
+												Value:    ec.Int32(1024),
+											},
+										},
+										AutoscalingMax: &models.TopologySize{
+											Value:    ec.Int32(118784),
+											Resource: ec.String("memory"),
+										},
+									},
+									{
+										ID: "master",
+										Elasticsearch: &models.ElasticsearchConfiguration{
+											UserSettingsYaml: "setting: false",
+										},
+										ZoneCount:               3,
+										InstanceConfigurationID: "aws.master.r5d",
+										Size: &models.TopologySize{
+											Resource: ec.String("memory"),
+											Value:    ec.Int32(1024),
+										},
+										NodeRoles: []string{
+											"master",
+											"remote_cluster_client",
+										},
+										TopologyElementControl: &models.TopologyElementControl{
+											Min: &models.TopologySize{
+												Resource: ec.String("memory"),
+												Value:    ec.Int32(0),
+											},
+										},
+									},
+									{
+										ID: "warm",
+										Elasticsearch: &models.ElasticsearchConfiguration{
+											NodeAttributes:   map[string]string{"data": "warm"},
+											UserSettingsYaml: "setting: false",
+										},
+										ZoneCount:               3,
+										InstanceConfigurationID: "aws.data.highstorage.d3",
+										Size: &models.TopologySize{
+											Resource: ec.String("memory"),
+											Value:    ec.Int32(8192),
+										},
+										NodeRoles: []string{
+											"data_warm",
+											"remote_cluster_client",
+										},
+										TopologyElementControl: &models.TopologyElementControl{
+											Min: &models.TopologySize{
+												Resource: ec.String("memory"),
+												Value:    ec.Int32(0),
+											},
+										},
+										AutoscalingMax: &models.TopologySize{
+											Value:    ec.Int32(118784),
+											Resource: ec.String("memory"),
+										},
+									},
+								},
 							},
-							ClusterTopology: []*models.ElasticsearchClusterTopologyElement{
-								{
+						}),
+					},
+				},
+			},
+			{
+				name: "parses the resources with tags",
+				args: args{
+					d:      deploymentWithTags,
+					client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
+				},
+				want: &models.DeploymentUpdateRequest{
+					Name:         "my_deployment_name",
+					PruneOrphans: ec.Bool(true),
+					Settings:     &models.DeploymentUpdateSettings{},
+					Metadata: &models.DeploymentUpdateMetadata{Tags: []*models.MetadataItem{
+						{Key: ec.String("aaa"), Value: ec.String("bbb")},
+						{Key: ec.String("cost-center"), Value: ec.String("rnd")},
+						{Key: ec.String("owner"), Value: ec.String("elastic")},
+					}},
+					Resources: &models.DeploymentUpdateResources{
+						Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ioOptimizedTpl(), true), &models.ElasticsearchPayload{
+							Region: ec.String("us-east-1"),
+							RefID:  ec.String("main-elasticsearch"),
+							Settings: &models.ElasticsearchClusterSettings{
+								DedicatedMastersThreshold: 6,
+							},
+							Plan: &models.ElasticsearchClusterPlan{
+								AutoscalingEnabled: ec.Bool(false),
+								Elasticsearch: &models.ElasticsearchConfiguration{
+									Version: "7.10.1",
+								},
+								DeploymentTemplate: &models.DeploymentTemplateReference{
+									ID: ec.String("aws-io-optimized-v2"),
+								},
+								ClusterTopology: []*models.ElasticsearchClusterTopologyElement{{
 									ID: "hot_content",
 									Elasticsearch: &models.ElasticsearchConfiguration{
 										NodeAttributes: map[string]string{"data": "hot"},
@@ -4654,7 +4935,7 @@ func Test_updateResourceToModel(t *testing.T) {
 									InstanceConfigurationID: "aws.data.highio.i3",
 									Size: &models.TopologySize{
 										Resource: ec.String("memory"),
-										Value:    ec.Int32(16384),
+										Value:    ec.Int32(8192),
 									},
 									NodeRoles: []string{
 										"master",
@@ -4674,156 +4955,256 @@ func Test_updateResourceToModel(t *testing.T) {
 										Value:    ec.Int32(118784),
 										Resource: ec.String("memory"),
 									},
+								}},
+							},
+						}),
+					},
+				},
+			},
+			{
+				name: "handles a snapshot_source block adding Strategy: partial",
+				args: args{
+					d: util.NewResourceData(t, util.ResDataParams{
+						ID: mock.ValidClusterID,
+						State: map[string]interface{}{
+							"name":                   "my_deployment_name",
+							"deployment_template_id": "aws-io-optimized-v2",
+							"region":                 "us-east-1",
+							"version":                "7.10.1",
+							"elasticsearch": []interface{}{map[string]interface{}{
+								"version": "7.10.1",
+								"topology": []interface{}{map[string]interface{}{
+									"id":   "hot_content",
+									"size": "8g",
+								}},
+							}},
+						},
+						Change: map[string]interface{}{
+							"name":                   "my_deployment_name",
+							"deployment_template_id": "aws-io-optimized-v2",
+							"region":                 "us-east-1",
+							"version":                "7.10.1",
+							"elasticsearch": []interface{}{map[string]interface{}{
+								"version": "7.10.1",
+								"snapshot_source": []interface{}{map[string]interface{}{
+									"source_elasticsearch_cluster_id": "8c63b87af9e24ea49b8a4bfe550e5fe9",
+								}},
+								"topology": []interface{}{map[string]interface{}{
+									"id":   "hot_content",
+									"size": "8g",
+								}},
+							}},
+						},
+						Schema: newSchema(),
+					}),
+					client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
+				},
+				want: &models.DeploymentUpdateRequest{
+					Name:         "my_deployment_name",
+					PruneOrphans: ec.Bool(true),
+					Settings:     &models.DeploymentUpdateSettings{},
+					Metadata: &models.DeploymentUpdateMetadata{
+						Tags: []*models.MetadataItem{},
+					},
+					Resources: &models.DeploymentUpdateResources{
+						Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ioOptimizedTpl(), true), &models.ElasticsearchPayload{
+							Region: ec.String("us-east-1"),
+							RefID:  ec.String("main-elasticsearch"),
+							Settings: &models.ElasticsearchClusterSettings{
+								DedicatedMastersThreshold: 6,
+							},
+							Plan: &models.ElasticsearchClusterPlan{
+								Transient: &models.TransientElasticsearchPlanConfiguration{
+									RestoreSnapshot: &models.RestoreSnapshotConfiguration{
+										SourceClusterID: "8c63b87af9e24ea49b8a4bfe550e5fe9",
+										SnapshotName:    ec.String("__latest_success__"),
+										Strategy:        "partial",
+									},
 								},
-								{
-									ID: "warm",
+								AutoscalingEnabled: ec.Bool(false),
+								Elasticsearch: &models.ElasticsearchConfiguration{
+									Version: "7.10.1",
+								},
+								DeploymentTemplate: &models.DeploymentTemplateReference{
+									ID: ec.String("aws-io-optimized-v2"),
+								},
+								ClusterTopology: []*models.ElasticsearchClusterTopologyElement{{
+									ID: "hot_content",
 									Elasticsearch: &models.ElasticsearchConfiguration{
-										NodeAttributes: map[string]string{"data": "warm"},
+										NodeAttributes: map[string]string{"data": "hot"},
 									},
 									ZoneCount:               2,
-									InstanceConfigurationID: "aws.data.highstorage.d3",
+									InstanceConfigurationID: "aws.data.highio.i3",
 									Size: &models.TopologySize{
 										Resource: ec.String("memory"),
 										Value:    ec.Int32(8192),
 									},
 									NodeRoles: []string{
-										"data_warm",
+										"master",
+										"ingest",
 										"remote_cluster_client",
+										"data_hot",
+										"transform",
+										"data_content",
 									},
 									TopologyElementControl: &models.TopologyElementControl{
 										Min: &models.TopologySize{
 											Resource: ec.String("memory"),
-											Value:    ec.Int32(0),
+											Value:    ec.Int32(1024),
 										},
 									},
 									AutoscalingMax: &models.TopologySize{
 										Value:    ec.Int32(118784),
 										Resource: ec.String("memory"),
 									},
-								},
+								}},
 							},
+						}),
+					},
+				},
+			},
+			{
+				name: "handles empty Elasticsearch empty config block",
+				args: args{
+					d: util.NewResourceData(t, util.ResDataParams{
+						ID: mock.ValidClusterID,
+						State: map[string]interface{}{
+							"name":                   "my_deployment_name",
+							"deployment_template_id": "aws-io-optimized-v2",
+							"region":                 "us-east-1",
+							"version":                "7.10.1",
+							"elasticsearch": []interface{}{map[string]interface{}{
+								"version": "7.10.1",
+								"topology": []interface{}{map[string]interface{}{
+									"id":     "hot_content",
+									"size":   "8g",
+									"config": []interface{}{},
+								}},
+							}},
 						},
+						Schema: newSchema(),
 					}),
+					client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
+				},
+				want: &models.DeploymentUpdateRequest{
+					Name:         "my_deployment_name",
+					PruneOrphans: ec.Bool(true),
+					Settings:     &models.DeploymentUpdateSettings{},
+					Metadata: &models.DeploymentUpdateMetadata{
+						Tags: []*models.MetadataItem{},
+					},
+					Resources: &models.DeploymentUpdateResources{
+						Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ioOptimizedTpl(), true), &models.ElasticsearchPayload{
+							Region: ec.String("us-east-1"),
+							RefID:  ec.String("main-elasticsearch"),
+							Settings: &models.ElasticsearchClusterSettings{
+								DedicatedMastersThreshold: 6,
+							},
+							Plan: &models.ElasticsearchClusterPlan{
+								AutoscalingEnabled: ec.Bool(false),
+								Elasticsearch: &models.ElasticsearchConfiguration{
+									Version: "7.10.1",
+								},
+								DeploymentTemplate: &models.DeploymentTemplateReference{
+									ID: ec.String("aws-io-optimized-v2"),
+								},
+								ClusterTopology: []*models.ElasticsearchClusterTopologyElement{{
+									ID: "hot_content",
+									Elasticsearch: &models.ElasticsearchConfiguration{
+										NodeAttributes: map[string]string{"data": "hot"},
+									},
+									ZoneCount:               2,
+									InstanceConfigurationID: "aws.data.highio.i3",
+									Size: &models.TopologySize{
+										Resource: ec.String("memory"),
+										Value:    ec.Int32(8192),
+									},
+									NodeRoles: []string{
+										"master",
+										"ingest",
+										"remote_cluster_client",
+										"data_hot",
+										"transform",
+										"data_content",
+									},
+									TopologyElementControl: &models.TopologyElementControl{
+										Min: &models.TopologySize{
+											Resource: ec.String("memory"),
+											Value:    ec.Int32(1024),
+										},
+									},
+									AutoscalingMax: &models.TopologySize{
+										Value:    ec.Int32(118784),
+										Resource: ec.String("memory"),
+									},
+								}},
+							},
+						}),
+					},
 				},
 			},
-		},
-		{
-			name: "updates topologies configuration",
-			args: args{
-				d: util.NewResourceData(t, util.ResDataParams{
-					ID: mock.ValidClusterID,
-					State: map[string]interface{}{
-						"name":                   "my_deployment_name",
-						"deployment_template_id": "aws-io-optimized-v2",
-						"region":                 "us-east-1",
-						"version":                "7.12.1",
-						"elasticsearch": []interface{}{
-							map[string]interface{}{
+			{
+				name: "handles Elasticsearch with topology.config block",
+				args: args{
+					d: util.NewResourceData(t, util.ResDataParams{
+						ID: mock.ValidClusterID,
+						State: map[string]interface{}{
+							"name":                   "my_deployment_name",
+							"deployment_template_id": "aws-io-optimized-v2",
+							"region":                 "us-east-1",
+							"version":                "7.10.1",
+							"elasticsearch": []interface{}{map[string]interface{}{
+								"version": "7.10.1",
+								"config":  []interface{}{},
 								"topology": []interface{}{map[string]interface{}{
-									"id":         "hot_content",
-									"size":       "16g",
-									"zone_count": 3,
+									"id":   "hot_content",
+									"size": "8g",
 									"config": []interface{}{map[string]interface{}{
 										"user_settings_yaml": "setting: true",
 									}},
 								}},
-							},
-							map[string]interface{}{
-								"topology": []interface{}{map[string]interface{}{
-									"id":         "master",
-									"size":       "1g",
-									"zone_count": 3,
-									"config": []interface{}{map[string]interface{}{
-										"user_settings_yaml": "setting: true",
-									}},
-								}},
-							},
-							map[string]interface{}{
-								"topology": []interface{}{map[string]interface{}{
-									"id":         "warm",
-									"size":       "8g",
-									"zone_count": 3,
-									"config": []interface{}{map[string]interface{}{
-										"user_settings_yaml": "setting: true",
-									}},
-								}},
-							},
+							}},
 						},
-					},
-					Change: map[string]interface{}{
-						"name":                   "my_deployment_name",
-						"deployment_template_id": "aws-io-optimized-v2",
-						"region":                 "us-east-1",
-						"version":                "7.12.1",
-						"elasticsearch": []interface{}{map[string]interface{}{
-							"topology": []interface{}{
-								map[string]interface{}{
-									"id":         "hot_content",
-									"size":       "16g",
-									"zone_count": 3,
-									"config": []interface{}{map[string]interface{}{
-										"user_settings_yaml": "setting: false",
-									}},
-								},
-								map[string]interface{}{
-									"id":         "master",
-									"size":       "1g",
-									"zone_count": 3,
-									"config": []interface{}{map[string]interface{}{
-										"user_settings_yaml": "setting: false",
-									}},
-								},
-								map[string]interface{}{
-									"id":         "warm",
-									"size":       "8g",
-									"zone_count": 3,
-									"config": []interface{}{map[string]interface{}{
-										"user_settings_yaml": "setting: false",
-									}},
-								},
-							},
-						}},
-					},
-					Schema: newSchema(),
-				}),
-				client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
-			},
-			want: &models.DeploymentUpdateRequest{
-				Name:         "my_deployment_name",
-				PruneOrphans: ec.Bool(true),
-				Settings:     &models.DeploymentUpdateSettings{},
-				Metadata: &models.DeploymentUpdateMetadata{
-					Tags: []*models.MetadataItem{},
+						Schema: newSchema(),
+					}),
+					client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
 				},
-				Resources: &models.DeploymentUpdateResources{
-					Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ioOptimizedTpl(), true), &models.ElasticsearchPayload{
-						Region: ec.String("us-east-1"),
-						RefID:  ec.String("main-elasticsearch"),
-						Settings: &models.ElasticsearchClusterSettings{
-							DedicatedMastersThreshold: 6,
-						},
-						Plan: &models.ElasticsearchClusterPlan{
-							AutoscalingEnabled: ec.Bool(false),
-							Elasticsearch: &models.ElasticsearchConfiguration{
-								Version: "7.12.1",
+				want: &models.DeploymentUpdateRequest{
+					Name:         "my_deployment_name",
+					PruneOrphans: ec.Bool(true),
+					Settings:     &models.DeploymentUpdateSettings{},
+					Metadata: &models.DeploymentUpdateMetadata{
+						Tags: []*models.MetadataItem{},
+					},
+					Resources: &models.DeploymentUpdateResources{
+						Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ioOptimizedTpl(), true), &models.ElasticsearchPayload{
+							Region: ec.String("us-east-1"),
+							RefID:  ec.String("main-elasticsearch"),
+							Settings: &models.ElasticsearchClusterSettings{
+								DedicatedMastersThreshold: 6,
 							},
-							DeploymentTemplate: &models.DeploymentTemplateReference{
-								ID: ec.String("aws-io-optimized-v2"),
-							},
-							ClusterTopology: []*models.ElasticsearchClusterTopologyElement{
-								{
+							Plan: &models.ElasticsearchClusterPlan{
+								AutoscalingEnabled: ec.Bool(false),
+								Elasticsearch: &models.ElasticsearchConfiguration{
+									Version: "7.10.1",
+								},
+								DeploymentTemplate: &models.DeploymentTemplateReference{
+									ID: ec.String("aws-io-optimized-v2"),
+								},
+								ClusterTopology: []*models.ElasticsearchClusterTopologyElement{{
 									ID: "hot_content",
 									Elasticsearch: &models.ElasticsearchConfiguration{
 										NodeAttributes:   map[string]string{"data": "hot"},
-										UserSettingsYaml: "setting: false",
+										UserSettingsYaml: "setting: true",
 									},
-									ZoneCount:               3,
+									ZoneCount:               2,
 									InstanceConfigurationID: "aws.data.highio.i3",
 									Size: &models.TopologySize{
 										Resource: ec.String("memory"),
-										Value:    ec.Int32(16384),
+										Value:    ec.Int32(8192),
 									},
 									NodeRoles: []string{
+										"master",
 										"ingest",
 										"remote_cluster_client",
 										"data_hot",
@@ -4840,453 +5221,72 @@ func Test_updateResourceToModel(t *testing.T) {
 										Value:    ec.Int32(118784),
 										Resource: ec.String("memory"),
 									},
-								},
-								{
-									ID: "master",
-									Elasticsearch: &models.ElasticsearchConfiguration{
-										UserSettingsYaml: "setting: false",
-									},
-									ZoneCount:               3,
-									InstanceConfigurationID: "aws.master.r5d",
-									Size: &models.TopologySize{
-										Resource: ec.String("memory"),
-										Value:    ec.Int32(1024),
-									},
-									NodeRoles: []string{
-										"master",
-										"remote_cluster_client",
-									},
-									TopologyElementControl: &models.TopologyElementControl{
-										Min: &models.TopologySize{
-											Resource: ec.String("memory"),
-											Value:    ec.Int32(0),
-										},
-									},
-								},
-								{
-									ID: "warm",
-									Elasticsearch: &models.ElasticsearchConfiguration{
-										NodeAttributes:   map[string]string{"data": "warm"},
-										UserSettingsYaml: "setting: false",
-									},
-									ZoneCount:               3,
-									InstanceConfigurationID: "aws.data.highstorage.d3",
-									Size: &models.TopologySize{
-										Resource: ec.String("memory"),
-										Value:    ec.Int32(8192),
-									},
-									NodeRoles: []string{
-										"data_warm",
-										"remote_cluster_client",
-									},
-									TopologyElementControl: &models.TopologyElementControl{
-										Min: &models.TopologySize{
-											Resource: ec.String("memory"),
-											Value:    ec.Int32(0),
-										},
-									},
-									AutoscalingMax: &models.TopologySize{
-										Value:    ec.Int32(118784),
-										Resource: ec.String("memory"),
-									},
-								},
-							},
-						},
-					}),
-				},
-			},
-		},
-		{
-			name: "parses the resources with tags",
-			args: args{
-				d:      deploymentWithTags,
-				client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
-			},
-			want: &models.DeploymentUpdateRequest{
-				Name:         "my_deployment_name",
-				PruneOrphans: ec.Bool(true),
-				Settings:     &models.DeploymentUpdateSettings{},
-				Metadata: &models.DeploymentUpdateMetadata{Tags: []*models.MetadataItem{
-					{Key: ec.String("aaa"), Value: ec.String("bbb")},
-					{Key: ec.String("cost-center"), Value: ec.String("rnd")},
-					{Key: ec.String("owner"), Value: ec.String("elastic")},
-				}},
-				Resources: &models.DeploymentUpdateResources{
-					Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ioOptimizedTpl(), true), &models.ElasticsearchPayload{
-						Region: ec.String("us-east-1"),
-						RefID:  ec.String("main-elasticsearch"),
-						Settings: &models.ElasticsearchClusterSettings{
-							DedicatedMastersThreshold: 6,
-						},
-						Plan: &models.ElasticsearchClusterPlan{
-							AutoscalingEnabled: ec.Bool(false),
-							Elasticsearch: &models.ElasticsearchConfiguration{
-								Version: "7.10.1",
-							},
-							DeploymentTemplate: &models.DeploymentTemplateReference{
-								ID: ec.String("aws-io-optimized-v2"),
-							},
-							ClusterTopology: []*models.ElasticsearchClusterTopologyElement{{
-								ID: "hot_content",
-								Elasticsearch: &models.ElasticsearchConfiguration{
-									NodeAttributes: map[string]string{"data": "hot"},
-								},
-								ZoneCount:               2,
-								InstanceConfigurationID: "aws.data.highio.i3",
-								Size: &models.TopologySize{
-									Resource: ec.String("memory"),
-									Value:    ec.Int32(8192),
-								},
-								NodeRoles: []string{
-									"master",
-									"ingest",
-									"remote_cluster_client",
-									"data_hot",
-									"transform",
-									"data_content",
-								},
-								TopologyElementControl: &models.TopologyElementControl{
-									Min: &models.TopologySize{
-										Resource: ec.String("memory"),
-										Value:    ec.Int32(1024),
-									},
-								},
-								AutoscalingMax: &models.TopologySize{
-									Value:    ec.Int32(118784),
-									Resource: ec.String("memory"),
-								},
-							}},
-						},
-					}),
-				},
-			},
-		},
-		{
-			name: "handles a snapshot_source block adding Strategy: partial",
-			args: args{
-				d: util.NewResourceData(t, util.ResDataParams{
-					ID: mock.ValidClusterID,
-					State: map[string]interface{}{
-						"name":                   "my_deployment_name",
-						"deployment_template_id": "aws-io-optimized-v2",
-						"region":                 "us-east-1",
-						"version":                "7.10.1",
-						"elasticsearch": []interface{}{map[string]interface{}{
-							"version": "7.10.1",
-							"topology": []interface{}{map[string]interface{}{
-								"id":   "hot_content",
-								"size": "8g",
-							}},
-						}},
-					},
-					Change: map[string]interface{}{
-						"name":                   "my_deployment_name",
-						"deployment_template_id": "aws-io-optimized-v2",
-						"region":                 "us-east-1",
-						"version":                "7.10.1",
-						"elasticsearch": []interface{}{map[string]interface{}{
-							"version": "7.10.1",
-							"snapshot_source": []interface{}{map[string]interface{}{
-								"source_elasticsearch_cluster_id": "8c63b87af9e24ea49b8a4bfe550e5fe9",
-							}},
-							"topology": []interface{}{map[string]interface{}{
-								"id":   "hot_content",
-								"size": "8g",
-							}},
-						}},
-					},
-					Schema: newSchema(),
-				}),
-				client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
-			},
-			want: &models.DeploymentUpdateRequest{
-				Name:         "my_deployment_name",
-				PruneOrphans: ec.Bool(true),
-				Settings:     &models.DeploymentUpdateSettings{},
-				Metadata: &models.DeploymentUpdateMetadata{
-					Tags: []*models.MetadataItem{},
-				},
-				Resources: &models.DeploymentUpdateResources{
-					Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ioOptimizedTpl(), true), &models.ElasticsearchPayload{
-						Region: ec.String("us-east-1"),
-						RefID:  ec.String("main-elasticsearch"),
-						Settings: &models.ElasticsearchClusterSettings{
-							DedicatedMastersThreshold: 6,
-						},
-						Plan: &models.ElasticsearchClusterPlan{
-							Transient: &models.TransientElasticsearchPlanConfiguration{
-								RestoreSnapshot: &models.RestoreSnapshotConfiguration{
-									SourceClusterID: "8c63b87af9e24ea49b8a4bfe550e5fe9",
-									SnapshotName:    ec.String("__latest_success__"),
-									Strategy:        "partial",
-								},
-							},
-							AutoscalingEnabled: ec.Bool(false),
-							Elasticsearch: &models.ElasticsearchConfiguration{
-								Version: "7.10.1",
-							},
-							DeploymentTemplate: &models.DeploymentTemplateReference{
-								ID: ec.String("aws-io-optimized-v2"),
-							},
-							ClusterTopology: []*models.ElasticsearchClusterTopologyElement{{
-								ID: "hot_content",
-								Elasticsearch: &models.ElasticsearchConfiguration{
-									NodeAttributes: map[string]string{"data": "hot"},
-								},
-								ZoneCount:               2,
-								InstanceConfigurationID: "aws.data.highio.i3",
-								Size: &models.TopologySize{
-									Resource: ec.String("memory"),
-									Value:    ec.Int32(8192),
-								},
-								NodeRoles: []string{
-									"master",
-									"ingest",
-									"remote_cluster_client",
-									"data_hot",
-									"transform",
-									"data_content",
-								},
-								TopologyElementControl: &models.TopologyElementControl{
-									Min: &models.TopologySize{
-										Resource: ec.String("memory"),
-										Value:    ec.Int32(1024),
-									},
-								},
-								AutoscalingMax: &models.TopologySize{
-									Value:    ec.Int32(118784),
-									Resource: ec.String("memory"),
-								},
-							}},
-						},
-					}),
-				},
-			},
-		},
-		{
-			name: "handles empty Elasticsearch empty config block",
-			args: args{
-				d: util.NewResourceData(t, util.ResDataParams{
-					ID: mock.ValidClusterID,
-					State: map[string]interface{}{
-						"name":                   "my_deployment_name",
-						"deployment_template_id": "aws-io-optimized-v2",
-						"region":                 "us-east-1",
-						"version":                "7.10.1",
-						"elasticsearch": []interface{}{map[string]interface{}{
-							"version": "7.10.1",
-							"topology": []interface{}{map[string]interface{}{
-								"id":     "hot_content",
-								"size":   "8g",
-								"config": []interface{}{},
-							}},
-						}},
-					},
-					Schema: newSchema(),
-				}),
-				client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
-			},
-			want: &models.DeploymentUpdateRequest{
-				Name:         "my_deployment_name",
-				PruneOrphans: ec.Bool(true),
-				Settings:     &models.DeploymentUpdateSettings{},
-				Metadata: &models.DeploymentUpdateMetadata{
-					Tags: []*models.MetadataItem{},
-				},
-				Resources: &models.DeploymentUpdateResources{
-					Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ioOptimizedTpl(), true), &models.ElasticsearchPayload{
-						Region: ec.String("us-east-1"),
-						RefID:  ec.String("main-elasticsearch"),
-						Settings: &models.ElasticsearchClusterSettings{
-							DedicatedMastersThreshold: 6,
-						},
-						Plan: &models.ElasticsearchClusterPlan{
-							AutoscalingEnabled: ec.Bool(false),
-							Elasticsearch: &models.ElasticsearchConfiguration{
-								Version: "7.10.1",
-							},
-							DeploymentTemplate: &models.DeploymentTemplateReference{
-								ID: ec.String("aws-io-optimized-v2"),
-							},
-							ClusterTopology: []*models.ElasticsearchClusterTopologyElement{{
-								ID: "hot_content",
-								Elasticsearch: &models.ElasticsearchConfiguration{
-									NodeAttributes: map[string]string{"data": "hot"},
-								},
-								ZoneCount:               2,
-								InstanceConfigurationID: "aws.data.highio.i3",
-								Size: &models.TopologySize{
-									Resource: ec.String("memory"),
-									Value:    ec.Int32(8192),
-								},
-								NodeRoles: []string{
-									"master",
-									"ingest",
-									"remote_cluster_client",
-									"data_hot",
-									"transform",
-									"data_content",
-								},
-								TopologyElementControl: &models.TopologyElementControl{
-									Min: &models.TopologySize{
-										Resource: ec.String("memory"),
-										Value:    ec.Int32(1024),
-									},
-								},
-								AutoscalingMax: &models.TopologySize{
-									Value:    ec.Int32(118784),
-									Resource: ec.String("memory"),
-								},
-							}},
-						},
-					}),
-				},
-			},
-		},
-		{
-			name: "handles Elasticsearch with topology.config block",
-			args: args{
-				d: util.NewResourceData(t, util.ResDataParams{
-					ID: mock.ValidClusterID,
-					State: map[string]interface{}{
-						"name":                   "my_deployment_name",
-						"deployment_template_id": "aws-io-optimized-v2",
-						"region":                 "us-east-1",
-						"version":                "7.10.1",
-						"elasticsearch": []interface{}{map[string]interface{}{
-							"version": "7.10.1",
-							"config":  []interface{}{},
-							"topology": []interface{}{map[string]interface{}{
-								"id":   "hot_content",
-								"size": "8g",
-								"config": []interface{}{map[string]interface{}{
-									"user_settings_yaml": "setting: true",
 								}},
-							}},
-						}},
+							},
+						}),
 					},
-					Schema: newSchema(),
-				}),
-				client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
-			},
-			want: &models.DeploymentUpdateRequest{
-				Name:         "my_deployment_name",
-				PruneOrphans: ec.Bool(true),
-				Settings:     &models.DeploymentUpdateSettings{},
-				Metadata: &models.DeploymentUpdateMetadata{
-					Tags: []*models.MetadataItem{},
-				},
-				Resources: &models.DeploymentUpdateResources{
-					Elasticsearch: enrichWithEmptyTopologies(readerToESPayload(t, ioOptimizedTpl(), true), &models.ElasticsearchPayload{
-						Region: ec.String("us-east-1"),
-						RefID:  ec.String("main-elasticsearch"),
-						Settings: &models.ElasticsearchClusterSettings{
-							DedicatedMastersThreshold: 6,
-						},
-						Plan: &models.ElasticsearchClusterPlan{
-							AutoscalingEnabled: ec.Bool(false),
-							Elasticsearch: &models.ElasticsearchConfiguration{
-								Version: "7.10.1",
-							},
-							DeploymentTemplate: &models.DeploymentTemplateReference{
-								ID: ec.String("aws-io-optimized-v2"),
-							},
-							ClusterTopology: []*models.ElasticsearchClusterTopologyElement{{
-								ID: "hot_content",
-								Elasticsearch: &models.ElasticsearchConfiguration{
-									NodeAttributes:   map[string]string{"data": "hot"},
-									UserSettingsYaml: "setting: true",
-								},
-								ZoneCount:               2,
-								InstanceConfigurationID: "aws.data.highio.i3",
-								Size: &models.TopologySize{
-									Resource: ec.String("memory"),
-									Value:    ec.Int32(8192),
-								},
-								NodeRoles: []string{
-									"master",
-									"ingest",
-									"remote_cluster_client",
-									"data_hot",
-									"transform",
-									"data_content",
-								},
-								TopologyElementControl: &models.TopologyElementControl{
-									Min: &models.TopologySize{
-										Resource: ec.String("memory"),
-										Value:    ec.Int32(1024),
-									},
-								},
-								AutoscalingMax: &models.TopologySize{
-									Value:    ec.Int32(118784),
-									Resource: ec.String("memory"),
-								},
-							}},
-						},
-					}),
 				},
 			},
-		},
-		{
-			name: "topology change with invalid resources returns an error",
-			args: args{
-				d:      deploymentChangeToEmptyDT,
-				client: api.NewMock(mock.New200Response(emptyTpl())),
+			{
+				name: "topology change with invalid resources returns an error",
+				args: args{
+					d:      deploymentChangeToEmptyDT,
+					client: api.NewMock(mock.New200Response(emptyTpl())),
+				},
+				err: multierror.NewPrefixed("invalid configuration",
+					errors.New("kibana specified but deployment template is not configured for it. Use a different template if you wish to add kibana"),
+					errors.New("apm specified but deployment template is not configured for it. Use a different template if you wish to add apm"),
+					errors.New("enterprise_search specified but deployment template is not configured for it. Use a different template if you wish to add enterprise_search"),
+				),
 			},
-			err: multierror.NewPrefixed("invalid configuration",
-				errors.New("kibana specified but deployment template is not configured for it. Use a different template if you wish to add kibana"),
-				errors.New("apm specified but deployment template is not configured for it. Use a different template if you wish to add apm"),
-				errors.New("enterprise_search specified but deployment template is not configured for it. Use a different template if you wish to add enterprise_search"),
-			),
-		},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := updateResourceToModel(tt.args.d, tt.args.client)
+				if tt.err != nil {
+					assert.EqualError(t, err, tt.err.Error())
+				} else {
+					assert.NoError(t, err)
+				}
+				assert.Equal(t, tt.want, got)
+			})
+		}
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := updateResourceToModel(tt.args.d, tt.args.client)
-			if tt.err != nil {
-				assert.EqualError(t, err, tt.err.Error())
-			} else {
-				assert.NoError(t, err)
-			}
-			assert.Equal(t, tt.want, got)
-		})
-	}
-}
-
+*/
 func Test_ensurePartialSnapshotStrategy(t *testing.T) {
 	type args struct {
-		ess []*models.ElasticsearchPayload
+		es *models.ElasticsearchPayload
 	}
 	tests := []struct {
 		name string
 		args args
-		want []*models.ElasticsearchPayload
+		want *models.ElasticsearchPayload
 	}{
 		{
 			name: "ignores resources with no transient block",
-			args: args{ess: []*models.ElasticsearchPayload{{
-				Plan: &models.ElasticsearchClusterPlan{},
-			}}},
-			want: []*models.ElasticsearchPayload{{
+			args: args{es: &models.ElasticsearchPayload{
 				Plan: &models.ElasticsearchClusterPlan{},
 			}},
+			want: &models.ElasticsearchPayload{
+				Plan: &models.ElasticsearchClusterPlan{},
+			},
 		},
 		{
 			name: "ignores resources with no transient.snapshot block",
-			args: args{ess: []*models.ElasticsearchPayload{{
-				Plan: &models.ElasticsearchClusterPlan{
-					Transient: &models.TransientElasticsearchPlanConfiguration{},
-				},
-			}}},
-			want: []*models.ElasticsearchPayload{{
+			args: args{es: &models.ElasticsearchPayload{
 				Plan: &models.ElasticsearchClusterPlan{
 					Transient: &models.TransientElasticsearchPlanConfiguration{},
 				},
 			}},
+			want: &models.ElasticsearchPayload{
+				Plan: &models.ElasticsearchClusterPlan{
+					Transient: &models.TransientElasticsearchPlanConfiguration{},
+				},
+			},
 		},
 		{
 			name: "Sets strategy to partial",
-			args: args{ess: []*models.ElasticsearchPayload{{
+			args: args{es: &models.ElasticsearchPayload{
 				Plan: &models.ElasticsearchClusterPlan{
 					Transient: &models.TransientElasticsearchPlanConfiguration{
 						RestoreSnapshot: &models.RestoreSnapshotConfiguration{
@@ -5294,8 +5294,8 @@ func Test_ensurePartialSnapshotStrategy(t *testing.T) {
 						},
 					},
 				},
-			}}},
-			want: []*models.ElasticsearchPayload{{
+			}},
+			want: &models.ElasticsearchPayload{
 				Plan: &models.ElasticsearchClusterPlan{
 					Transient: &models.TransientElasticsearchPlanConfiguration{
 						RestoreSnapshot: &models.RestoreSnapshotConfiguration{
@@ -5304,14 +5304,13 @@ func Test_ensurePartialSnapshotStrategy(t *testing.T) {
 						},
 					},
 				},
-			}},
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ensurePartialSnapshotStrategy(tt.args.ess)
-			assert.Equal(t, tt.want, tt.args.ess)
+			ensurePartialSnapshotStrategy(tt.args.es)
+			assert.Equal(t, tt.want, tt.args.es)
 		})
 	}
 }
-*/
