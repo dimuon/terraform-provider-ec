@@ -29,25 +29,23 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type ElasticsearchConfigTF struct {
+type ElasticsearchTopologyConfigTF struct {
 	Plugins                  types.Set    `tfsdk:"plugins"`
-	DockerImage              types.String `tfsdk:"docker_image"`
 	UserSettingsJson         types.String `tfsdk:"user_settings_json"`
 	UserSettingsOverrideJson types.String `tfsdk:"user_settings_override_json"`
 	UserSettingsYaml         types.String `tfsdk:"user_settings_yaml"`
 	UserSettingsOverrideYaml types.String `tfsdk:"user_settings_override_yaml"`
 }
 
-type ElasticsearchConfig struct {
+type ElasticsearchTopologyConfig struct {
 	Plugins                  []string `tfsdk:"plugins"`
-	DockerImage              *string  `tfsdk:"docker_image"`
 	UserSettingsJson         *string  `tfsdk:"user_settings_json"`
 	UserSettingsOverrideJson *string  `tfsdk:"user_settings_override_json"`
 	UserSettingsYaml         *string  `tfsdk:"user_settings_yaml"`
 	UserSettingsOverrideYaml *string  `tfsdk:"user_settings_override_yaml"`
 }
 
-func (config *ElasticsearchConfigTF) Payload(ctx context.Context, model *models.ElasticsearchConfiguration) (*models.ElasticsearchConfiguration, diag.Diagnostics) {
+func (config *ElasticsearchTopologyConfigTF) Payload(ctx context.Context, model *models.ElasticsearchConfiguration) (*models.ElasticsearchConfiguration, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	if model == nil {
@@ -83,19 +81,15 @@ func (config *ElasticsearchConfigTF) Payload(ctx context.Context, model *models.
 
 	diags = append(diags, ds...)
 
-	if !config.DockerImage.IsNull() {
-		model.DockerImage = config.DockerImage.Value
-	}
-
 	return model, diags
 }
 
-func (c *ElasticsearchConfig) isEmpty() bool {
+func (c *ElasticsearchTopologyConfig) isEmpty() bool {
 	return c == nil || reflect.ValueOf(*c).IsZero()
 }
 
-func readElasticsearchConfig(in *models.ElasticsearchConfiguration) (*ElasticsearchConfig, error) {
-	var config ElasticsearchConfig
+func readElasticsearchTopologyConfig(in *models.ElasticsearchConfiguration) (*ElasticsearchTopologyConfig, error) {
+	var config ElasticsearchTopologyConfig
 	if in == nil {
 		return nil, nil
 	}
@@ -122,10 +116,6 @@ func readElasticsearchConfig(in *models.ElasticsearchConfiguration) (*Elasticsea
 		if b, _ := json.Marshal(o); len(b) > 0 && !bytes.Equal([]byte("{}"), b) {
 			config.UserSettingsOverrideJson = ec.String(string(b))
 		}
-	}
-
-	if in.DockerImage != "" {
-		config.DockerImage = ec.String(in.DockerImage)
 	}
 
 	if config.isEmpty() {

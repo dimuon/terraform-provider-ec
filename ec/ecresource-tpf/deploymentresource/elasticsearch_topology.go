@@ -62,7 +62,7 @@ type ElasticsearchTopology struct {
 	NodeTypeMl              *string                           `tfsdk:"node_type_ml"`
 	NodeRoles               []string                          `tfsdk:"node_roles"`
 	Autoscaling             ElasticsearchTopologyAutoscalings `tfsdk:"autoscaling"`
-	Config                  *ElasticsearchConfig              `tfsdk:"config"`
+	Config                  *ElasticsearchTopologyConfig      `tfsdk:"config"`
 }
 
 type ElasticsearchTopologies []ElasticsearchTopology
@@ -145,7 +145,7 @@ func elasticsearchTopologiesPayload(ctx context.Context, tops types.List, planTo
 		diags.Append(elasticsearchTopologyAutoscalingPayload(ctx, topology.Autoscaling, topologyID, topologyElem)...)
 
 		if !topology.Config.IsNull() {
-			var config ElasticsearchConfigTF
+			var config ElasticsearchTopologyConfigTF
 
 			ds = tfsdk.ValueAs(ctx, topology.Config, &config)
 			diags = append(diags, ds...)
@@ -202,7 +202,7 @@ func readElasticsearchTopology(model *models.ElasticsearchClusterTopologyElement
 	}
 	topology.Autoscaling = autoscaling
 
-	config, err := readElasticsearchConfig(model.Elasticsearch)
+	config, err := readElasticsearchTopologyConfig(model.Elasticsearch)
 	if err != nil {
 		return nil, err
 	}
