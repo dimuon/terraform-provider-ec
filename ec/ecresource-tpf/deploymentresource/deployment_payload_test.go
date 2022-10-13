@@ -603,7 +603,7 @@ func Test_createRequest(t *testing.T) {
 				},
 				client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
 			},
-			// Ref ids are taken from template, not from defautls values in this test.
+			// Ref ids are taken from template, not from defaults values in this test.
 			// Defaults are processed by TF during config processing.
 			want: &models.DeploymentCreateRequest{
 				Name: "my_deployment_name",
@@ -751,7 +751,7 @@ func Test_createRequest(t *testing.T) {
 				Metadata: &models.DeploymentCreateMetadata{
 					Tags: []*models.MetadataItem{},
 				},
-				// Ref ids are taken from template, not from defautls values in this test.
+				// Ref ids are taken from template, not from defaults values in this test.
 				// Defaults are processed by TF during config processing.
 				Resources: &models.DeploymentCreateResources{
 					Elasticsearch: []*models.ElasticsearchPayload{testutil.EnrichWithEmptyTopologies(testutil.ReaderToESPayload(t, ioOptimizedTpl(), true), &models.ElasticsearchPayload{
