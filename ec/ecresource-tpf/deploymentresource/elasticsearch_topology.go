@@ -134,17 +134,18 @@ func elasticsearchTopologiesPayload(ctx context.Context, tops types.List, planTo
 			diags.AddError("topology legacy node type error", err.Error())
 		}
 
-		if len(topology.NodeRoles.Elems) > 0 {
-			topologyElem.NodeRoles = make([]string, 0, len(topology.NodeRoles.Elems))
-			for _, nd := range topology.NodeRoles.Elems {
-				topologyElem.NodeRoles = append(topologyElem.NodeRoles, nd.(types.String).Value)
-			}
+		var nodeRoles []string
+		ds = topology.NodeRoles.ElementsAs(ctx, &nodeRoles, true)
+		diags.Append(ds...)
+
+		if !ds.HasError() && len(nodeRoles) > 0 {
+			topologyElem.NodeRoles = nodeRoles
 			topologyElem.NodeType = nil
 		}
 
 		diags.Append(elasticsearchTopologyAutoscalingPayload(ctx, topology.Autoscaling, topologyID, topologyElem)...)
 
-		if !topology.Config.IsNull() {
+		if !topology.Config.IsNull() && !topology.Config.IsUnknown() {
 			var config ElasticsearchTopologyConfigTF
 
 			ds = tfsdk.ValueAs(ctx, topology.Config, &config)

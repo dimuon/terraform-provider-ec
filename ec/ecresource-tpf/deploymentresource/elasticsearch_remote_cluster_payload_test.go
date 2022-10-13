@@ -70,23 +70,23 @@ func Test_handleRemoteClusters(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.7.0",
-					// Elasticsearch: Elasticsearch{
-					// 	RefId: ec.String("main-elasticsearch"),
-					// 	RemoteCluster: ElasticsearchRemoteClusters{
-					// 		{
-					// 			Alias:           ec.String("alias"),
-					// 			DeploymentId:    ec.String("someid"),
-					// 			RefId:           ec.String("main-elasticsearch"),
-					// 			SkipUnavailable: ec.Bool(true),
-					// 		},
-					// 		{
-					// 			Alias:           ec.String("alias"),
-					// 			DeploymentId:    ec.String("some other id"),
-					// 			RefId:           ec.String("main-elasticsearch"),
-					// 			SkipUnavailable: ec.Bool(false),
-					// 		},
-					// 	},
-					// },
+					Elasticsearch: &Elasticsearch{
+						RefId: ec.String("main-elasticsearch"),
+						RemoteCluster: ElasticsearchRemoteClusters{
+							{
+								Alias:           ec.String("alias"),
+								DeploymentId:    ec.String("someid"),
+								RefId:           ec.String("main-elasticsearch"),
+								SkipUnavailable: ec.Bool(true),
+							},
+							{
+								Alias:           ec.String("alias"),
+								DeploymentId:    ec.String("some other id"),
+								RefId:           ec.String("main-elasticsearch"),
+								SkipUnavailable: ec.Bool(false),
+							},
+						},
+					},
 				},
 			},
 		},
@@ -161,7 +161,7 @@ func Test_writeRemoteClusters(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var remoteClustersTF types.Set
-			diags := tfsdk.ValueFrom(context.Background(), tt.args.remoteClusters, elasticsearchRemoteCluster().FrameworkType(), &remoteClustersTF)
+			diags := tfsdk.ValueFrom(context.Background(), tt.args.remoteClusters, elasticsearchRemoteClusterAttribute().FrameworkType(), &remoteClustersTF)
 			assert.Nil(t, diags)
 
 			got, diags := elasticsearchRemoteClustersPayload(context.Background(), remoteClustersTF)

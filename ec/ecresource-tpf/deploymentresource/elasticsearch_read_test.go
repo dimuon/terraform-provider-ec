@@ -397,7 +397,7 @@ func Test_readElasticsearchTopology(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 
 			var topologiesTF types.List
-			diags := tfsdk.ValueFrom(context.Background(), got, elasticsearchTopology().FrameworkType(), &topologiesTF)
+			diags := tfsdk.ValueFrom(context.Background(), got, elasticsearchTopologyAttribute().FrameworkType(), &topologiesTF)
 			assert.Nil(t, diags)
 		})
 	}
@@ -429,7 +429,7 @@ func Test_readElasticsearchConfig(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 
 			var config types.Object
-			diags := tfsdk.ValueFrom(context.Background(), got, elasticsearchConfig().FrameworkType(), &config)
+			diags := tfsdk.ValueFrom(context.Background(), got, elasticsearchConfigAttribute().FrameworkType(), &config)
 			assert.Nil(t, diags)
 		})
 	}
