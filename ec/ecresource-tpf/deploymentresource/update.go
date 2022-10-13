@@ -46,7 +46,7 @@ func (r Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *
 		return
 	}
 
-	updateReq, diags := plan.UpdateRequest(ctx, r.client, state)
+	updateReq, diags := plan.updateRequest(ctx, r.client, state)
 	if diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return

@@ -77,8 +77,7 @@ func Test_createDeploymentWithEmptyFields(t *testing.T) {
 
 	r.UnitTest(t, r.TestCase{
 		ProtoV6ProviderFactories: protoV6ProviderFactoriesWithMockClient(
-			api.NewDebugMock(
-				os.Stdout,
+			api.NewMock(
 				getTemplate(t, templateFileName),
 				createDeployment(t, readFile(t, "testdata/aws-io-optimized-v2-empty-config-create-expected-payload.json"), createDeploymentResponseJson, requestId),
 				mock.New200Response(readTestData(t, "testdata/aws-io-optimized-v2-empty-config-expected-deployment1.json")),

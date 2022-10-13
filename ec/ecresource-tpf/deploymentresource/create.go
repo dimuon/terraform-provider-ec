@@ -45,7 +45,7 @@ func (r Resource) Create(ctx context.Context, req resource.CreateRequest, resp *
 		return
 	}
 
-	request, diags := plan.CreateRequest(ctx, r.client)
+	request, diags := plan.createRequest(ctx, r.client)
 	if diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return

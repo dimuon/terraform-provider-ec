@@ -522,15 +522,7 @@ func elasticsearchSnapshotSource() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: "Optional snapshot source settings. Restore data from a snapshot of another deployment.",
 		Optional:    true,
-		// Computed:    true,
-		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-
-			// return tfsdk.Block{
-			// 	NestingMode: tfsdk.BlockNestingModeList,
-			// 	Description: "Optional snapshot source settings. Restore data from a snapshot of another deployment.",
-			// 	MinItems:    0,
-			// 	MaxItems:    1,
-			// 	Attributes: map[string]tfsdk.Attribute{
+		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
 			"source_elasticsearch_cluster_id": {
 				Description: "ID of the Elasticsearch cluster that will be used as the source of the snapshot",
 				Type:        types.StringType,
@@ -543,6 +535,7 @@ func elasticsearchSnapshotSource() tfsdk.Attribute {
 					planmodifier.DefaultValue(types.String{Value: "__latest_success__"}),
 				},
 				Optional: true,
+				Computed: true,
 			},
 		}),
 	}

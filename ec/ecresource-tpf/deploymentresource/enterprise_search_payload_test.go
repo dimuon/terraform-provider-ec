@@ -344,7 +344,7 @@ func Test_enterpriseSearchPayload(t *testing.T) {
 			},
 			diags: func() diag.Diagnostics {
 				var diags diag.Diagnostics
-				diags.AddError("enterprise_search payload create error", `deployment template is not configured for Enterprise Search. Use a different template if you wish to add enterprise_search`)
+				diags.AddError("enterprise_search payload error", `enterprise_search specified but deployment template is not configured for it. Use a different template if you wish to add enterprise_search`)
 				return diags
 			}(),
 		},

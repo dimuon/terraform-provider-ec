@@ -1636,11 +1636,9 @@ func Test_writeElasticsearch(t *testing.T) {
 					RefId:      ec.String("main-elasticsearch"),
 					ResourceId: ec.String(mock.ValidClusterID),
 					Region:     ec.String("some-region"),
-					SnapshotSource: ElasticsearchSnapshotSources{
-						{
-							SnapshotName:                 "__latest_success__",
-							SourceElasticsearchClusterId: mock.ValidClusterID,
-						},
+					SnapshotSource: &ElasticsearchSnapshotSource{
+						SnapshotName:                 "__latest_success__",
+						SourceElasticsearchClusterId: mock.ValidClusterID,
 					},
 					Topology: ElasticsearchTopologies{
 						{

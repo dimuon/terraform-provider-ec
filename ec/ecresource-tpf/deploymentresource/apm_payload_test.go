@@ -256,7 +256,7 @@ func Test_writeApm(t *testing.T) {
 			},
 			diags: func() diag.Diagnostics {
 				var diags diag.Diagnostics
-				diags.AddError("Apm reading error", "apm specified but deployment template is not configured for it. Use a different template if you wish to add apm")
+				diags.AddError("apm payload error", "apm specified but deployment template is not configured for it. Use a different template if you wish to add apm")
 				return diags
 			}(),
 		},

@@ -166,7 +166,7 @@ func readDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteRes
 	return &dep, nil
 }
 
-func (dep DeploymentTF) CreateRequest(ctx context.Context, client *api.API) (*models.DeploymentCreateRequest, diag.Diagnostics) {
+func (dep DeploymentTF) createRequest(ctx context.Context, client *api.API) (*models.DeploymentCreateRequest, diag.Diagnostics) {
 	var result = models.DeploymentCreateRequest{
 		Name:      dep.Name.Value,
 		Alias:     dep.Alias.Value,
@@ -340,7 +340,7 @@ func trafficFilterToModel(ctx context.Context, set types.Set, req *models.Deploy
 	return nil
 }
 
-func (plan DeploymentTF) UpdateRequest(ctx context.Context, client *api.API, curState DeploymentTF) (*models.DeploymentUpdateRequest, diag.Diagnostics) {
+func (plan DeploymentTF) updateRequest(ctx context.Context, client *api.API, curState DeploymentTF) (*models.DeploymentUpdateRequest, diag.Diagnostics) {
 	var result = models.DeploymentUpdateRequest{
 		Name:         plan.Name.Value,
 		Alias:        plan.Alias.Value,
@@ -457,7 +457,7 @@ func (plan DeploymentTF) UpdateRequest(ctx context.Context, client *api.API, cur
 		diagsnostics.Append(diags...)
 	}
 
-	return &result, nil
+	return &result, diagsnostics
 }
 
 // legacyToNodeRoles returns true when the legacy  "node_type_*" should be

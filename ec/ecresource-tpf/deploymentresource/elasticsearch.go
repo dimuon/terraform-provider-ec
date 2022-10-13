@@ -43,7 +43,7 @@ type ElasticsearchTF struct {
 	Topology       types.List   `tfsdk:"topology"`
 	Config         types.Object `tfsdk:"config"`
 	RemoteCluster  types.Set    `tfsdk:"remote_cluster"`
-	SnapshotSource types.List   `tfsdk:"snapshot_source"`
+	SnapshotSource types.Object `tfsdk:"snapshot_source"`
 	Extension      types.Set    `tfsdk:"extension"`
 	TrustAccount   types.Set    `tfsdk:"trust_account"`
 	TrustExternal  types.Set    `tfsdk:"trust_external"`
@@ -61,7 +61,7 @@ type Elasticsearch struct {
 	Topology       ElasticsearchTopologies      `tfsdk:"topology"`
 	Config         *ElasticsearchConfig         `tfsdk:"config"`
 	RemoteCluster  ElasticsearchRemoteClusters  `tfsdk:"remote_cluster"`
-	SnapshotSource ElasticsearchSnapshotSources `tfsdk:"snapshot_source"`
+	SnapshotSource *ElasticsearchSnapshotSource `tfsdk:"snapshot_source"`
 	Extension      ElasticsearchExtensions      `tfsdk:"extension"`
 	TrustAccount   ElasticsearchTrustAccounts   `tfsdk:"trust_account"`
 	TrustExternal  ElasticsearchTrustExternals  `tfsdk:"trust_external"`
