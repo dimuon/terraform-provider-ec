@@ -20,7 +20,9 @@ package deploymentresource
 import (
 	"context"
 	"errors"
+	"fmt"
 
+	"github.com/blang/semver"
 	"github.com/elastic/cloud-sdk-go/pkg/api/apierror"
 	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi"
 	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi/deputil"
@@ -66,6 +68,7 @@ func (r Resource) Read(ctx context.Context, request resource.ReadRequest, respon
 
 func (r Resource) read(ctx context.Context, id string, current DeploymentTF, deploymentResources []*models.DeploymentResource) (*DeploymentTF, diag.Diagnostics) {
 	var diags diag.Diagnostics
+
 	response, err := deploymentapi.Get(deploymentapi.GetParams{
 		API: r.client, DeploymentID: id,
 		QueryParams: deputil.QueryParams{
@@ -84,18 +87,34 @@ func (r Resource) read(ctx context.Context, id string, current DeploymentTF, dep
 		return nil, diags
 	}
 
+	if response.Resources == nil || len(response.Resources.Elasticsearch) == 0 {
+		diags.AddError("Get resource error", "cannot find Elasticsearch in response resources")
+		return nil, diags
+	}
+
+	if err := checkVersion(response.Resources.Elasticsearch[0].Info.PlanInfo.Current.Plan.Elasticsearch.Version); err != nil {
+		diags.AddError("Get resource error", err.Error())
+		return nil, diags
+	}
+
 	if !hasRunningResources(response) {
 		return nil, nil
 	}
 
-	var elasticsearch ElasticsearchTF
-	if diags := tfsdk.ValueAs(ctx, current.Elasticsearch, &elasticsearch); diags.HasError() {
-		return nil, diags
+	refId := ""
+
+	if !current.Elasticsearch.IsNull() {
+		var elasticsearch ElasticsearchTF
+		if diags := tfsdk.ValueAs(ctx, current.Elasticsearch, &elasticsearch); diags.HasError() {
+			return nil, diags
+		}
+
+		refId = elasticsearch.RefId.Value
 	}
 
 	remotes, err := esremoteclustersapi.Get(esremoteclustersapi.GetParams{
 		API: r.client, DeploymentID: id,
-		RefID: elasticsearch.RefId.Value,
+		RefID: refId,
 	})
 	if err != nil {
 		diags.AddError("Remote clusters read error", err.Error())
@@ -148,4 +167,25 @@ func deploymentNotFound(err error) bool {
 
 	// We also check for the case where a 403 is thrown for ESS.
 	return apierror.IsRuntimeStatusCode(err, 403)
+}
+
+// Setting this variable here so that it is parsed at compile time in case
+// any errors are thrown, they are at compile time not when the user runs it.
+var minimumSupportedVersion = semver.MustParse("6.6.0")
+
+func checkVersion(version string) error {
+	v, err := semver.New(version)
+
+	if err != nil {
+		return fmt.Errorf("unable to parse deployment version: %w", err)
+	}
+
+	if v.LT(minimumSupportedVersion) {
+		return fmt.Errorf(
+			`invalid deployment version "%s": minimum supported version is "%s"`,
+			v.String(), minimumSupportedVersion.String(),
+		)
+	}
+
+	return nil
 }

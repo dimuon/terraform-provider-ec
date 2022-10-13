@@ -36,7 +36,7 @@ import (
 
 // Ensure provider defined types fully satisfy framework interfaces
 // var _ tpfprovider.ResourceType = DeploymentResourceType{}
-var _ resource.Resource = &Resource{}
+var _ resource.ResourceWithImportState = &Resource{}
 
 // These constants are only used to determine whether or not a dedicated
 // tier of masters or ingest (coordinating) nodes are set.
@@ -182,9 +182,9 @@ func (r *Resource) Metadata(ctx context.Context, request resource.MetadataReques
 	response.TypeName = request.ProviderTypeName + "_deployment"
 }
 
-// func (r deploymentResource) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
-// 	tfsdk.ResourceImportStatePassthroughID(ctx, tftypes.NewAttributePath().WithAttributeName("id"), req, resp)
-// }
+func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
 
 func elasticsearchAttribute() tfsdk.Attribute {
 	return tfsdk.Attribute{
