@@ -63,7 +63,7 @@ resource "ec_deployment" "example_keystore" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "aws-io-optimized-v2"
 
-  elasticsearch {}
+  elasticsearch = [{}]
 }
 
 # Create the keystore secret entry

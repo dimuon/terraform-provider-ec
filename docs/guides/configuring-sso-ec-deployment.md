@@ -31,30 +31,32 @@ resource "ec_deployment" "elastic-sso" {
   version                = "7.17.5"
   deployment_template_id = "aws-compute-optimized-v3"
 
-  elasticsearch {
-    topology {
-      id         = "hot_content"
-      size       = "8g"
-      zone_count = 2
-    }
+  elasticsearch = [{
+    topology = [
+      {
+        id         = "hot_content"
+        size       = "8g"
+        zone_count = 2
+      },
 
-    topology {
-      id         = "warm"
-      size       = "8g"
-      zone_count = 2
-    }
+      {
+        id         = "warm"
+        size       = "8g"
+        zone_count = 2
+      }
+    ]
 
-    config {
+    config = [{
       # The URL domain suffix that is used in this example is often different for other Elasticsearch Service regions. Please check the appropriate domain suffix for your used region.
       user_settings_yaml = templatefile("./es.yml", { kibana_url = format("https://%s-%s.kb.us-east-1.aws.found.io:9243", var.name, substr("${random_uuid.uuid.result}", 0, 6)) })
-    }
-  }
+    }]
+  }]
 
-  kibana {
-    config {
+  kibana = [{
+    config = [{
       user_settings_yaml = file("./kb.yml")
-    }
-  }
+    }]
+  }]
 }
 
 ```

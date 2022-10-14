@@ -33,9 +33,9 @@ resource "ec_deployment" "example_minimal" {
   ]
 
   # Use the deployment template defaults
-  elasticsearch {}
+  elasticsearch = [{}]
 
-  kibana {}
+  kibana = [{}]
 }
 
 resource "ec_deployment_traffic_filter" "example" {
@@ -76,9 +76,9 @@ resource "ec_deployment" "example_minimal" {
   ]
 
   # Use the deployment template defaults
-  elasticsearch {}
+  elasticsearch = [{}]
 
-  kibana {}
+  kibana = [{}]
 }
 
 resource "ec_deployment_traffic_filter" "azure" {
@@ -121,9 +121,9 @@ resource "ec_deployment" "example_minimal" {
   ]
 
   # Use the deployment template defaults
-  elasticsearch {}
+  elasticsearch = [{}]
 
-  kibana {}
+  kibana = [{}]
 }
 
 resource "ec_deployment_traffic_filter" "gcp_psc" {

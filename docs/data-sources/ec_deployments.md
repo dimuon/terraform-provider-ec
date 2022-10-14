@@ -21,21 +21,21 @@ data "ec_deployments" "example" {
     "foo" = "bar"
   }
 
-  elasticsearch {
+  elasticsearch = [{
     healthy = "true"
-  }
+  }]
 
-  kibana {
+  kibana = [{
     status = "started"
-  }
+  }]
 
-  integrations_server {
+  integrations_server = [{
     version = "8.0.0"
-  }
+  }]
 
-  enterprise_search {
+  enterprise_search = [{
     healthy = "true"
-  }
+  }]
 }
 ```
 

@@ -35,13 +35,13 @@ resource "ec_deployment" "example_minimal" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "aws-io-optimized-v2"
 
-  elasticsearch {}
+  elasticsearch = [{}]
 
-  kibana {}
+  kibana = [{}]
 
-  integrations_server {}
+  integrations_server = [{}]
 
-  enterprise_search {}
+  enterprise_search = [{}]
 }
 ```
 
@@ -58,7 +58,7 @@ resource "ec_deployment" "example_minimal" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "aws-io-optimized-v2"
 
-  elasticsearch {
+  elasticsearch = [{
 
     autoscale = "true"
 
@@ -67,33 +67,34 @@ resource "ec_deployment" "example_minimal" {
     # - have non-zero default `max_size` (that is read from the deployment templates's `autoscaling_max` value)
     # have to be listed in alphabetical order of their `id` fields,
     # even if their blocks don't specify other fields beside `id`
-    topology {
-      id = "cold"
-    }
+    topology = [
+      {
+        id = "cold"
+      },
 
-    topology {
-      id = "frozen"
-    }
+      {
+        id = "frozen"
+      },
 
-    topology {
-      id   = "hot_content"
-      size = "8g"
+      {
+        id   = "hot_content"
+        size = "8g"
 
-      autoscaling {
-        max_size          = "128g"
-        max_size_resource = "memory"
+        autoscaling = [{
+          max_size          = "128g"
+          max_size_resource = "memory"
+        }]
+      },
+
+      {
+        id = "ml"
+      },
+
+      {
+        id = "warm"
       }
-    }
 
-    topology {
-      id = "ml"
-    }
-
-    topology {
-      id = "warm"
-    }
-
-  }
+  }]
 
   # Initial size for `hot_content` tier is set to 8g
   # so `hot_content`'s size has to be added to the `ignore_changes` meta-argument to ignore future modifications that can be made by the autoscaler
@@ -103,11 +104,11 @@ resource "ec_deployment" "example_minimal" {
     ]
   }
 
-  kibana {}
+  kibana = [{}]
 
-  integrations_server {}
+  integrations_server = [{}]
 
-  enterprise_search {}
+  enterprise_search = [{}]
 }
 ```
 
@@ -128,22 +129,22 @@ resource "ec_deployment" "example_observability" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "aws-io-optimized-v2"
 
-  elasticsearch {}
+  elasticsearch = [{}]
 
-  kibana {}
+  kibana = [{}]
 
   # Optional observability settings
-  observability {
+  observability = [{
     deployment_id = ec_deployment.example_minimal.id
-  }
+  }]
 }
 ```
 
 It is possible to enable observability without using a second deployment, by storing the observability data in the current deployment. To enable this, set `deployment_id` to `self`.
 ```hcl
-observability {
+observability = [{
   deployment_id = "self"
-}
+}]
 ```
 
 ### With Cross Cluster Search settings
@@ -161,12 +162,12 @@ resource "ec_deployment" "source_deployment" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "aws-io-optimized-v2"
 
-  elasticsearch {
-    topology {
+  elasticsearch = [{
+    topology = [{
       id   = "hot_content"
       size = "1g"
-    }
-  }
+    }]
+  }]
 }
 
 resource "ec_deployment" "ccs" {
@@ -176,15 +177,15 @@ resource "ec_deployment" "ccs" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "aws-cross-cluster-search-v2"
 
-  elasticsearch {
-    remote_cluster {
+  elasticsearch = [{
+    remote_cluster = [{
       deployment_id = ec_deployment.source_deployment.id
       alias         = ec_deployment.source_deployment.name
       ref_id        = ec_deployment.source_deployment.elasticsearch.0.ref_id
-    }
-  }
+    }]
+  }]
 
-  kibana {}
+  kibana = [{}]
 }
 ```
 
@@ -205,7 +206,7 @@ resource "ec_deployment" "with_tags" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "aws-io-optimized-v2"
 
-  elasticsearch {}
+  elasticsearch = [{}]
 
   tags = {
     owner     = "elastic cloud"
@@ -231,11 +232,11 @@ resource "ec_deployment" "with_tags" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "aws-io-optimized-v2"
 
-  elasticsearch {
-    strategy {
+  elasticsearch = [{
+    strategy = [{
       type = "rolling_all"
-    }
-  }
+    }]
+  }]
 
   tags = {
     owner     = "elastic cloud"
