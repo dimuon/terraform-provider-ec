@@ -92,8 +92,8 @@ resource "ec_deployment" "example_minimal" {
 
       {
         id = "warm"
-      }
-
+      }]
+      
   }]
 
   # Initial size for `hot_content` tier is set to 8g
