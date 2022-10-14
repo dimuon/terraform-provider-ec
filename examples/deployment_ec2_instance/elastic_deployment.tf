@@ -16,8 +16,8 @@ resource "ec_deployment" "deployment" {
   traffic_filter         = [ec_deployment_traffic_filter.allow_my_instance.id]
 
   # Note the deployment will contain Elasticsearch and Kibana resources with default configurations.
-  elasticsearch {}
-  kibana {}
+  elasticsearch = [{}]
+  kibana = [{}]
 }
 
 # Create a traffic filter to allow the instance's public IP address to access our deployment.

@@ -28,23 +28,23 @@ resource "ec_deployment" "example_minimal" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "aws-io-optimized-v2"
 
-  elasticsearch {
-    config {
+  elasticsearch = [{
+    config = [{
       user_settings_yaml = file("./es_settings.yaml")
-    }
-  }
+    }]
+  }]
 
-  kibana {}
+  kibana = [{}]
 
-  enterprise_search {
-    topology {
+  enterprise_search = [{
+    topology = [{
       zone_count = 1
-    }
-  }
+    }]
+  }]
 
-  apm {
-    topology {
+  apm = [{
+    topology = [{
       size = "0.5g"
-    }
-  }
+    }]
+  }]
 }
