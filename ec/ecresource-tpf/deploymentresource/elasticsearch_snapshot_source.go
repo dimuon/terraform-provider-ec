@@ -22,7 +22,6 @@ import (
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -36,8 +35,16 @@ type ElasticsearchSnapshotSource struct {
 	SnapshotName                 string `tfsdk:"snapshot_name"`
 }
 
-func elasticsearchSnapshotSourcePayload(ctx context.Context, snapshotObj types.Object, payload *models.ElasticsearchClusterPlan) diag.Diagnostics {
-	if snapshotObj.IsNull() {
+type ElasticsearchSnapshotSources []ElasticsearchSnapshotSource
+
+func elasticsearchSnapshotSourcePayload(ctx context.Context, list types.List, payload *models.ElasticsearchClusterPlan) diag.Diagnostics {
+	var snapshot *ElasticsearchSnapshotSourceTF
+
+	if diags := getFirst(ctx, list, &snapshot); diags.HasError() {
+		return diags
+	}
+
+	if snapshot == nil {
 		return nil
 	}
 
@@ -45,12 +52,6 @@ func elasticsearchSnapshotSourcePayload(ctx context.Context, snapshotObj types.O
 		payload.Transient = &models.TransientElasticsearchPlanConfiguration{
 			RestoreSnapshot: &models.RestoreSnapshotConfiguration{},
 		}
-	}
-
-	var snapshot ElasticsearchSnapshotSourceTF
-
-	if diags := tfsdk.ValueAs(ctx, snapshotObj, &snapshot); diags.HasError() {
-		return diags
 	}
 
 	if !snapshot.SourceElasticsearchClusterId.IsNull() {

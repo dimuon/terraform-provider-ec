@@ -46,7 +46,9 @@ type ApmConfig struct {
 	UserSettingsOverrideYaml *string `tfsdk:"user_settings_override_yaml"`
 }
 
-func readApmConfigs(in *models.ApmConfiguration) (*ApmConfig, error) {
+type ApmConfigs []ApmConfig
+
+func readApmConfigs(in *models.ApmConfiguration) (ApmConfigs, error) {
 	var cfg ApmConfig
 
 	if in.UserSettingsYaml != "" {
@@ -83,7 +85,7 @@ func readApmConfigs(in *models.ApmConfiguration) (*ApmConfig, error) {
 		return nil, nil
 	}
 
-	return &cfg, nil
+	return ApmConfigs{cfg}, nil
 }
 
 func (cfg ApmConfigTF) Payload(ctx context.Context, model *models.ApmConfiguration) diag.Diagnostics {

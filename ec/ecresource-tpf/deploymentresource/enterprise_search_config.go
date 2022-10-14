@@ -44,7 +44,9 @@ type EnterpriseSearchConfig struct {
 	UserSettingsOverrideYaml *string `tfsdk:"user_settings_override_yaml"`
 }
 
-func readEnterpriseSearchConfig(in *models.EnterpriseSearchConfiguration) (*EnterpriseSearchConfig, error) {
+type EnterpriseSearchConfigs []EnterpriseSearchConfig
+
+func readEnterpriseSearchConfig(in *models.EnterpriseSearchConfiguration) (EnterpriseSearchConfigs, error) {
 	var cfg EnterpriseSearchConfig
 
 	if in == nil {
@@ -79,7 +81,7 @@ func readEnterpriseSearchConfig(in *models.EnterpriseSearchConfiguration) (*Ente
 		return nil, nil
 	}
 
-	return &cfg, nil
+	return EnterpriseSearchConfigs{cfg}, nil
 }
 
 func (cfg EnterpriseSearchConfigTF) Payload(ctx context.Context, res *models.EnterpriseSearchConfiguration) diag.Diagnostics {

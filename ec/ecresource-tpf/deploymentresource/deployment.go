@@ -45,12 +45,12 @@ type DeploymentTF struct {
 	ApmSecretToken        types.String `tfsdk:"apm_secret_token"`
 	TrafficFilter         types.Set    `tfsdk:"traffic_filter"`
 	Tags                  types.Map    `tfsdk:"tags"`
-	Elasticsearch         types.Object `tfsdk:"elasticsearch"`
-	Kibana                types.Object `tfsdk:"kibana"`
-	Apm                   types.Object `tfsdk:"apm"`
-	IntegrationsServer    types.Object `tfsdk:"integrations_server"`
-	EnterpriseSearch      types.Object `tfsdk:"enterprise_search"`
-	Observability         types.Object `tfsdk:"observability"`
+	Elasticsearch         types.List   `tfsdk:"elasticsearch"`
+	Kibana                types.List   `tfsdk:"kibana"`
+	Apm                   types.List   `tfsdk:"apm"`
+	IntegrationsServer    types.List   `tfsdk:"integrations_server"`
+	EnterpriseSearch      types.List   `tfsdk:"enterprise_search"`
+	Observability         types.List   `tfsdk:"observability"`
 }
 
 type Deployment struct {
@@ -66,12 +66,12 @@ type Deployment struct {
 	ApmSecretToken        string              `tfsdk:"apm_secret_token"`
 	TrafficFilter         []string            `tfsdk:"traffic_filter"`
 	Tags                  map[string]string   `tfsdk:"tags"`
-	Elasticsearch         *Elasticsearch      `tfsdk:"elasticsearch"`
-	Kibana                *Kibana             `tfsdk:"kibana"`
-	Apm                   *Apm                `tfsdk:"apm"`
-	IntegrationsServer    *IntegrationsServer `tfsdk:"integrations_server"`
-	EnterpriseSearch      *EnterpriseSearch   `tfsdk:"enterprise_search"`
-	Observability         *Observability      `tfsdk:"observability"`
+	Elasticsearch         Elasticsearches     `tfsdk:"elasticsearch"`
+	Kibana                Kibanas             `tfsdk:"kibana"`
+	Apm                   Apms                `tfsdk:"apm"`
+	IntegrationsServer    IntegrationsServers `tfsdk:"integrations_server"`
+	EnterpriseSearch      EnterpriseSearches  `tfsdk:"enterprise_search"`
+	Observability         Observabilities     `tfsdk:"observability"`
 }
 
 var (
@@ -155,7 +155,7 @@ func readDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteRes
 		return nil, err
 	}
 
-	if dep.Observability, err = readObservability(res.Settings); err != nil {
+	if dep.Observability, err = readObservabilities(res.Settings); err != nil {
 		return nil, err
 	}
 
@@ -498,8 +498,15 @@ func (plan DeploymentTF) legacyToNodeRoles(ctx context.Context, curState Deploym
 	// we'd be changing the version AND migrating over `node_role`s
 	// which is not permitted by the API.
 	var hasNodeTypeSet bool
-	var es ElasticsearchTF
-	if diags := tfsdk.ValueAs(ctx, plan.Elasticsearch, &es); diags.HasError() {
+
+	var es *ElasticsearchTF
+
+	if diags := getFirst(ctx, plan.Elasticsearch, &es); diags.HasError() {
+		return false, diags
+	}
+
+	if es == nil {
+		diags.AddError("Cannot migrate node types to node roles", "cannot find elasticsearch data")
 		return false, diags
 	}
 

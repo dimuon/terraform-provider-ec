@@ -24,7 +24,6 @@ import (
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -36,7 +35,7 @@ type EnterpriseSearchTF struct {
 	HttpEndpoint              types.String `tfsdk:"http_endpoint"`
 	HttpsEndpoint             types.String `tfsdk:"https_endpoint"`
 	Topology                  types.List   `tfsdk:"topology"`
-	Config                    types.Object `tfsdk:"config"`
+	Config                    types.List   `tfsdk:"config"`
 }
 
 type EnterpriseSearch struct {
@@ -47,8 +46,10 @@ type EnterpriseSearch struct {
 	HttpEndpoint              *string                    `tfsdk:"http_endpoint"`
 	HttpsEndpoint             *string                    `tfsdk:"https_endpoint"`
 	Topology                  EnterpriseSearchTopologies `tfsdk:"topology"`
-	Config                    *EnterpriseSearchConfig    `tfsdk:"config"`
+	Config                    EnterpriseSearchConfigs    `tfsdk:"config"`
 }
+
+type EnterpriseSearches []EnterpriseSearch
 
 func readEnterpriseSearch(in *models.EnterpriseSearchResourceInfo) (*EnterpriseSearch, error) {
 	var ess EnterpriseSearch
@@ -93,63 +94,60 @@ func (es *EnterpriseSearchTF) Payload(ctx context.Context, payload models.Enterp
 		payload.Region = &es.Region.Value
 	}
 
-	if !es.Config.IsNull() {
-		var config EnterpriseSearchConfigTF
+	var config *EnterpriseSearchConfigTF
 
-		ds := tfsdk.ValueAs(ctx, es.Config, &config)
-		diags = append(diags, ds...)
+	ds := getFirst(ctx, es.Config, &config)
 
-		if !ds.HasError() {
-			diags.Append(config.Payload(ctx, payload.Plan.EnterpriseSearch)...)
-		}
+	diags.Append(ds...)
+
+	if !ds.HasError() && config != nil {
+		diags.Append(config.Payload(ctx, payload.Plan.EnterpriseSearch)...)
 	}
 
-	topology, err := enterpriseSearchTopologiesPayload(ctx, es.Topology, payload.Plan.ClusterTopology)
-	if err != nil {
-		return nil, err
-	}
-	payload.Plan.ClusterTopology = topology
+	payload.Plan.ClusterTopology, ds = enterpriseSearchTopologiesPayload(ctx, es.Topology, payload.Plan.ClusterTopology)
+
+	diags = append(diags, ds...)
 
 	return &payload, diags
 }
 
-func readEnterpriseSearches(in []*models.EnterpriseSearchResourceInfo) (*EnterpriseSearch, error) {
+func readEnterpriseSearches(in []*models.EnterpriseSearchResourceInfo) (EnterpriseSearches, error) {
 	for _, model := range in {
 		if util.IsCurrentEssPlanEmpty(model) || isEssResourceStopped(model) {
 			continue
 		}
 
-		ess, err := readEnterpriseSearch(model)
+		es, err := readEnterpriseSearch(model)
 		if err != nil {
 			return nil, err
 		}
 
-		return ess, nil
+		return EnterpriseSearches{*es}, nil
 	}
 
 	return nil, nil
 }
 
-func enterpriseSearchesPayload(ctx context.Context, esObj types.Object, template *models.DeploymentTemplateInfoV2) (*models.EnterpriseSearchPayload, diag.Diagnostics) {
-	if esObj.IsNull() {
+func enterpriseSearchesPayload(ctx context.Context, list types.List, template *models.DeploymentTemplateInfoV2) (*models.EnterpriseSearchPayload, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	var es *EnterpriseSearchTF
+
+	if diags = getFirst(ctx, list, &es); diags.HasError() {
+		return nil, diags
+	}
+
+	if es == nil {
 		return nil, nil
 	}
 
 	templatePayload := essResource(template)
-
-	var diags diag.Diagnostics
 
 	if templatePayload == nil {
 		diags.AddError(
 			"enterprise_search payload error",
 			"enterprise_search specified but deployment template is not configured for it. Use a different template if you wish to add enterprise_search",
 		)
-		return nil, diags
-	}
-
-	var es EnterpriseSearchTF
-
-	if diags = tfsdk.ValueAs(ctx, esObj, &es); diags.HasError() {
 		return nil, diags
 	}
 

@@ -25,7 +25,6 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -45,7 +44,9 @@ type KibanaConfig struct {
 	UserSettingsOverrideYaml *string `tfsdk:"user_settings_override_yaml"`
 }
 
-func readKibanaConfig(in *models.KibanaConfiguration) (*KibanaConfig, error) {
+type KibanaConfigs []KibanaConfig
+
+func readKibanaConfig(in *models.KibanaConfiguration) (KibanaConfigs, error) {
 	var cfg KibanaConfig
 
 	if in.UserSettingsYaml != "" {
@@ -76,21 +77,21 @@ func readKibanaConfig(in *models.KibanaConfiguration) (*KibanaConfig, error) {
 		return nil, nil
 	}
 
-	return &cfg, nil
+	return KibanaConfigs{cfg}, nil
 }
 
-func kibanaConfigPayload(ctx context.Context, cfgObj types.Object, model *models.KibanaConfiguration) diag.Diagnostics {
-	if cfgObj.IsNull() {
-		return nil
-	}
+func kibanaConfigPayload(ctx context.Context, list types.List, model *models.KibanaConfiguration) diag.Diagnostics {
+	var cfg *KibanaConfigTF
 
-	var cfg KibanaConfigTF
+	diags := getFirst(ctx, list, &cfg)
 
-	if diags := tfsdk.ValueAs(ctx, cfgObj, &cfg); diags.HasError() {
+	if diags.HasError() {
 		return diags
 	}
 
-	var diags diag.Diagnostics
+	if cfg == nil {
+		return nil
+	}
 
 	if cfg.UserSettingsJson.Value != "" {
 		if err := json.Unmarshal([]byte(cfg.UserSettingsJson.Value), &model.UserSettingsJSON); err != nil {

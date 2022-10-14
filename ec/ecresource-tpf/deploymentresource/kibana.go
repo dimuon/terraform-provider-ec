@@ -24,7 +24,6 @@ import (
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -36,7 +35,7 @@ type KibanaTF struct {
 	HttpEndpoint              types.String `tfsdk:"http_endpoint"`
 	HttpsEndpoint             types.String `tfsdk:"https_endpoint"`
 	Topology                  types.List   `tfsdk:"topology"`
-	Config                    types.Object `tfsdk:"config"`
+	Config                    types.List   `tfsdk:"config"`
 }
 
 type Kibana struct {
@@ -47,8 +46,10 @@ type Kibana struct {
 	HttpEndpoint              *string       `tfsdk:"http_endpoint"`
 	HttpsEndpoint             *string       `tfsdk:"https_endpoint"`
 	Topology                  Topologies    `tfsdk:"topology"`
-	Config                    *KibanaConfig `tfsdk:"config"`
+	Config                    KibanaConfigs `tfsdk:"config"`
 }
+
+type Kibanas []Kibana
 
 func readKibana(in *models.KibanaResourceInfo) (*Kibana, error) {
 	var kibana Kibana
@@ -105,7 +106,7 @@ func (kibana KibanaTF) Payload(ctx context.Context, payload models.KibanaPayload
 	return &payload, nil
 }
 
-func readKibanas(in []*models.KibanaResourceInfo) (*Kibana, error) {
+func readKibanas(in []*models.KibanaResourceInfo) (Kibanas, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}
@@ -120,29 +121,29 @@ func readKibanas(in []*models.KibanaResourceInfo) (*Kibana, error) {
 			return nil, err
 		}
 
-		return kibana, nil
+		return Kibanas{*kibana}, nil
 	}
 
 	return nil, nil
 }
 
-func kibanaPayload(ctx context.Context, kibana types.Object, template *models.DeploymentTemplateInfoV2) (*models.KibanaPayload, diag.Diagnostics) {
-	if kibana.IsNull() {
+func kibanaPayload(ctx context.Context, list types.List, template *models.DeploymentTemplateInfoV2) (*models.KibanaPayload, diag.Diagnostics) {
+	var kibanaTF *KibanaTF
+
+	var diags diag.Diagnostics
+
+	if diags = getFirst(ctx, list, &kibanaTF); diags.HasError() {
+		return nil, diags
+	}
+
+	if kibanaTF == nil {
 		return nil, nil
 	}
 
 	templatePlayload := kibanaResource(template)
 
-	var diags diag.Diagnostics
-
 	if templatePlayload == nil {
 		diags.AddError("kibana payload error", "kibana specified but deployment template is not configured for it. Use a different template if you wish to add kibana")
-		return nil, diags
-	}
-
-	var kibanaTF KibanaTF
-
-	if tfsdk.ValueAs(ctx, kibana, &kibanaTF); diags.HasError() {
 		return nil, diags
 	}
 

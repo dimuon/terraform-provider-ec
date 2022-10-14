@@ -26,7 +26,6 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi/trafficfilterapi"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 )
 
 func (r Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -166,24 +165,27 @@ func associateRule(ruleID, deploymentID string, client *api.API) error {
 }
 
 func handleRemoteClusters(ctx context.Context, client *api.API, plan, state DeploymentTF) diag.Diagnostics {
-	// if len(plan.Elasticsearch.Elems) == 0 {
-	// 	return nil
-	// }
-
 	if plan.Elasticsearch.Equal(state.Elasticsearch) {
 		return nil
 	}
 
-	var ess ElasticsearchTF
-	if diags := tfsdk.ValueAs(ctx, plan.Elasticsearch, &ess); diags.HasError() {
+	var es *ElasticsearchTF
+
+	var diags diag.Diagnostics
+
+	if diags = getFirst(ctx, plan.Elasticsearch, &es); diags.HasError() {
 		return diags
 	}
 
-	if len(ess.RemoteCluster.Elems) == 0 {
+	if es == nil {
 		return nil
 	}
 
-	remoteRes, diags := elasticsearchRemoteClustersPayload(ctx, ess.RemoteCluster)
+	if len(es.RemoteCluster.Elems) == 0 {
+		return nil
+	}
+
+	remoteRes, diags := elasticsearchRemoteClustersPayload(ctx, es.RemoteCluster)
 	if diags.HasError() {
 		return diags
 	}
@@ -191,7 +193,7 @@ func handleRemoteClusters(ctx context.Context, client *api.API, plan, state Depl
 	if err := esremoteclustersapi.Update(esremoteclustersapi.UpdateParams{
 		API:             client,
 		DeploymentID:    plan.Id.Value,
-		RefID:           ess.RefId.Value,
+		RefID:           es.RefId.Value,
 		RemoteResources: remoteRes,
 	}); err != nil {
 		diags.AddError("cannot update remote clusters", err.Error())

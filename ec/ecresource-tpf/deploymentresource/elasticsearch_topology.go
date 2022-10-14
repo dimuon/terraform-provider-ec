@@ -45,7 +45,7 @@ type ElasticsearchTopologyTF struct {
 	NodeTypeMl              types.String `tfsdk:"node_type_ml"`
 	NodeRoles               types.Set    `tfsdk:"node_roles"`
 	Autoscaling             types.List   `tfsdk:"autoscaling"`
-	Config                  types.Object `tfsdk:"config"`
+	Config                  types.List   `tfsdk:"config"`
 }
 
 type ElasticsearchTopologiesTF types.List
@@ -62,7 +62,7 @@ type ElasticsearchTopology struct {
 	NodeTypeMl              *string                           `tfsdk:"node_type_ml"`
 	NodeRoles               []string                          `tfsdk:"node_roles"`
 	Autoscaling             ElasticsearchTopologyAutoscalings `tfsdk:"autoscaling"`
-	Config                  *ElasticsearchTopologyConfig      `tfsdk:"config"`
+	Config                  ElasticsearchTopologyConfigs      `tfsdk:"config"`
 }
 
 type ElasticsearchTopologies []ElasticsearchTopology
@@ -145,17 +145,9 @@ func elasticsearchTopologiesPayload(ctx context.Context, tops types.List, planTo
 
 		diags.Append(elasticsearchTopologyAutoscalingPayload(ctx, topology.Autoscaling, topologyID, topologyElem)...)
 
-		if !topology.Config.IsNull() && !topology.Config.IsUnknown() {
-			var config ElasticsearchTopologyConfigTF
+		topologyElem.Elasticsearch, ds = elasticsearchTopologyConfigPayload(ctx, topology.Config, topologyElem.Elasticsearch)
 
-			ds = tfsdk.ValueAs(ctx, topology.Config, &config)
-			diags = append(diags, ds...)
-
-			if !ds.HasError() {
-				topologyElem.Elasticsearch, ds = config.Payload(ctx, topologyElem.Elasticsearch)
-				diags = append(diags, ds...)
-			}
-		}
+		diags = append(diags, ds...)
 	}
 
 	return payload, diags

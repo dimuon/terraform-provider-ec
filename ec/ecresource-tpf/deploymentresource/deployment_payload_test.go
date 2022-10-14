@@ -54,7 +54,7 @@ func fileAsResponseBody(t *testing.T, name string) io.ReadCloser {
 
 func Test_createRequest(t *testing.T) {
 
-	sampleKibana := &Kibana{
+	sampleKibana := Kibana{
 		ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
 		RefId:                     ec.String("main-kibana"),
 		ResourceId:                ec.String(mock.ValidClusterID),
@@ -68,13 +68,15 @@ func Test_createRequest(t *testing.T) {
 		},
 	}
 
-	sampleApm := &Apm{
+	sampleApm := Apm{
 		ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
 		RefId:                     ec.String("main-apm"),
 		ResourceId:                ec.String(mock.ValidClusterID),
 		Region:                    ec.String("us-east-1"),
-		Config: &ApmConfig{
-			DebugEnabled: ec.Bool(false),
+		Config: ApmConfigs{
+			{
+				DebugEnabled: ec.Bool(false),
+			},
 		},
 		Topology: Topologies{
 			{
@@ -85,7 +87,7 @@ func Test_createRequest(t *testing.T) {
 		},
 	}
 
-	sampleEnterpriseSearch := &EnterpriseSearch{
+	sampleEnterpriseSearch := EnterpriseSearch{
 		ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
 		RefId:                     ec.String("main-enterprise_search"),
 		ResourceId:                ec.String(mock.ValidClusterID),
@@ -102,7 +104,7 @@ func Test_createRequest(t *testing.T) {
 		},
 	}
 
-	sampleObservability := &Observability{
+	sampleObservability := Observability{
 		DeploymentId: ec.String(mock.ValidClusterID),
 		RefId:        ec.String("main-elasticsearch"),
 		Logs:         true,
@@ -115,57 +117,63 @@ func Test_createRequest(t *testing.T) {
 		DeploymentTemplateId: "aws-hot-warm-v2",
 		Region:               "us-east-1",
 		Version:              "7.11.1",
-		Elasticsearch: &Elasticsearch{
-			RefId:      ec.String("main-elasticsearch"),
-			ResourceId: ec.String(mock.ValidClusterID),
-			Region:     ec.String("us-east-1"),
-			Config: &ElasticsearchConfig{
+		Elasticsearch: Elasticsearches{
+			{
+				RefId:      ec.String("main-elasticsearch"),
+				ResourceId: ec.String(mock.ValidClusterID),
+				Region:     ec.String("us-east-1"),
+				Config: ElasticsearchConfigs{
+					{
+						UserSettingsYaml:         ec.String("some.setting: value"),
+						UserSettingsOverrideYaml: ec.String("some.setting: value2"),
+						UserSettingsJson:         ec.String("{\"some.setting\":\"value\"}"),
+						UserSettingsOverrideJson: ec.String("{\"some.setting\":\"value2\"}"),
+					},
+				},
+				Topology: ElasticsearchTopologies{
+					{
+						Id:   "hot_content",
+						Size: ec.String("2g"),
+						NodeRoles: []string{
+							"master",
+							"ingest",
+							"remote_cluster_client",
+							"data_hot",
+							"transform",
+							"data_content",
+						},
+						ZoneCount: 1,
+					},
+					{
+						Id:   "warm",
+						Size: ec.String("2g"),
+						NodeRoles: []string{
+							"data_warm",
+							"remote_cluster_client",
+						},
+						ZoneCount: 1,
+					},
+				},
+			},
+		},
+		Kibana:           Kibanas{sampleKibana},
+		Apm:              Apms{sampleApm},
+		EnterpriseSearch: EnterpriseSearches{sampleEnterpriseSearch},
+		Observability:    Observabilities{sampleObservability},
+		TrafficFilter:    []string{"0.0.0.0/0", "192.168.10.0/24"},
+	}
+
+	sampleElasticsearch := Elasticsearch{
+		RefId:      ec.String("main-elasticsearch"),
+		ResourceId: ec.String(mock.ValidClusterID),
+		Region:     ec.String("us-east-1"),
+		Config: ElasticsearchConfigs{
+			{
 				UserSettingsYaml:         ec.String("some.setting: value"),
 				UserSettingsOverrideYaml: ec.String("some.setting: value2"),
 				UserSettingsJson:         ec.String("{\"some.setting\":\"value\"}"),
 				UserSettingsOverrideJson: ec.String("{\"some.setting\":\"value2\"}"),
 			},
-			Topology: ElasticsearchTopologies{
-				{
-					Id:   "hot_content",
-					Size: ec.String("2g"),
-					NodeRoles: []string{
-						"master",
-						"ingest",
-						"remote_cluster_client",
-						"data_hot",
-						"transform",
-						"data_content",
-					},
-					ZoneCount: 1,
-				},
-				{
-					Id:   "warm",
-					Size: ec.String("2g"),
-					NodeRoles: []string{
-						"data_warm",
-						"remote_cluster_client",
-					},
-					ZoneCount: 1,
-				},
-			},
-		},
-		Kibana:           sampleKibana,
-		Apm:              sampleApm,
-		EnterpriseSearch: sampleEnterpriseSearch,
-		Observability:    sampleObservability,
-		TrafficFilter:    []string{"0.0.0.0/0", "192.168.10.0/24"},
-	}
-
-	sampleElasticsearch := &Elasticsearch{
-		RefId:      ec.String("main-elasticsearch"),
-		ResourceId: ec.String(mock.ValidClusterID),
-		Region:     ec.String("us-east-1"),
-		Config: &ElasticsearchConfig{
-			UserSettingsYaml:         ec.String("some.setting: value"),
-			UserSettingsOverrideYaml: ec.String("some.setting: value2"),
-			UserSettingsJson:         ec.String("{\"some.setting\":\"value\"}"),
-			UserSettingsOverrideJson: ec.String("{\"some.setting\":\"value2\"}"),
 		},
 		Topology: ElasticsearchTopologies{
 			{
@@ -187,11 +195,11 @@ func Test_createRequest(t *testing.T) {
 		DeploymentTemplateId: "aws-io-optimized-v2",
 		Region:               "us-east-1",
 		Version:              "7.7.0",
-		Elasticsearch:        sampleElasticsearch,
-		Kibana:               sampleKibana,
-		Apm:                  sampleApm,
-		EnterpriseSearch:     sampleEnterpriseSearch,
-		Observability:        sampleObservability,
+		Elasticsearch:        Elasticsearches{sampleElasticsearch},
+		Kibana:               Kibanas{sampleKibana},
+		Apm:                  Apms{sampleApm},
+		EnterpriseSearch:     EnterpriseSearches{sampleEnterpriseSearch},
+		Observability:        Observabilities{sampleObservability},
 		TrafficFilter:        []string{"0.0.0.0/0", "192.168.10.0/24"},
 	}
 
@@ -595,10 +603,10 @@ func Test_createRequest(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.7.0",
-					Elasticsearch:        &Elasticsearch{},
-					Kibana:               &Kibana{},
-					Apm:                  &Apm{},
-					EnterpriseSearch:     &EnterpriseSearch{},
+					Elasticsearch:        Elasticsearches{Elasticsearch{}},
+					Kibana:               Kibanas{Kibana{}},
+					Apm:                  Apms{Apm{}},
+					EnterpriseSearch:     EnterpriseSearches{EnterpriseSearch{}},
 					TrafficFilter:        []string{"0.0.0.0/0", "192.168.10.0/24"},
 				},
 				client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
@@ -733,10 +741,10 @@ func Test_createRequest(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.11.0",
-					Elasticsearch:        &Elasticsearch{},
-					Kibana:               &Kibana{},
-					Apm:                  &Apm{},
-					EnterpriseSearch:     &EnterpriseSearch{},
+					Elasticsearch:        Elasticsearches{Elasticsearch{}},
+					Kibana:               Kibanas{Kibana{}},
+					Apm:                  Apms{Apm{}},
+					EnterpriseSearch:     EnterpriseSearches{EnterpriseSearch{}},
 					TrafficFilter:        []string{"0.0.0.0/0", "192.168.10.0/24"},
 				},
 				client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
@@ -876,39 +884,47 @@ func Test_createRequest(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.7.0",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id:   "hot_content",
-								Size: ec.String("4g"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id:   "hot_content",
+									Size: ec.String("4g"),
+								},
 							},
 						},
 					},
-					Kibana: &Kibana{
-						RefId:                     ec.String("main-kibana"),
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						Topology: Topologies{
-							{
-								Size: ec.String("2g"),
+					Kibana: Kibanas{
+						{
+							RefId:                     ec.String("main-kibana"),
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							Topology: Topologies{
+								{
+									Size: ec.String("2g"),
+								},
 							},
 						},
 					},
-					Apm: &Apm{
-						RefId:                     ec.String("main-apm"),
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						Topology: Topologies{
-							{
-								Size: ec.String("1g"),
+					Apm: Apms{
+						{
+							RefId:                     ec.String("main-apm"),
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							Topology: Topologies{
+								{
+									Size: ec.String("1g"),
+								},
 							},
 						},
 					},
-					EnterpriseSearch: &EnterpriseSearch{
-						RefId:                     ec.String("main-enterprise_search"),
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						Topology: EnterpriseSearchTopologies{
-							{
-								Size: ec.String("4g"),
+					EnterpriseSearch: EnterpriseSearches{
+						{
+							RefId:                     ec.String("main-enterprise_search"),
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							Topology: EnterpriseSearchTopologies{
+								{
+									Size: ec.String("4g"),
+								},
 							},
 						},
 					},
@@ -1047,38 +1063,46 @@ func Test_createRequest(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.7.0",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id: "hot_content",
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id: "hot_content",
+								},
 							},
 						},
 					},
-					Kibana: &Kibana{
-						RefId:                     ec.String("main-kibana"),
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						Topology: Topologies{
-							{
-								InstanceConfigurationId: ec.String("aws.kibana.r5d"),
+					Kibana: Kibanas{
+						{
+							RefId:                     ec.String("main-kibana"),
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							Topology: Topologies{
+								{
+									InstanceConfigurationId: ec.String("aws.kibana.r5d"),
+								},
 							},
 						},
 					},
-					Apm: &Apm{
-						RefId:                     ec.String("main-apm"),
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						Topology: Topologies{
-							{
-								InstanceConfigurationId: ec.String("aws.apm.r5d"),
+					Apm: Apms{
+						{
+							RefId:                     ec.String("main-apm"),
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							Topology: Topologies{
+								{
+									InstanceConfigurationId: ec.String("aws.apm.r5d"),
+								},
 							},
 						},
 					},
-					EnterpriseSearch: &EnterpriseSearch{
-						RefId:                     ec.String("main-enterprise_search"),
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						Topology: EnterpriseSearchTopologies{
-							{
-								InstanceConfigurationId: ec.String("aws.enterprisesearch.m5d"),
+					EnterpriseSearch: EnterpriseSearches{
+						{
+							RefId:                     ec.String("main-enterprise_search"),
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							Topology: EnterpriseSearchTopologies{
+								{
+									InstanceConfigurationId: ec.String("aws.enterprisesearch.m5d"),
+								},
 							},
 						},
 					},
@@ -1216,8 +1240,8 @@ func Test_createRequest(t *testing.T) {
 					DeploymentTemplateId: "aws-hot-warm-v2",
 					Region:               "us-east-1",
 					Version:              "7.9.2",
-					Elasticsearch:        &Elasticsearch{},
-					Kibana:               &Kibana{},
+					Elasticsearch:        Elasticsearches{{}},
+					Kibana:               Kibanas{{}},
 				},
 				client: api.NewMock(mock.New200Response(hotWarmTpl())),
 			},
@@ -1336,8 +1360,8 @@ func Test_createRequest(t *testing.T) {
 					DeploymentTemplateId: "aws-hot-warm-v2",
 					Region:               "us-east-1",
 					Version:              "7.12.0",
-					Elasticsearch:        &Elasticsearch{},
-					Kibana:               &Kibana{},
+					Elasticsearch:        Elasticsearches{{}},
+					Kibana:               Kibanas{{}},
 				},
 				client: api.NewMock(mock.New200Response(hotWarmTpl())),
 			},
@@ -1458,32 +1482,34 @@ func Test_createRequest(t *testing.T) {
 					DeploymentTemplateId: "aws-hot-warm-v2",
 					Region:               "us-east-1",
 					Version:              "7.12.0",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						Extension: ElasticsearchExtensions{
-							{
-								Name:    "my-plugin",
-								Type:    "plugin",
-								Url:     "repo://12311234",
-								Version: "7.7.0",
-							},
-							{
-								Name:    "my-second-plugin",
-								Type:    "plugin",
-								Url:     "repo://12311235",
-								Version: "7.7.0",
-							},
-							{
-								Name:    "my-bundle",
-								Type:    "bundle",
-								Url:     "repo://1231122",
-								Version: "7.7.0",
-							},
-							{
-								Name:    "my-second-bundle",
-								Type:    "bundle",
-								Url:     "repo://1231123",
-								Version: "7.7.0",
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							Extension: ElasticsearchExtensions{
+								{
+									Name:    "my-plugin",
+									Type:    "plugin",
+									Url:     "repo://12311234",
+									Version: "7.7.0",
+								},
+								{
+									Name:    "my-second-plugin",
+									Type:    "plugin",
+									Url:     "repo://12311235",
+									Version: "7.7.0",
+								},
+								{
+									Name:    "my-bundle",
+									Type:    "bundle",
+									Url:     "repo://1231122",
+									Version: "7.7.0",
+								},
+								{
+									Name:    "my-second-bundle",
+									Type:    "bundle",
+									Url:     "repo://1231123",
+									Version: "7.7.0",
+								},
 							},
 						},
 					},
@@ -1609,21 +1635,23 @@ func Test_createRequest(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.12.0",
-					Elasticsearch: &Elasticsearch{
-						RefId:     ec.String("main-elasticsearch"),
-						Autoscale: ec.String("true"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id:   "cold",
-								Size: ec.String("2g"),
-							},
-							{
-								Id:   "hot_content",
-								Size: ec.String("8g"),
-							},
-							{
-								Id:   "warm",
-								Size: ec.String("4g"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId:     ec.String("main-elasticsearch"),
+							Autoscale: ec.String("true"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id:   "cold",
+									Size: ec.String("2g"),
+								},
+								{
+									Id:   "hot_content",
+									Size: ec.String("8g"),
+								},
+								{
+									Id:   "warm",
+									Size: ec.String("4g"),
+								},
 							},
 						},
 					},
@@ -1753,29 +1781,31 @@ func Test_createRequest(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.12.0",
-					Elasticsearch: &Elasticsearch{
-						RefId:     ec.String("main-elasticsearch"),
-						Autoscale: ec.String("true"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id:   "cold",
-								Size: ec.String("2g"),
-							},
-							{
-								Id:   "hot_content",
-								Size: ec.String("8g"),
-								Autoscaling: ElasticsearchTopologyAutoscalings{
-									{
-										MaxSize: ec.String("232g"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId:     ec.String("main-elasticsearch"),
+							Autoscale: ec.String("true"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id:   "cold",
+									Size: ec.String("2g"),
+								},
+								{
+									Id:   "hot_content",
+									Size: ec.String("8g"),
+									Autoscaling: ElasticsearchTopologyAutoscalings{
+										{
+											MaxSize: ec.String("232g"),
+										},
 									},
 								},
-							},
-							{
-								Id:   "warm",
-								Size: ec.String("4g"),
-								Autoscaling: ElasticsearchTopologyAutoscalings{
-									{
-										MaxSize: ec.String("116g"),
+								{
+									Id:   "warm",
+									Size: ec.String("4g"),
+									Autoscaling: ElasticsearchTopologyAutoscalings{
+										{
+											MaxSize: ec.String("116g"),
+										},
 									},
 								},
 							},
@@ -1907,25 +1937,27 @@ func Test_createRequest(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.12.0",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id:   "cold",
-								Size: ec.String("2g"),
-							},
-							{
-								Id:   "hot_content",
-								Size: ec.String("8g"),
-							},
-							{
-								Id:        "master",
-								Size:      ec.String("1g"),
-								ZoneCount: 3,
-							},
-							{
-								Id:   "warm",
-								Size: ec.String("4g"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id:   "cold",
+									Size: ec.String("2g"),
+								},
+								{
+									Id:   "hot_content",
+									Size: ec.String("8g"),
+								},
+								{
+									Id:        "master",
+									Size:      ec.String("1g"),
+									ZoneCount: 3,
+								},
+								{
+									Id:   "warm",
+									Size: ec.String("4g"),
+								},
 							},
 						},
 					},
@@ -2074,25 +2106,27 @@ func Test_createRequest(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.12.0",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id:   "cold",
-								Size: ec.String("2g"),
-							},
-							{
-								Id:        "coordinating",
-								Size:      ec.String("2g"),
-								ZoneCount: 2,
-							},
-							{
-								Id:   "hot_content",
-								Size: ec.String("8g"),
-							},
-							{
-								Id:   "warm",
-								Size: ec.String("4g"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id:   "cold",
+									Size: ec.String("2g"),
+								},
+								{
+									Id:        "coordinating",
+									Size:      ec.String("2g"),
+									ZoneCount: 2,
+								},
+								{
+									Id:   "hot_content",
+									Size: ec.String("8g"),
+								},
+								{
+									Id:   "warm",
+									Size: ec.String("4g"),
+								},
 							},
 						},
 					},
@@ -2241,30 +2275,32 @@ func Test_createRequest(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.12.0",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id:   "cold",
-								Size: ec.String("2g"),
-							},
-							{
-								Id:        "coordinating",
-								Size:      ec.String("2g"),
-								ZoneCount: 2,
-							},
-							{
-								Id:   "hot_content",
-								Size: ec.String("8g"),
-							},
-							{
-								Id:        "master",
-								Size:      ec.String("1g"),
-								ZoneCount: 3,
-							},
-							{
-								Id:   "warm",
-								Size: ec.String("4g"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id:   "cold",
+									Size: ec.String("2g"),
+								},
+								{
+									Id:        "coordinating",
+									Size:      ec.String("2g"),
+									ZoneCount: 2,
+								},
+								{
+									Id:   "hot_content",
+									Size: ec.String("8g"),
+								},
+								{
+									Id:        "master",
+									Size:      ec.String("1g"),
+									ZoneCount: 3,
+								},
+								{
+									Id:   "warm",
+									Size: ec.String("4g"),
+								},
 							},
 						},
 					},
@@ -2432,44 +2468,60 @@ func Test_createRequest(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.14.1",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						Config: &ElasticsearchConfig{
-							DockerImage: ec.String("docker.elastic.com/elasticsearch/container:7.14.1-hash"),
-						},
-						Autoscale: ec.String("false"),
-						TrustAccount: ElasticsearchTrustAccounts{
-							{
-								AccountId: ec.String("ANID"),
-								TrustAll:  ec.Bool(true),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							Config: ElasticsearchConfigs{
+								{
+									DockerImage: ec.String("docker.elastic.com/elasticsearch/container:7.14.1-hash"),
+								},
+							},
+							Autoscale: ec.String("false"),
+							TrustAccount: ElasticsearchTrustAccounts{
+								{
+									AccountId: ec.String("ANID"),
+									TrustAll:  ec.Bool(true),
+								},
+							},
+							Topology: ElasticsearchTopologies{
+								{
+									Id:   "hot_content",
+									Size: ec.String("8g"),
+								},
 							},
 						},
-						Topology: ElasticsearchTopologies{
-							{
-								Id:   "hot_content",
-								Size: ec.String("8g"),
+					},
+					Kibana: Kibanas{
+						{
+							RefId:                     ec.String("main-kibana"),
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							Config: KibanaConfigs{
+								{
+									DockerImage: ec.String("docker.elastic.com/kibana/container:7.14.1-hash"),
+								},
 							},
 						},
 					},
-					Kibana: &Kibana{
-						RefId:                     ec.String("main-kibana"),
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						Config: &KibanaConfig{
-							DockerImage: ec.String("docker.elastic.com/kibana/container:7.14.1-hash"),
+					Apm: Apms{
+						{
+							RefId:                     ec.String("main-apm"),
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							Config: ApmConfigs{
+								{
+									DockerImage: ec.String("docker.elastic.com/apm/container:7.14.1-hash"),
+								},
+							},
 						},
 					},
-					Apm: &Apm{
-						RefId:                     ec.String("main-apm"),
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						Config: &ApmConfig{
-							DockerImage: ec.String("docker.elastic.com/apm/container:7.14.1-hash"),
-						},
-					},
-					EnterpriseSearch: &EnterpriseSearch{
-						RefId:                     ec.String("main-enterprise_search"),
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						Config: &EnterpriseSearchConfig{
-							DockerImage: ec.String("docker.elastic.com/enterprise_search/container:7.14.1-hash"),
+					EnterpriseSearch: EnterpriseSearches{
+						{
+							RefId:                     ec.String("main-enterprise_search"),
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							Config: EnterpriseSearchConfigs{
+								{
+									DockerImage: ec.String("docker.elastic.com/enterprise_search/container:7.14.1-hash"),
+								},
+							},
 						},
 					},
 				},
@@ -2613,51 +2665,53 @@ func Test_createRequest(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.12.0",
-					Elasticsearch: &Elasticsearch{
-						RefId:     ec.String("main-elasticsearch"),
-						Autoscale: ec.String("false"),
-						TrustAccount: ElasticsearchTrustAccounts{
-							{
-								AccountId: ec.String("ANID"),
-								TrustAll:  ec.Bool(true),
-							},
-							{
-								AccountId:      ec.String("anotherID"),
-								TrustAll:       ec.Bool(false),
-								TrustAllowlist: []string{"abc", "hij", "dfg"},
-							},
-						},
-						TrustExternal: ElasticsearchTrustExternals{
-							{
-								RelationshipId: ec.String("external_id"),
-								TrustAll:       ec.Bool(true),
-							},
-							{
-								RelationshipId: ec.String("another_external_id"),
-								TrustAll:       ec.Bool(false),
-								TrustAllowlist: []string{"abc", "dfg"},
-							},
-						},
-						Topology: ElasticsearchTopologies{
-							{
-								Id:   "cold",
-								Size: ec.String("2g"),
-							},
-							{
-								Id:   "hot_content",
-								Size: ec.String("8g"),
-								Autoscaling: ElasticsearchTopologyAutoscalings{
-									{
-										MaxSize: ec.String("232g"),
-									},
+					Elasticsearch: Elasticsearches{
+						{
+							RefId:     ec.String("main-elasticsearch"),
+							Autoscale: ec.String("false"),
+							TrustAccount: ElasticsearchTrustAccounts{
+								{
+									AccountId: ec.String("ANID"),
+									TrustAll:  ec.Bool(true),
+								},
+								{
+									AccountId:      ec.String("anotherID"),
+									TrustAll:       ec.Bool(false),
+									TrustAllowlist: []string{"abc", "hij", "dfg"},
 								},
 							},
-							{
-								Id:   "warm",
-								Size: ec.String("4g"),
-								Autoscaling: ElasticsearchTopologyAutoscalings{
-									{
-										MaxSize: ec.String("116g"),
+							TrustExternal: ElasticsearchTrustExternals{
+								{
+									RelationshipId: ec.String("external_id"),
+									TrustAll:       ec.Bool(true),
+								},
+								{
+									RelationshipId: ec.String("another_external_id"),
+									TrustAll:       ec.Bool(false),
+									TrustAllowlist: []string{"abc", "dfg"},
+								},
+							},
+							Topology: ElasticsearchTopologies{
+								{
+									Id:   "cold",
+									Size: ec.String("2g"),
+								},
+								{
+									Id:   "hot_content",
+									Size: ec.String("8g"),
+									Autoscaling: ElasticsearchTopologyAutoscalings{
+										{
+											MaxSize: ec.String("232g"),
+										},
+									},
+								},
+								{
+									Id:   "warm",
+									Size: ec.String("4g"),
+									Autoscaling: ElasticsearchTopologyAutoscalings{
+										{
+											MaxSize: ec.String("116g"),
+										},
 									},
 								},
 							},
@@ -2817,12 +2871,16 @@ func Test_createRequest(t *testing.T) {
 					DeploymentTemplateId: "aws-cross-cluster-search-v2",
 					Region:               "us-east-1",
 					Version:              "7.9.2",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+						},
 					},
-					Kibana: &Kibana{
-						RefId:                     ec.String("main-kibana"),
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+					Kibana: Kibanas{
+						{
+							RefId:                     ec.String("main-kibana"),
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+						},
 					},
 				},
 				client: api.NewMock(mock.New200Response(ccsTpl())),
@@ -2901,12 +2959,14 @@ func Test_createRequest(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.10.1",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id:   "hot_content",
-								Size: ec.String("8g"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id:   "hot_content",
+									Size: ec.String("8g"),
+								},
 							},
 						},
 					},
@@ -2985,15 +3045,19 @@ func Test_createRequest(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.10.1",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						SnapshotSource: &ElasticsearchSnapshotSource{
-							SourceElasticsearchClusterId: "8c63b87af9e24ea49b8a4bfe550e5fe9",
-						},
-						Topology: ElasticsearchTopologies{
-							{
-								Id:   "hot_content",
-								Size: ec.String("8g"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							SnapshotSource: ElasticsearchSnapshotSources{
+								{
+									SourceElasticsearchClusterId: "8c63b87af9e24ea49b8a4bfe550e5fe9",
+								},
+							},
+							Topology: ElasticsearchTopologies{
+								{
+									Id:   "hot_content",
+									Size: ec.String("8g"),
+								},
 							},
 						},
 					},
@@ -3074,10 +3138,10 @@ func Test_createRequest(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.10.1",
-					Elasticsearch:        &Elasticsearch{},
-					Kibana:               &Kibana{},
-					Apm:                  &Apm{},
-					EnterpriseSearch:     &EnterpriseSearch{},
+					Elasticsearch:        Elasticsearches{{}},
+					Kibana:               Kibanas{{}},
+					Apm:                  Apms{{}},
+					EnterpriseSearch:     EnterpriseSearches{{}},
 				},
 				client: api.NewMock(mock.New200Response(emptyTpl())),
 			},
@@ -3150,79 +3214,93 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.7.0",
-					Elasticsearch: &Elasticsearch{
-						RefId:      ec.String("main-elasticsearch"),
-						ResourceId: ec.String(mock.ValidClusterID),
-						Region:     ec.String("us-east-1"),
-						Config: &ElasticsearchConfig{
-							UserSettingsYaml:         ec.String("some.setting: value"),
-							UserSettingsOverrideYaml: ec.String("some.setting: value2"),
-							UserSettingsJson:         ec.String("{\"some.setting\":\"value\"}"),
-							UserSettingsOverrideJson: ec.String("{\"some.setting\":\"value2\"}"),
-						},
-						Topology: ElasticsearchTopologies{
-							{
-								Id:                      "hot_content",
-								InstanceConfigurationId: ec.String("aws.data.highio.i3"),
-								Size:                    ec.String("2g"),
-								NodeTypeData:            ec.String("true"),
-								NodeTypeIngest:          ec.String("true"),
-								NodeTypeMaster:          ec.String("true"),
-								NodeTypeMl:              ec.String("false"),
-								ZoneCount:               1,
+					Elasticsearch: Elasticsearches{
+						{
+							RefId:      ec.String("main-elasticsearch"),
+							ResourceId: ec.String(mock.ValidClusterID),
+							Region:     ec.String("us-east-1"),
+							Config: ElasticsearchConfigs{
+								{
+									UserSettingsYaml:         ec.String("some.setting: value"),
+									UserSettingsOverrideYaml: ec.String("some.setting: value2"),
+									UserSettingsJson:         ec.String("{\"some.setting\":\"value\"}"),
+									UserSettingsOverrideJson: ec.String("{\"some.setting\":\"value2\"}"),
+								},
+							},
+							Topology: ElasticsearchTopologies{
+								{
+									Id:                      "hot_content",
+									InstanceConfigurationId: ec.String("aws.data.highio.i3"),
+									Size:                    ec.String("2g"),
+									NodeTypeData:            ec.String("true"),
+									NodeTypeIngest:          ec.String("true"),
+									NodeTypeMaster:          ec.String("true"),
+									NodeTypeMl:              ec.String("false"),
+									ZoneCount:               1,
+								},
 							},
 						},
 					},
-					Kibana: &Kibana{
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						RefId:                     ec.String("main-kibana"),
-						ResourceId:                ec.String(mock.ValidClusterID),
-						Region:                    ec.String("us-east-1"),
-						Topology: Topologies{
-							{
-								InstanceConfigurationId: ec.String("aws.kibana.r5d"),
-								Size:                    ec.String("1g"),
-								ZoneCount:               1,
+					Kibana: Kibanas{
+						{
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							RefId:                     ec.String("main-kibana"),
+							ResourceId:                ec.String(mock.ValidClusterID),
+							Region:                    ec.String("us-east-1"),
+							Topology: Topologies{
+								{
+									InstanceConfigurationId: ec.String("aws.kibana.r5d"),
+									Size:                    ec.String("1g"),
+									ZoneCount:               1,
+								},
 							},
 						},
 					},
-					Apm: &Apm{
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						RefId:                     ec.String("main-apm"),
-						ResourceId:                ec.String(mock.ValidClusterID),
-						Region:                    ec.String("us-east-1"),
-						Config: &ApmConfig{
-							DebugEnabled: ec.Bool(false),
-						},
-						Topology: Topologies{
-							{
-								InstanceConfigurationId: ec.String("aws.apm.r5d"),
-								Size:                    ec.String("0.5g"),
-								ZoneCount:               1,
+					Apm: Apms{
+						{
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							RefId:                     ec.String("main-apm"),
+							ResourceId:                ec.String(mock.ValidClusterID),
+							Region:                    ec.String("us-east-1"),
+							Config: ApmConfigs{
+								{
+									DebugEnabled: ec.Bool(false),
+								},
+							},
+							Topology: Topologies{
+								{
+									InstanceConfigurationId: ec.String("aws.apm.r5d"),
+									Size:                    ec.String("0.5g"),
+									ZoneCount:               1,
+								},
 							},
 						},
 					},
-					EnterpriseSearch: &EnterpriseSearch{
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						RefId:                     ec.String("main-enterprise_search"),
-						ResourceId:                ec.String(mock.ValidClusterID),
-						Region:                    ec.String("us-east-1"),
-						Topology: EnterpriseSearchTopologies{
-							{
-								InstanceConfigurationId: ec.String("aws.enterprisesearch.m5d"),
-								Size:                    ec.String("2g"),
-								ZoneCount:               1,
-								NodeTypeAppserver:       ec.Bool(true),
-								NodeTypeConnector:       ec.Bool(true),
-								NodeTypeWorker:          ec.Bool(true),
+					EnterpriseSearch: EnterpriseSearches{
+						{
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							RefId:                     ec.String("main-enterprise_search"),
+							ResourceId:                ec.String(mock.ValidClusterID),
+							Region:                    ec.String("us-east-1"),
+							Topology: EnterpriseSearchTopologies{
+								{
+									InstanceConfigurationId: ec.String("aws.enterprisesearch.m5d"),
+									Size:                    ec.String("2g"),
+									ZoneCount:               1,
+									NodeTypeAppserver:       ec.Bool(true),
+									NodeTypeConnector:       ec.Bool(true),
+									NodeTypeWorker:          ec.Bool(true),
+								},
 							},
 						},
 					},
-					Observability: &Observability{
-						DeploymentId: ec.String(mock.ValidClusterID),
-						RefId:        ec.String("main-elasticsearch"),
-						Logs:         true,
-						Metrics:      true,
+					Observability: Observabilities{
+						{
+							DeploymentId: ec.String(mock.ValidClusterID),
+							RefId:        ec.String("main-elasticsearch"),
+							Logs:         true,
+							Metrics:      true,
+						},
 					},
 					TrafficFilter: []string{"0.0.0.0/0", "192.168.10.0/24"},
 				},
@@ -3398,10 +3476,10 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.7.0",
-					Elasticsearch:        &Elasticsearch{},
-					Kibana:               &Kibana{},
-					Apm:                  &Apm{},
-					EnterpriseSearch:     &EnterpriseSearch{},
+					Elasticsearch:        Elasticsearches{{}},
+					Kibana:               Kibanas{{}},
+					Apm:                  Apms{{}},
+					EnterpriseSearch:     EnterpriseSearches{{}},
 					TrafficFilter:        []string{"0.0.0.0/0", "192.168.10.0/24"},
 				},
 				client: api.NewMock(mock.New200Response(ioOptimizedTpl())),
@@ -3534,39 +3612,47 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.7.0",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id:   "hot_content",
-								Size: ec.String("4g"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id:   "hot_content",
+									Size: ec.String("4g"),
+								},
 							},
 						},
 					},
-					Kibana: &Kibana{
-						RefId:                     ec.String("main-kibana"),
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						Topology: Topologies{
-							{
-								Size: ec.String("2g"),
+					Kibana: Kibanas{
+						{
+							RefId:                     ec.String("main-kibana"),
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							Topology: Topologies{
+								{
+									Size: ec.String("2g"),
+								},
 							},
 						},
 					},
-					Apm: &Apm{
-						RefId:                     ec.String("main-apm"),
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						Topology: Topologies{
-							{
-								Size: ec.String("1g"),
+					Apm: Apms{
+						{
+							RefId:                     ec.String("main-apm"),
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							Topology: Topologies{
+								{
+									Size: ec.String("1g"),
+								},
 							},
 						},
 					},
-					EnterpriseSearch: &EnterpriseSearch{
-						RefId:                     ec.String("main-enterprise_search"),
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						Topology: EnterpriseSearchTopologies{
-							{
-								Size: ec.String("4g"),
+					EnterpriseSearch: EnterpriseSearches{
+						{
+							RefId:                     ec.String("main-enterprise_search"),
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							Topology: EnterpriseSearchTopologies{
+								{
+									Size: ec.String("4g"),
+								},
 							},
 						},
 					},
@@ -3701,8 +3787,8 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-hot-warm-v2",
 					Region:               "us-east-1",
 					Version:              "7.9.2",
-					Elasticsearch:        &Elasticsearch{},
-					Kibana:               &Kibana{},
+					Elasticsearch:        Elasticsearches{{}},
+					Kibana:               Kibanas{{}},
 				},
 				client: api.NewMock(mock.New200Response(hotWarmTpl())),
 			},
@@ -3821,12 +3907,16 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-cross-cluster-search-v2",
 					Region:               "us-east-1",
 					Version:              "7.9.2",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+						},
 					},
-					Kibana: &Kibana{
-						RefId:                     ec.String("main-kibana"),
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+					Kibana: Kibanas{
+						{
+							RefId:                     ec.String("main-kibana"),
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+						},
 					},
 				},
 				state: &Deployment{
@@ -3836,79 +3926,93 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.7.0",
-					Elasticsearch: &Elasticsearch{
-						RefId:      ec.String("main-elasticsearch"),
-						ResourceId: ec.String(mock.ValidClusterID),
-						Region:     ec.String("us-east-1"),
-						Config: &ElasticsearchConfig{
-							UserSettingsYaml:         ec.String("some.setting: value"),
-							UserSettingsOverrideYaml: ec.String("some.setting: value2"),
-							UserSettingsJson:         ec.String("{\"some.setting\":\"value\"}"),
-							UserSettingsOverrideJson: ec.String("{\"some.setting\":\"value2\"}"),
-						},
-						Topology: ElasticsearchTopologies{
-							{
-								Id:                      "hot_content",
-								InstanceConfigurationId: ec.String("aws.data.highio.i3"),
-								Size:                    ec.String("2g"),
-								NodeTypeData:            ec.String("true"),
-								NodeTypeIngest:          ec.String("true"),
-								NodeTypeMaster:          ec.String("true"),
-								NodeTypeMl:              ec.String("false"),
-								ZoneCount:               1,
+					Elasticsearch: Elasticsearches{
+						{
+							RefId:      ec.String("main-elasticsearch"),
+							ResourceId: ec.String(mock.ValidClusterID),
+							Region:     ec.String("us-east-1"),
+							Config: ElasticsearchConfigs{
+								{
+									UserSettingsYaml:         ec.String("some.setting: value"),
+									UserSettingsOverrideYaml: ec.String("some.setting: value2"),
+									UserSettingsJson:         ec.String("{\"some.setting\":\"value\"}"),
+									UserSettingsOverrideJson: ec.String("{\"some.setting\":\"value2\"}"),
+								},
+							},
+							Topology: ElasticsearchTopologies{
+								{
+									Id:                      "hot_content",
+									InstanceConfigurationId: ec.String("aws.data.highio.i3"),
+									Size:                    ec.String("2g"),
+									NodeTypeData:            ec.String("true"),
+									NodeTypeIngest:          ec.String("true"),
+									NodeTypeMaster:          ec.String("true"),
+									NodeTypeMl:              ec.String("false"),
+									ZoneCount:               1,
+								},
 							},
 						},
 					},
-					Kibana: &Kibana{
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						RefId:                     ec.String("main-kibana"),
-						ResourceId:                ec.String(mock.ValidClusterID),
-						Region:                    ec.String("us-east-1"),
-						Topology: Topologies{
-							{
-								InstanceConfigurationId: ec.String("aws.kibana.r5d"),
-								Size:                    ec.String("1g"),
-								ZoneCount:               1,
+					Kibana: Kibanas{
+						{
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							RefId:                     ec.String("main-kibana"),
+							ResourceId:                ec.String(mock.ValidClusterID),
+							Region:                    ec.String("us-east-1"),
+							Topology: Topologies{
+								{
+									InstanceConfigurationId: ec.String("aws.kibana.r5d"),
+									Size:                    ec.String("1g"),
+									ZoneCount:               1,
+								},
 							},
 						},
 					},
-					Apm: &Apm{
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						RefId:                     ec.String("main-apm"),
-						ResourceId:                ec.String(mock.ValidClusterID),
-						Region:                    ec.String("us-east-1"),
-						Config: &ApmConfig{
-							DebugEnabled: ec.Bool(false),
-						},
-						Topology: Topologies{
-							{
-								InstanceConfigurationId: ec.String("aws.apm.r5d"),
-								Size:                    ec.String("0.5g"),
-								ZoneCount:               1,
+					Apm: Apms{
+						{
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							RefId:                     ec.String("main-apm"),
+							ResourceId:                ec.String(mock.ValidClusterID),
+							Region:                    ec.String("us-east-1"),
+							Config: ApmConfigs{
+								{
+									DebugEnabled: ec.Bool(false),
+								},
+							},
+							Topology: Topologies{
+								{
+									InstanceConfigurationId: ec.String("aws.apm.r5d"),
+									Size:                    ec.String("0.5g"),
+									ZoneCount:               1,
+								},
 							},
 						},
 					},
-					EnterpriseSearch: &EnterpriseSearch{
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						RefId:                     ec.String("main-enterprise_search"),
-						ResourceId:                ec.String(mock.ValidClusterID),
-						Region:                    ec.String("us-east-1"),
-						Topology: EnterpriseSearchTopologies{
-							{
-								InstanceConfigurationId: ec.String("aws.enterprisesearch.m5d"),
-								Size:                    ec.String("2g"),
-								ZoneCount:               1,
-								NodeTypeAppserver:       ec.Bool(true),
-								NodeTypeConnector:       ec.Bool(true),
-								NodeTypeWorker:          ec.Bool(true),
+					EnterpriseSearch: EnterpriseSearches{
+						{
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							RefId:                     ec.String("main-enterprise_search"),
+							ResourceId:                ec.String(mock.ValidClusterID),
+							Region:                    ec.String("us-east-1"),
+							Topology: EnterpriseSearchTopologies{
+								{
+									InstanceConfigurationId: ec.String("aws.enterprisesearch.m5d"),
+									Size:                    ec.String("2g"),
+									ZoneCount:               1,
+									NodeTypeAppserver:       ec.Bool(true),
+									NodeTypeConnector:       ec.Bool(true),
+									NodeTypeWorker:          ec.Bool(true),
+								},
 							},
 						},
 					},
-					Observability: &Observability{
-						DeploymentId: ec.String(mock.ValidClusterID),
-						RefId:        ec.String("main-elasticsearch"),
-						Logs:         true,
-						Metrics:      true,
+					Observability: Observabilities{
+						{
+							DeploymentId: ec.String(mock.ValidClusterID),
+							RefId:        ec.String("main-elasticsearch"),
+							Logs:         true,
+							Metrics:      true,
+						},
 					},
 					TrafficFilter: []string{"0.0.0.0/0", "192.168.10.0/24"},
 				},
@@ -3992,12 +4096,16 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-cross-cluster-search-v2",
 					Region:               "us-east-1",
 					Version:              "7.9.2",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+						},
 					},
-					Kibana: &Kibana{
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						RefId:                     ec.String("main-kibana"),
+					Kibana: Kibanas{
+						{
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							RefId:                     ec.String("main-kibana"),
+						},
 					},
 				},
 				state: &Deployment{
@@ -4006,43 +4114,51 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.9.2",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id:   "hot_content",
-								Size: ec.String("16g"),
-							},
-							{
-								Id:   "coordinating",
-								Size: ec.String("16g"),
-							},
-						},
-					},
-					Kibana: &Kibana{
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						RefId:                     ec.String("main-kibana"),
-						Topology: Topologies{
-							{
-								Size: ec.String("2g"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id:   "hot_content",
+									Size: ec.String("16g"),
+								},
+								{
+									Id:   "coordinating",
+									Size: ec.String("16g"),
+								},
 							},
 						},
 					},
-					Apm: &Apm{
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						RefId:                     ec.String("main-apm"),
-						Topology: Topologies{
-							{
-								Size: ec.String("1g"),
+					Kibana: Kibanas{
+						{
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							RefId:                     ec.String("main-kibana"),
+							Topology: Topologies{
+								{
+									Size: ec.String("2g"),
+								},
 							},
 						},
 					},
-					EnterpriseSearch: &EnterpriseSearch{
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						RefId:                     ec.String("main-enterprise_search"),
-						Topology: EnterpriseSearchTopologies{
-							{
-								Size: ec.String("2g"),
+					Apm: Apms{
+						{
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							RefId:                     ec.String("main-apm"),
+							Topology: Topologies{
+								{
+									Size: ec.String("1g"),
+								},
+							},
+						},
+					},
+					EnterpriseSearch: EnterpriseSearches{
+						{
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							RefId:                     ec.String("main-enterprise_search"),
+							Topology: EnterpriseSearchTopologies{
+								{
+									Size: ec.String("2g"),
+								},
 							},
 						},
 					},
@@ -4123,20 +4239,28 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.9.2",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+						},
 					},
-					Kibana: &Kibana{
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						RefId:                     ec.String("main-kibana"),
+					Kibana: Kibanas{
+						{
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							RefId:                     ec.String("main-kibana"),
+						},
 					},
-					Apm: &Apm{
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						RefId:                     ec.String("main-apm"),
+					Apm: Apms{
+						{
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							RefId:                     ec.String("main-apm"),
+						},
 					},
-					EnterpriseSearch: &EnterpriseSearch{
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						RefId:                     ec.String("main-enterprise_search"),
+					EnterpriseSearch: EnterpriseSearches{
+						{
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							RefId:                     ec.String("main-enterprise_search"),
+						},
 					},
 				},
 				state: &Deployment{
@@ -4145,43 +4269,51 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.9.2",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id:   "hot_content",
-								Size: ec.String("16g"),
-							},
-							{
-								Id:   "coordinating",
-								Size: ec.String("16g"),
-							},
-						},
-					},
-					Kibana: &Kibana{
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						RefId:                     ec.String("main-kibana"),
-						Topology: Topologies{
-							{
-								Size: ec.String("2g"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id:   "hot_content",
+									Size: ec.String("16g"),
+								},
+								{
+									Id:   "coordinating",
+									Size: ec.String("16g"),
+								},
 							},
 						},
 					},
-					Apm: &Apm{
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						RefId:                     ec.String("main-apm"),
-						Topology: Topologies{
-							{
-								Size: ec.String("1g"),
+					Kibana: Kibanas{
+						{
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							RefId:                     ec.String("main-kibana"),
+							Topology: Topologies{
+								{
+									Size: ec.String("2g"),
+								},
 							},
 						},
 					},
-					EnterpriseSearch: &EnterpriseSearch{
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						RefId:                     ec.String("main-enterprise_search"),
-						Topology: EnterpriseSearchTopologies{
-							{
-								Size: ec.String("8g"),
+					Apm: Apms{
+						{
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							RefId:                     ec.String("main-apm"),
+							Topology: Topologies{
+								{
+									Size: ec.String("1g"),
+								},
+							},
+						},
+					},
+					EnterpriseSearch: EnterpriseSearches{
+						{
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							RefId:                     ec.String("main-enterprise_search"),
+							Topology: EnterpriseSearchTopologies{
+								{
+									Size: ec.String("8g"),
+								},
 							},
 						},
 					},
@@ -4309,16 +4441,18 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.11.1",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id:             "hot_content",
-								Size:           ec.String("16g"),
-								NodeTypeData:   ec.String("true"),
-								NodeTypeIngest: ec.String("true"),
-								NodeTypeMaster: ec.String("true"),
-								NodeTypeMl:     ec.String("false"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id:             "hot_content",
+									Size:           ec.String("16g"),
+									NodeTypeData:   ec.String("true"),
+									NodeTypeIngest: ec.String("true"),
+									NodeTypeMaster: ec.String("true"),
+									NodeTypeMl:     ec.String("false"),
+								},
 							},
 						},
 					},
@@ -4329,16 +4463,18 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.9.1",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id:             "hot_content",
-								Size:           ec.String("16g"),
-								NodeTypeData:   ec.String("true"),
-								NodeTypeIngest: ec.String("true"),
-								NodeTypeMaster: ec.String("true"),
-								NodeTypeMl:     ec.String("false"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id:             "hot_content",
+									Size:           ec.String("16g"),
+									NodeTypeData:   ec.String("true"),
+									NodeTypeIngest: ec.String("true"),
+									NodeTypeMaster: ec.String("true"),
+									NodeTypeMl:     ec.String("false"),
+								},
 							},
 						},
 					},
@@ -4409,16 +4545,18 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.11.1",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id:             "hot_content",
-								Size:           ec.String("16g"),
-								NodeTypeData:   ec.String("true"),
-								NodeTypeIngest: ec.String("true"),
-								NodeTypeMaster: ec.String("true"),
-								NodeTypeMl:     ec.String("false"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id:             "hot_content",
+									Size:           ec.String("16g"),
+									NodeTypeData:   ec.String("true"),
+									NodeTypeIngest: ec.String("true"),
+									NodeTypeMaster: ec.String("true"),
+									NodeTypeMl:     ec.String("false"),
+								},
 							},
 						},
 					},
@@ -4429,16 +4567,18 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.10.1",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id:             "hot_content",
-								Size:           ec.String("16g"),
-								NodeTypeData:   ec.String("true"),
-								NodeTypeIngest: ec.String("true"),
-								NodeTypeMaster: ec.String("true"),
-								NodeTypeMl:     ec.String("false"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id:             "hot_content",
+									Size:           ec.String("16g"),
+									NodeTypeData:   ec.String("true"),
+									NodeTypeIngest: ec.String("true"),
+									NodeTypeMaster: ec.String("true"),
+									NodeTypeMl:     ec.String("false"),
+								},
 							},
 						},
 					},
@@ -4511,16 +4651,18 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.10.1",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id:             "hot_content",
-								Size:           ec.String("32g"),
-								NodeTypeData:   ec.String("true"),
-								NodeTypeIngest: ec.String("true"),
-								NodeTypeMaster: ec.String("true"),
-								NodeTypeMl:     ec.String("false"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id:             "hot_content",
+									Size:           ec.String("32g"),
+									NodeTypeData:   ec.String("true"),
+									NodeTypeIngest: ec.String("true"),
+									NodeTypeMaster: ec.String("true"),
+									NodeTypeMl:     ec.String("false"),
+								},
 							},
 						},
 					},
@@ -4531,16 +4673,18 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.10.1",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id:             "hot_content",
-								Size:           ec.String("16g"),
-								NodeTypeData:   ec.String("true"),
-								NodeTypeIngest: ec.String("true"),
-								NodeTypeMaster: ec.String("true"),
-								NodeTypeMl:     ec.String("false"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id:             "hot_content",
+									Size:           ec.String("16g"),
+									NodeTypeData:   ec.String("true"),
+									NodeTypeIngest: ec.String("true"),
+									NodeTypeMaster: ec.String("true"),
+									NodeTypeMl:     ec.String("false"),
+								},
 							},
 						},
 					},
@@ -4613,20 +4757,22 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.10.1",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id:             "hot_content",
-								Size:           ec.String("16g"),
-								NodeTypeData:   ec.String("true"),
-								NodeTypeIngest: ec.String("true"),
-								NodeTypeMaster: ec.String("true"),
-								NodeTypeMl:     ec.String("false"),
-							},
-							{
-								Id:   "warm",
-								Size: ec.String("8g"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id:             "hot_content",
+									Size:           ec.String("16g"),
+									NodeTypeData:   ec.String("true"),
+									NodeTypeIngest: ec.String("true"),
+									NodeTypeMaster: ec.String("true"),
+									NodeTypeMl:     ec.String("false"),
+								},
+								{
+									Id:   "warm",
+									Size: ec.String("8g"),
+								},
 							},
 						},
 					},
@@ -4637,16 +4783,18 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.10.1",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id:             "hot_content",
-								Size:           ec.String("16g"),
-								NodeTypeData:   ec.String("true"),
-								NodeTypeIngest: ec.String("true"),
-								NodeTypeMaster: ec.String("true"),
-								NodeTypeMl:     ec.String("false"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id:             "hot_content",
+									Size:           ec.String("16g"),
+									NodeTypeData:   ec.String("true"),
+									NodeTypeIngest: ec.String("true"),
+									NodeTypeMaster: ec.String("true"),
+									NodeTypeMl:     ec.String("false"),
+								},
 							},
 						},
 					},
@@ -4747,17 +4895,19 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.12.1",
-					Elasticsearch: &Elasticsearch{
-						RefId:     ec.String("main-elasticsearch"),
-						Autoscale: ec.String("true"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id:   "hot_content",
-								Size: ec.String("16g"),
-							},
-							{
-								Id:   "warm",
-								Size: ec.String("8g"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId:     ec.String("main-elasticsearch"),
+							Autoscale: ec.String("true"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id:   "hot_content",
+									Size: ec.String("16g"),
+								},
+								{
+									Id:   "warm",
+									Size: ec.String("8g"),
+								},
 							},
 						},
 					},
@@ -4768,12 +4918,14 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.12.1",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id:   "hot_content",
-								Size: ec.String("16g"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id:   "hot_content",
+									Size: ec.String("16g"),
+								},
 							},
 						},
 					},
@@ -4874,31 +5026,39 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.12.1",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id:        "hot_content",
-								Size:      ec.String("16g"),
-								ZoneCount: 3,
-								Config: &ElasticsearchTopologyConfig{
-									UserSettingsYaml: ec.String("setting: false"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id:        "hot_content",
+									Size:      ec.String("16g"),
+									ZoneCount: 3,
+									Config: ElasticsearchTopologyConfigs{
+										{
+											UserSettingsYaml: ec.String("setting: false"),
+										},
+									},
 								},
-							},
-							{
-								Id:        "master",
-								Size:      ec.String("1g"),
-								ZoneCount: 3,
-								Config: &ElasticsearchTopologyConfig{
-									UserSettingsYaml: ec.String("setting: false"),
+								{
+									Id:        "master",
+									Size:      ec.String("1g"),
+									ZoneCount: 3,
+									Config: ElasticsearchTopologyConfigs{
+										{
+											UserSettingsYaml: ec.String("setting: false"),
+										},
+									},
 								},
-							},
-							{
-								Id:        "warm",
-								Size:      ec.String("8g"),
-								ZoneCount: 3,
-								Config: &ElasticsearchTopologyConfig{
-									UserSettingsYaml: ec.String("setting: false"),
+								{
+									Id:        "warm",
+									Size:      ec.String("8g"),
+									ZoneCount: 3,
+									Config: ElasticsearchTopologyConfigs{
+										{
+											UserSettingsYaml: ec.String("setting: false"),
+										},
+									},
 								},
 							},
 						},
@@ -4910,31 +5070,39 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.12.1",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id:        "hot_content",
-								Size:      ec.String("16g"),
-								ZoneCount: 3,
-								Config: &ElasticsearchTopologyConfig{
-									UserSettingsYaml: ec.String("setting: true"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id:        "hot_content",
+									Size:      ec.String("16g"),
+									ZoneCount: 3,
+									Config: ElasticsearchTopologyConfigs{
+										{
+											UserSettingsYaml: ec.String("setting: true"),
+										},
+									},
 								},
-							},
-							{
-								Id:        "master",
-								Size:      ec.String("1g"),
-								ZoneCount: 3,
-								Config: &ElasticsearchTopologyConfig{
-									UserSettingsYaml: ec.String("setting: true"),
+								{
+									Id:        "master",
+									Size:      ec.String("1g"),
+									ZoneCount: 3,
+									Config: ElasticsearchTopologyConfigs{
+										{
+											UserSettingsYaml: ec.String("setting: true"),
+										},
+									},
 								},
-							},
-							{
-								Id:        "warm",
-								Size:      ec.String("8g"),
-								ZoneCount: 3,
-								Config: &ElasticsearchTopologyConfig{
-									UserSettingsYaml: ec.String("setting: true"),
+								{
+									Id:        "warm",
+									Size:      ec.String("8g"),
+									ZoneCount: 3,
+									Config: ElasticsearchTopologyConfigs{
+										{
+											UserSettingsYaml: ec.String("setting: true"),
+										},
+									},
 								},
 							},
 						},
@@ -5059,12 +5227,14 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.10.1",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id:   "hot_content",
-								Size: ec.String("8g"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id:   "hot_content",
+									Size: ec.String("8g"),
+								},
 							},
 						},
 					},
@@ -5080,12 +5250,14 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.10.1",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id:   "hot_content",
-								Size: ec.String("8g"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id:   "hot_content",
+									Size: ec.String("8g"),
+								},
 							},
 						},
 					},
@@ -5160,16 +5332,20 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.10.1",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id:   "hot_content",
-								Size: ec.String("8g"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id:   "hot_content",
+									Size: ec.String("8g"),
+								},
 							},
-						},
-						SnapshotSource: &ElasticsearchSnapshotSource{
-							SourceElasticsearchClusterId: "8c63b87af9e24ea49b8a4bfe550e5fe9",
+							SnapshotSource: ElasticsearchSnapshotSources{
+								{
+									SourceElasticsearchClusterId: "8c63b87af9e24ea49b8a4bfe550e5fe9",
+								},
+							},
 						},
 					},
 				},
@@ -5179,12 +5355,14 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.10.1",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id:   "hot_content",
-								Size: ec.String("8g"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id:   "hot_content",
+									Size: ec.String("8g"),
+								},
 							},
 						},
 					},
@@ -5264,13 +5442,15 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.10.1",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id:     "hot_content",
-								Size:   ec.String("8g"),
-								Config: &ElasticsearchTopologyConfig{},
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id:     "hot_content",
+									Size:   ec.String("8g"),
+									Config: ElasticsearchTopologyConfigs{{}},
+								},
 							},
 						},
 					},
@@ -5343,15 +5523,19 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.10.1",
-					Elasticsearch: &Elasticsearch{
-						RefId:  ec.String("main-elasticsearch"),
-						Config: &ElasticsearchConfig{},
-						Topology: ElasticsearchTopologies{
-							{
-								Id:   "hot_content",
-								Size: ec.String("8g"),
-								Config: &ElasticsearchTopologyConfig{
-									UserSettingsYaml: ec.String("setting: true"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId:  ec.String("main-elasticsearch"),
+							Config: ElasticsearchConfigs{{}},
+							Topology: ElasticsearchTopologies{
+								{
+									Id:   "hot_content",
+									Size: ec.String("8g"),
+									Config: ElasticsearchTopologyConfigs{
+										{
+											UserSettingsYaml: ec.String("setting: true"),
+										},
+									},
 								},
 							},
 						},
@@ -5426,10 +5610,10 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "empty-deployment-template",
 					Region:               "us-east-1",
 					Version:              "7.9.2",
-					Elasticsearch:        &Elasticsearch{},
-					Kibana:               &Kibana{},
-					Apm:                  &Apm{},
-					EnterpriseSearch:     &EnterpriseSearch{},
+					Elasticsearch:        Elasticsearches{{}},
+					Kibana:               Kibanas{{}},
+					Apm:                  Apms{{}},
+					EnterpriseSearch:     EnterpriseSearches{{}},
 				},
 				state: &Deployment{
 					Id:                   mock.ValidClusterID,
@@ -5437,43 +5621,51 @@ func Test_updateResourceToModel(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.9.2",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						Topology: ElasticsearchTopologies{
-							{
-								Id:   "hot_content",
-								Size: ec.String("16g"),
-							},
-							{
-								Id:   "coordinating",
-								Size: ec.String("16g"),
-							},
-						},
-					},
-					Kibana: &Kibana{
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						RefId:                     ec.String("main-kibana"),
-						Topology: Topologies{
-							{
-								Size: ec.String("2g"),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							Topology: ElasticsearchTopologies{
+								{
+									Id:   "hot_content",
+									Size: ec.String("16g"),
+								},
+								{
+									Id:   "coordinating",
+									Size: ec.String("16g"),
+								},
 							},
 						},
 					},
-					Apm: &Apm{
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						RefId:                     ec.String("main-apm"),
-						Topology: Topologies{
-							{
-								Size: ec.String("1g"),
+					Kibana: Kibanas{
+						{
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							RefId:                     ec.String("main-kibana"),
+							Topology: Topologies{
+								{
+									Size: ec.String("2g"),
+								},
 							},
 						},
 					},
-					EnterpriseSearch: &EnterpriseSearch{
-						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-						RefId:                     ec.String("main-enterprise_search"),
-						Topology: EnterpriseSearchTopologies{
-							{
-								Size: ec.String("8g"),
+					Apm: Apms{
+						{
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							RefId:                     ec.String("main-apm"),
+							Topology: Topologies{
+								{
+									Size: ec.String("1g"),
+								},
+							},
+						},
+					},
+					EnterpriseSearch: EnterpriseSearches{
+						{
+							ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+							RefId:                     ec.String("main-enterprise_search"),
+							Topology: EnterpriseSearchTopologies{
+								{
+									Size: ec.String("8g"),
+								},
 							},
 						},
 					},

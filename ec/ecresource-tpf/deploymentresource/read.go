@@ -103,12 +103,13 @@ func (r Resource) read(ctx context.Context, id string, current DeploymentTF, dep
 
 	refId := ""
 
-	if !current.Elasticsearch.IsNull() {
-		var elasticsearch ElasticsearchTF
-		if diags := tfsdk.ValueAs(ctx, current.Elasticsearch, &elasticsearch); diags.HasError() {
-			return nil, diags
-		}
+	var elasticsearch *ElasticsearchTF
 
+	if diags = getFirst(ctx, current.Elasticsearch, &elasticsearch); diags.HasError() {
+		return nil, diags
+	}
+
+	if elasticsearch != nil {
 		refId = elasticsearch.RefId.Value
 	}
 

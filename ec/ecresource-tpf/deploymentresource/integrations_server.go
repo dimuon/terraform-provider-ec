@@ -24,7 +24,6 @@ import (
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -36,7 +35,7 @@ type IntegrationsServerTF struct {
 	HttpEndpoint              types.String `tfsdk:"http_endpoint"`
 	HttpsEndpoint             types.String `tfsdk:"https_endpoint"`
 	Topology                  types.List   `tfsdk:"topology"`
-	Config                    types.Object `tfsdk:"config"`
+	Config                    types.List   `tfsdk:"config"`
 }
 
 type IntegrationsServer struct {
@@ -47,10 +46,12 @@ type IntegrationsServer struct {
 	HttpEndpoint              *string                   `tfsdk:"http_endpoint"`
 	HttpsEndpoint             *string                   `tfsdk:"https_endpoint"`
 	Topology                  Topologies                `tfsdk:"topology"`
-	Config                    *IntegrationsServerConfig `tfsdk:"config"`
+	Config                    IntegrationsServerConfigs `tfsdk:"config"`
 }
 
-func readIntegrationsServers(in []*models.IntegrationsServerResourceInfo) (*IntegrationsServer, error) {
+type IntegrationsServers []IntegrationsServer
+
+func readIntegrationsServers(in []*models.IntegrationsServerResourceInfo) (IntegrationsServers, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}
@@ -65,7 +66,7 @@ func readIntegrationsServers(in []*models.IntegrationsServerResourceInfo) (*Inte
 			return nil, err
 		}
 
-		return srv, nil
+		return IntegrationsServers{*srv}, nil
 	}
 
 	return nil, nil
@@ -126,23 +127,23 @@ func (srv IntegrationsServerTF) Payload(ctx context.Context, payload models.Inte
 	return &payload, nil
 }
 
-func integrationsServerPayload(ctx context.Context, srvObj types.Object, template *models.DeploymentTemplateInfoV2) (*models.IntegrationsServerPayload, diag.Diagnostics) {
-	if srvObj.IsNull() {
+func integrationsServerPayload(ctx context.Context, list types.List, template *models.DeploymentTemplateInfoV2) (*models.IntegrationsServerPayload, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	var srv *IntegrationsServerTF
+
+	if diags = getFirst(ctx, list, &srv); diags.HasError() {
+		return nil, diags
+	}
+
+	if srv == nil {
 		return nil, nil
 	}
 
 	templatePayload := integrationsServerResource(template)
 
-	var diags diag.Diagnostics
-
 	if templatePayload == nil {
 		diags.AddError("IntegrationsServer payload error", "IntegrationsServer specified but deployment template is not configured for it. Use a different template if you wish to add IntegrationsServer")
-		return nil, diags
-	}
-
-	var srv IntegrationsServerTF
-
-	if diags := tfsdk.ValueAs(ctx, srvObj, &srv); diags.HasError() {
 		return nil, diags
 	}
 

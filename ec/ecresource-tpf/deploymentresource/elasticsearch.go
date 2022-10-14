@@ -25,7 +25,6 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
@@ -41,9 +40,9 @@ type ElasticsearchTF struct {
 	HttpEndpoint   types.String `tfsdk:"http_endpoint"`
 	HttpsEndpoint  types.String `tfsdk:"https_endpoint"`
 	Topology       types.List   `tfsdk:"topology"`
-	Config         types.Object `tfsdk:"config"`
+	Config         types.List   `tfsdk:"config"`
 	RemoteCluster  types.Set    `tfsdk:"remote_cluster"`
-	SnapshotSource types.Object `tfsdk:"snapshot_source"`
+	SnapshotSource types.List   `tfsdk:"snapshot_source"`
 	Extension      types.Set    `tfsdk:"extension"`
 	TrustAccount   types.Set    `tfsdk:"trust_account"`
 	TrustExternal  types.Set    `tfsdk:"trust_external"`
@@ -59,18 +58,18 @@ type Elasticsearch struct {
 	HttpEndpoint   *string                      `tfsdk:"http_endpoint"`
 	HttpsEndpoint  *string                      `tfsdk:"https_endpoint"`
 	Topology       ElasticsearchTopologies      `tfsdk:"topology"`
-	Config         *ElasticsearchConfig         `tfsdk:"config"`
+	Config         ElasticsearchConfigs         `tfsdk:"config"`
 	RemoteCluster  ElasticsearchRemoteClusters  `tfsdk:"remote_cluster"`
-	SnapshotSource *ElasticsearchSnapshotSource `tfsdk:"snapshot_source"`
+	SnapshotSource ElasticsearchSnapshotSources `tfsdk:"snapshot_source"`
 	Extension      ElasticsearchExtensions      `tfsdk:"extension"`
 	TrustAccount   ElasticsearchTrustAccounts   `tfsdk:"trust_account"`
 	TrustExternal  ElasticsearchTrustExternals  `tfsdk:"trust_external"`
 	Strategy       ElasticsearchStrategies      `tfsdk:"strategy"`
 }
 
-type ElasticsearchesTF []*ElasticsearchTF
+type Elasticsearches []Elasticsearch
 
-func readElasticsearches(in []*models.ElasticsearchResourceInfo, remotes *models.RemoteResources) (*Elasticsearch, error) {
+func readElasticsearches(in []*models.ElasticsearchResourceInfo, remotes *models.RemoteResources) (Elasticsearches, error) {
 	for _, model := range in {
 		if util.IsCurrentEsPlanEmpty(model) || isEsResourceStopped(model) {
 			continue
@@ -79,23 +78,27 @@ func readElasticsearches(in []*models.ElasticsearchResourceInfo, remotes *models
 		if err != nil {
 			return nil, err
 		}
-		return es, nil
+		return Elasticsearches{*es}, nil
 	}
 
 	return nil, nil
 }
 
-func elasticsearchPayload(ctx context.Context, esObj types.Object, template *models.DeploymentTemplateInfoV2, dtID, version string, useNodeRoles bool, skipTopologies bool) (*models.ElasticsearchPayload, diag.Diagnostics) {
-	if esObj.IsNull() {
-		return nil, nil
+func elasticsearchPayload(ctx context.Context, list types.List, template *models.DeploymentTemplateInfoV2, dtID, version string, useNodeRoles bool, skipTopologies bool) (*models.ElasticsearchPayload, diag.Diagnostics) {
+	var es *ElasticsearchTF
+
+	if diags := getFirst(ctx, list, &es); diags.HasError() {
+		return nil, diags
+	}
+
+	if es == nil {
+		var diags diag.Diagnostics
+		diags.AddError("Elasticsearch payload error", "cannot find elasticsearch data")
+		return nil, diags
 	}
 
 	templatePayload := enrichElasticsearchTemplate(esResource(template), dtID, version, useNodeRoles)
 
-	var es ElasticsearchTF
-	if diags := tfsdk.ValueAs(ctx, esObj, &es); diags.HasError() {
-		return nil, diags
-	}
 	payload, diags := es.Payload(ctx, templatePayload, skipTopologies)
 	if diags.HasError() {
 		return nil, diags
@@ -200,17 +203,8 @@ func (es *ElasticsearchTF) Payload(ctx context.Context, res *models.Elasticsearc
 	// list when these are set as a dedicated tier as a topology element.
 	updateNodeRolesOnDedicatedTiers(res.Plan.ClusterTopology)
 
-	if !es.Config.IsNull() {
-		var config ElasticsearchConfigTF
-
-		ds = tfsdk.ValueAs(ctx, es.Config, &config)
-		diags.Append(ds...)
-
-		if !ds.HasError() {
-			res.Plan.Elasticsearch, ds = config.Payload(ctx, res.Plan.Elasticsearch)
-			diags = append(diags, ds...)
-		}
-	}
+	res.Plan.Elasticsearch, ds = elasticsearchConfigPayload(ctx, es.Config, res.Plan.Elasticsearch)
+	diags = append(diags, ds...)
 
 	diags.Append(elasticsearchSnapshotSourcePayload(ctx, es.SnapshotSource, res.Plan)...)
 

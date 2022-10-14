@@ -39,7 +39,7 @@ func Test_readApm(t *testing.T) {
 	tests := []struct {
 		name  string
 		args  args
-		want  *Apm
+		want  Apms
 		diags diag.Diagnostics
 	}{
 		{
@@ -101,19 +101,23 @@ func Test_readApm(t *testing.T) {
 					},
 				},
 			}},
-			want: &Apm{
-				ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-				RefId:                     ec.String("main-apm"),
-				ResourceId:                &mock.ValidClusterID,
-				Region:                    ec.String("some-region"),
-				HttpEndpoint:              ec.String("http://apmresource.cloud.elastic.co:9200"),
-				HttpsEndpoint:             ec.String("https://apmresource.cloud.elastic.co:9243"),
-				Topology: []Topology{{
-					InstanceConfigurationId: ec.String("aws.apm.r4"),
-					Size:                    ec.String("1g"),
-					SizeResource:            ec.String("memory"),
-					ZoneCount:               1,
-				}},
+			want: Apms{
+				{
+					ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+					RefId:                     ec.String("main-apm"),
+					ResourceId:                &mock.ValidClusterID,
+					Region:                    ec.String("some-region"),
+					HttpEndpoint:              ec.String("http://apmresource.cloud.elastic.co:9200"),
+					HttpsEndpoint:             ec.String("https://apmresource.cloud.elastic.co:9243"),
+					Topology: []Topology{
+						{
+							InstanceConfigurationId: ec.String("aws.apm.r4"),
+							Size:                    ec.String("1g"),
+							SizeResource:            ec.String("memory"),
+							ZoneCount:               1,
+						},
+					},
+				},
 			},
 		},
 		{
@@ -208,24 +212,28 @@ func Test_readApm(t *testing.T) {
 					},
 				},
 			}},
-			want: &Apm{
-				ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-				RefId:                     ec.String("main-apm"),
-				ResourceId:                &mock.ValidClusterID,
-				Region:                    ec.String("some-region"),
-				HttpEndpoint:              ec.String("http://apmresource.cloud.elastic.co:9200"),
-				HttpsEndpoint:             ec.String("https://apmresource.cloud.elastic.co:9243"),
-				Topology: Topologies{{
-					InstanceConfigurationId: ec.String("aws.apm.r4"),
-					Size:                    ec.String("1g"),
-					SizeResource:            ec.String("memory"),
-					ZoneCount:               1,
-				}},
-				Config: &ApmConfig{
-					UserSettingsYaml:         ec.String("some.setting: value"),
-					UserSettingsOverrideYaml: ec.String("some.setting: value2"),
-					UserSettingsJson:         ec.String("{\"some.setting\":\"value\"}"),
-					UserSettingsOverrideJson: ec.String("{\"some.setting\":\"value2\"}"),
+			want: Apms{
+				{
+					ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+					RefId:                     ec.String("main-apm"),
+					ResourceId:                &mock.ValidClusterID,
+					Region:                    ec.String("some-region"),
+					HttpEndpoint:              ec.String("http://apmresource.cloud.elastic.co:9200"),
+					HttpsEndpoint:             ec.String("https://apmresource.cloud.elastic.co:9243"),
+					Topology: Topologies{{
+						InstanceConfigurationId: ec.String("aws.apm.r4"),
+						Size:                    ec.String("1g"),
+						SizeResource:            ec.String("memory"),
+						ZoneCount:               1,
+					}},
+					Config: ApmConfigs{
+						{
+							UserSettingsYaml:         ec.String("some.setting: value"),
+							UserSettingsOverrideYaml: ec.String("some.setting: value2"),
+							UserSettingsJson:         ec.String("{\"some.setting\":\"value\"}"),
+							UserSettingsOverrideJson: ec.String("{\"some.setting\":\"value2\"}"),
+						},
+					},
 				},
 			},
 		},
@@ -279,25 +287,29 @@ func Test_readApm(t *testing.T) {
 					},
 				},
 			}},
-			want: &Apm{
-				ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-				RefId:                     ec.String("main-apm"),
-				ResourceId:                &mock.ValidClusterID,
-				Region:                    ec.String("some-region"),
-				HttpEndpoint:              ec.String("http://apmresource.cloud.elastic.co:9200"),
-				HttpsEndpoint:             ec.String("https://apmresource.cloud.elastic.co:9243"),
-				Topology: Topologies{{
-					InstanceConfigurationId: ec.String("aws.apm.r4"),
-					Size:                    ec.String("1g"),
-					SizeResource:            ec.String("memory"),
-					ZoneCount:               1,
-				}},
-				Config: &ApmConfig{
-					UserSettingsYaml:         ec.String("some.setting: value"),
-					UserSettingsOverrideYaml: ec.String("some.setting: value2"),
-					UserSettingsJson:         ec.String("{\"some.setting\":\"value\"}"),
-					UserSettingsOverrideJson: ec.String("{\"some.setting\":\"value2\"}"),
-					DebugEnabled:             ec.Bool(true),
+			want: Apms{
+				{
+					ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+					RefId:                     ec.String("main-apm"),
+					ResourceId:                &mock.ValidClusterID,
+					Region:                    ec.String("some-region"),
+					HttpEndpoint:              ec.String("http://apmresource.cloud.elastic.co:9200"),
+					HttpsEndpoint:             ec.String("https://apmresource.cloud.elastic.co:9243"),
+					Topology: Topologies{{
+						InstanceConfigurationId: ec.String("aws.apm.r4"),
+						Size:                    ec.String("1g"),
+						SizeResource:            ec.String("memory"),
+						ZoneCount:               1,
+					}},
+					Config: ApmConfigs{
+						{
+							UserSettingsYaml:         ec.String("some.setting: value"),
+							UserSettingsOverrideYaml: ec.String("some.setting: value2"),
+							UserSettingsJson:         ec.String("{\"some.setting\":\"value\"}"),
+							UserSettingsOverrideJson: ec.String("{\"some.setting\":\"value2\"}"),
+							DebugEnabled:             ec.Bool(true),
+						},
+					},
 				},
 			},
 		},
@@ -308,7 +320,7 @@ func Test_readApm(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Equal(t, tt.want, apm)
 
-			var apmsTF types.Object
+			var apmsTF types.List
 			diags := tfsdk.ValueFrom(context.Background(), apm, apmAttribute().FrameworkType(), &apmsTF)
 			assert.Nil(t, diags)
 		})

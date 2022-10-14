@@ -244,11 +244,13 @@ func Test_enterpriseSearchPayload(t *testing.T) {
 					ResourceId:                ec.String(mock.ValidClusterID),
 					Region:                    ec.String("some-region"),
 					ElasticsearchClusterRefId: ec.String("somerefid"),
-					Config: &EnterpriseSearchConfig{
-						UserSettingsYaml:         ec.String("some.setting: value"),
-						UserSettingsOverrideYaml: ec.String("some.setting: override"),
-						UserSettingsJson:         ec.String(`{"some.setting":"value"}`),
-						UserSettingsOverrideJson: ec.String(`{"some.setting":"override"}`),
+					Config: EnterpriseSearchConfigs{
+						{
+							UserSettingsYaml:         ec.String("some.setting: value"),
+							UserSettingsOverrideYaml: ec.String("some.setting: override"),
+							UserSettingsJson:         ec.String(`{"some.setting":"value"}`),
+							UserSettingsOverrideJson: ec.String(`{"some.setting":"override"}`),
+						},
 					},
 					Topology: EnterpriseSearchTopologies{
 						{
@@ -326,11 +328,13 @@ func Test_enterpriseSearchPayload(t *testing.T) {
 					ResourceId:                ec.String(mock.ValidClusterID),
 					Region:                    ec.String("some-region"),
 					ElasticsearchClusterRefId: ec.String("somerefid"),
-					Config: &EnterpriseSearchConfig{
-						UserSettingsYaml:         ec.String("some.setting: value"),
-						UserSettingsOverrideYaml: ec.String("some.setting: value2"),
-						UserSettingsJson:         ec.String(`{"some.setting": "value"}`),
-						UserSettingsOverrideJson: ec.String(`{"some.setting": "value2"}`),
+					Config: EnterpriseSearchConfigs{
+						{
+							UserSettingsYaml:         ec.String("some.setting: value"),
+							UserSettingsOverrideYaml: ec.String("some.setting: value2"),
+							UserSettingsJson:         ec.String(`{"some.setting": "value"}`),
+							UserSettingsOverrideJson: ec.String(`{"some.setting": "value2"}`),
+						},
 					},
 					Topology: EnterpriseSearchTopologies{
 						{
@@ -351,11 +355,11 @@ func Test_enterpriseSearchPayload(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var esObj types.Object
-			diags := tfsdk.ValueFrom(context.Background(), &tt.args.es, enterpriseSearchAttribute().FrameworkType(), &esObj)
+			var ess types.List
+			diags := tfsdk.ValueFrom(context.Background(), &EnterpriseSearches{tt.args.es}, enterpriseSearchAttribute().FrameworkType(), &ess)
 			assert.Nil(t, diags)
 
-			got, diags := enterpriseSearchesPayload(context.Background(), esObj, tt.args.template)
+			got, diags := enterpriseSearchesPayload(context.Background(), ess, tt.args.template)
 			if tt.diags != nil {
 				assert.Equal(t, tt.diags, diags)
 			}

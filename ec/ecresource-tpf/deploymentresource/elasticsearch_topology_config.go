@@ -45,39 +45,47 @@ type ElasticsearchTopologyConfig struct {
 	UserSettingsOverrideYaml *string  `tfsdk:"user_settings_override_yaml"`
 }
 
-func (config *ElasticsearchTopologyConfigTF) Payload(ctx context.Context, model *models.ElasticsearchConfiguration) (*models.ElasticsearchConfiguration, diag.Diagnostics) {
+type ElasticsearchTopologyConfigs []ElasticsearchTopologyConfig
+
+func elasticsearchTopologyConfigPayload(ctx context.Context, list types.List, model *models.ElasticsearchConfiguration) (*models.ElasticsearchConfiguration, diag.Diagnostics) {
 	var diags diag.Diagnostics
+
+	var cfg *ElasticsearchTopologyConfigTF
+
+	if diags = getFirst(ctx, list, &cfg); diags.HasError() {
+		return nil, diags
+	}
+
+	if cfg == nil {
+		return model, nil
+	}
 
 	if model == nil {
 		model = &models.ElasticsearchConfiguration{}
 	}
 
-	if config == nil {
-		return model, nil
-	}
+	if cfg.UserSettingsJson.Value != "" {
 
-	if config.UserSettingsJson.Value != "" {
-
-		if err := json.Unmarshal([]byte(config.UserSettingsJson.Value), &model.UserSettingsJSON); err != nil {
+		if err := json.Unmarshal([]byte(cfg.UserSettingsJson.Value), &model.UserSettingsJSON); err != nil {
 			diags.AddError("failed expanding elasticsearch user_settings_json", err.Error())
 		}
 	}
 
-	if config.UserSettingsOverrideJson.Value != "" {
-		if err := json.Unmarshal([]byte(config.UserSettingsOverrideJson.Value), &model.UserSettingsOverrideJSON); err != nil {
+	if cfg.UserSettingsOverrideJson.Value != "" {
+		if err := json.Unmarshal([]byte(cfg.UserSettingsOverrideJson.Value), &model.UserSettingsOverrideJSON); err != nil {
 			diags.AddError("failed expanding elasticsearch user_settings_override_json", err.Error())
 		}
 	}
 
-	if !config.UserSettingsYaml.IsNull() {
-		model.UserSettingsYaml = config.UserSettingsYaml.Value
+	if !cfg.UserSettingsYaml.IsNull() {
+		model.UserSettingsYaml = cfg.UserSettingsYaml.Value
 	}
 
-	if !config.UserSettingsOverrideYaml.IsNull() {
-		model.UserSettingsOverrideYaml = config.UserSettingsOverrideYaml.Value
+	if !cfg.UserSettingsOverrideYaml.IsNull() {
+		model.UserSettingsOverrideYaml = cfg.UserSettingsOverrideYaml.Value
 	}
 
-	ds := config.Plugins.ElementsAs(ctx, &model.EnabledBuiltInPlugins, true)
+	ds := cfg.Plugins.ElementsAs(ctx, &model.EnabledBuiltInPlugins, true)
 
 	diags = append(diags, ds...)
 
@@ -88,7 +96,7 @@ func (c *ElasticsearchTopologyConfig) isEmpty() bool {
 	return c == nil || reflect.ValueOf(*c).IsZero()
 }
 
-func readElasticsearchTopologyConfig(in *models.ElasticsearchConfiguration) (*ElasticsearchTopologyConfig, error) {
+func readElasticsearchTopologyConfig(in *models.ElasticsearchConfiguration) (ElasticsearchTopologyConfigs, error) {
 	var config ElasticsearchTopologyConfig
 	if in == nil {
 		return nil, nil
@@ -122,5 +130,5 @@ func readElasticsearchTopologyConfig(in *models.ElasticsearchConfiguration) (*El
 		return nil, nil
 	}
 
-	return &config, nil
+	return ElasticsearchTopologyConfigs{config}, nil
 }

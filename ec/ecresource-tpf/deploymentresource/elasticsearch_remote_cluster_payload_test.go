@@ -70,20 +70,22 @@ func Test_handleRemoteClusters(t *testing.T) {
 					DeploymentTemplateId: "aws-io-optimized-v2",
 					Region:               "us-east-1",
 					Version:              "7.7.0",
-					Elasticsearch: &Elasticsearch{
-						RefId: ec.String("main-elasticsearch"),
-						RemoteCluster: ElasticsearchRemoteClusters{
-							{
-								Alias:           ec.String("alias"),
-								DeploymentId:    ec.String("someid"),
-								RefId:           ec.String("main-elasticsearch"),
-								SkipUnavailable: ec.Bool(true),
-							},
-							{
-								Alias:           ec.String("alias"),
-								DeploymentId:    ec.String("some other id"),
-								RefId:           ec.String("main-elasticsearch"),
-								SkipUnavailable: ec.Bool(false),
+					Elasticsearch: Elasticsearches{
+						{
+							RefId: ec.String("main-elasticsearch"),
+							RemoteCluster: ElasticsearchRemoteClusters{
+								{
+									Alias:           ec.String("alias"),
+									DeploymentId:    ec.String("someid"),
+									RefId:           ec.String("main-elasticsearch"),
+									SkipUnavailable: ec.Bool(true),
+								},
+								{
+									Alias:           ec.String("alias"),
+									DeploymentId:    ec.String("some other id"),
+									RefId:           ec.String("main-elasticsearch"),
+									SkipUnavailable: ec.Bool(false),
+								},
 							},
 						},
 					},

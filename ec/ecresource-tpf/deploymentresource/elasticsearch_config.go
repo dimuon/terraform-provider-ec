@@ -26,6 +26,7 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -47,44 +48,55 @@ type ElasticsearchConfig struct {
 	UserSettingsOverrideYaml *string  `tfsdk:"user_settings_override_yaml"`
 }
 
-func (config *ElasticsearchConfigTF) Payload(ctx context.Context, model *models.ElasticsearchConfiguration) (*models.ElasticsearchConfiguration, diag.Diagnostics) {
-	var diags diag.Diagnostics
+type ElasticsearchConfigs []ElasticsearchConfig
 
-	if model == nil {
-		model = &models.ElasticsearchConfiguration{}
-	}
-
-	if config == nil {
+func elasticsearchConfigPayload(ctx context.Context, cfgList types.List, model *models.ElasticsearchConfiguration) (*models.ElasticsearchConfiguration, diag.Diagnostics) {
+	if cfgList.IsNull() || cfgList.IsUnknown() || len(cfgList.Elems) == 0 {
 		return model, nil
 	}
 
-	if config.UserSettingsJson.Value != "" {
+	if cfgList.Elems[0].IsUnknown() || cfgList.Elems[0].IsNull() {
+		return model, nil
+	}
 
-		if err := json.Unmarshal([]byte(config.UserSettingsJson.Value), &model.UserSettingsJSON); err != nil {
+	var cfg ElasticsearchConfigTF
+
+	diags := tfsdk.ValueAs(ctx, cfgList.Elems[0], &cfg)
+
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	// if model == nil {
+	// 	model = &models.ElasticsearchConfiguration{}
+	// }
+
+	if cfg.UserSettingsJson.Value != "" {
+		if err := json.Unmarshal([]byte(cfg.UserSettingsJson.Value), &model.UserSettingsJSON); err != nil {
 			diags.AddError("failed expanding elasticsearch user_settings_json", err.Error())
 		}
 	}
 
-	if config.UserSettingsOverrideJson.Value != "" {
-		if err := json.Unmarshal([]byte(config.UserSettingsOverrideJson.Value), &model.UserSettingsOverrideJSON); err != nil {
+	if cfg.UserSettingsOverrideJson.Value != "" {
+		if err := json.Unmarshal([]byte(cfg.UserSettingsOverrideJson.Value), &model.UserSettingsOverrideJSON); err != nil {
 			diags.AddError("failed expanding elasticsearch user_settings_override_json", err.Error())
 		}
 	}
 
-	if !config.UserSettingsYaml.IsNull() {
-		model.UserSettingsYaml = config.UserSettingsYaml.Value
+	if !cfg.UserSettingsYaml.IsNull() {
+		model.UserSettingsYaml = cfg.UserSettingsYaml.Value
 	}
 
-	if !config.UserSettingsOverrideYaml.IsNull() {
-		model.UserSettingsOverrideYaml = config.UserSettingsOverrideYaml.Value
+	if !cfg.UserSettingsOverrideYaml.IsNull() {
+		model.UserSettingsOverrideYaml = cfg.UserSettingsOverrideYaml.Value
 	}
 
-	ds := config.Plugins.ElementsAs(ctx, &model.EnabledBuiltInPlugins, true)
+	ds := cfg.Plugins.ElementsAs(ctx, &model.EnabledBuiltInPlugins, true)
 
 	diags = append(diags, ds...)
 
-	if !config.DockerImage.IsNull() {
-		model.DockerImage = config.DockerImage.Value
+	if !cfg.DockerImage.IsNull() {
+		model.DockerImage = cfg.DockerImage.Value
 	}
 
 	return model, diags
@@ -94,7 +106,7 @@ func (c *ElasticsearchConfig) isEmpty() bool {
 	return c == nil || reflect.ValueOf(*c).IsZero()
 }
 
-func readElasticsearchConfig(in *models.ElasticsearchConfiguration) (*ElasticsearchConfig, error) {
+func readElasticsearchConfig(in *models.ElasticsearchConfiguration) (ElasticsearchConfigs, error) {
 	var config ElasticsearchConfig
 	if in == nil {
 		return nil, nil
@@ -132,5 +144,5 @@ func readElasticsearchConfig(in *models.ElasticsearchConfiguration) (*Elasticsea
 		return nil, nil
 	}
 
-	return &config, nil
+	return ElasticsearchConfigs{config}, nil
 }

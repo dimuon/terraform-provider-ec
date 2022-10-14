@@ -26,7 +26,6 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/util"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -44,7 +43,9 @@ type Observability struct {
 	Metrics      bool    `tfsdk:"metrics"`
 }
 
-func readObservability(in *models.DeploymentSettings) (*Observability, error) {
+type Observabilities []Observability
+
+func readObservabilities(in *models.DeploymentSettings) (Observabilities, error) {
 	if in == nil || in.Observability == nil {
 		return nil, nil
 	}
@@ -74,21 +75,21 @@ func readObservability(in *models.DeploymentSettings) (*Observability, error) {
 		return nil, nil
 	}
 
-	return &obs, nil
+	return Observabilities{obs}, nil
 }
 
-func observabilityPayload(ctx context.Context, obsObj types.Object, client *api.API) (*models.DeploymentObservabilitySettings, diag.Diagnostics) {
-	if obsObj.IsNull() {
+func observabilityPayload(ctx context.Context, list types.List, client *api.API) (*models.DeploymentObservabilitySettings, diag.Diagnostics) {
+	var observability *ObservabilityTF
+
+	if diags := getFirst(ctx, list, &observability); diags.HasError() {
+		return nil, nil
+	}
+
+	if observability == nil {
 		return nil, nil
 	}
 
 	var payload models.DeploymentObservabilitySettings
-
-	var observability ObservabilityTF
-
-	if diags := tfsdk.ValueAs(ctx, obsObj, &observability); diags.HasError() {
-		return nil, diags
-	}
 
 	if observability.DeploymentId.Value == "" {
 		return nil, nil

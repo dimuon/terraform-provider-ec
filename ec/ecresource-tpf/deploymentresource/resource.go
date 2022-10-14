@@ -190,7 +190,8 @@ func elasticsearchAttribute() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: "Required Elasticsearch resource definition",
 		Required:    true,
-		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+		Validators:  []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
+		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 			"autoscale": {
 				Type:        types.StringType,
 				Description: `Enable or disable autoscaling. Defaults to the setting coming from the deployment template. Accepted values are "true" or "false".`,
@@ -276,7 +277,8 @@ func elasticsearchConfigAttribute() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: `Optional Elasticsearch settings which will be applied to all topologies unless overridden on the topology element`,
 		Optional:    true,
-		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+		Validators:  []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
+		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 			// TODO
 			// DiffSuppressFunc: suppressMissingOptionalConfigurationBlock,
 			"docker_image": {
@@ -433,6 +435,7 @@ func elasticsearchTopologyAutoscalingAttribute() tfsdk.Attribute {
 		PlanModifiers: tfsdk.AttributePlanModifiers{
 			resource.UseStateForUnknown(),
 		},
+		Validators: []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
 		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 			"max_size_resource": {
 				Description: "Maximum resource type for the maximum autoscaling setting.",
@@ -479,7 +482,6 @@ func elasticsearchTopologyAutoscalingAttribute() tfsdk.Attribute {
 				},
 			},
 		}),
-		Validators: []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
 	}
 }
 
@@ -535,7 +537,8 @@ func elasticsearchSnapshotSourceAttribute() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: "Optional snapshot source settings. Restore data from a snapshot of another deployment.",
 		Optional:    true,
-		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+		Validators:  []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
+		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 			"source_elasticsearch_cluster_id": {
 				Description: "ID of the Elasticsearch cluster that will be used as the source of the snapshot",
 				Type:        types.StringType,
@@ -713,7 +716,8 @@ func apmConfig() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: `Optionally define the Apm configuration options for the APM Server`,
 		Optional:    true,
-		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+		Validators:  []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
+		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 			// TODO
 			// DiffSuppressFunc: suppressMissingOptionalConfigurationBlock,
 			"docker_image": {
@@ -759,7 +763,8 @@ func apmAttribute() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: "Optional APM resource definition",
 		Optional:    true,
-		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+		Validators:  []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
+		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 			"elasticsearch_cluster_ref_id": {
 				Type:     types.StringType,
 				Optional: true,
@@ -816,7 +821,8 @@ func enterpriseSearchAttribute() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: "Optional Enterprise Search resource definition",
 		Optional:    true,
-		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+		Validators:  []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
+		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 			"elasticsearch_cluster_ref_id": {
 				Type:     types.StringType,
 				Optional: true,
@@ -927,7 +933,8 @@ func enterpriseSearchAttribute() tfsdk.Attribute {
 			"config": {
 				Description: `Optionally define the Enterprise Search configuration options for the Enterprise Search Server`,
 				Optional:    true,
-				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+				Validators:  []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
+				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 					// TODO
 					// DiffSuppressFunc: suppressMissingOptionalConfigurationBlock,
 					"docker_image": {
@@ -965,7 +972,8 @@ func kibanaAttribute() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: "Optional Kibana resource definition",
 		Optional:    true,
-		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+		Validators:  []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
+		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 			"elasticsearch_cluster_ref_id": {
 				Type: types.StringType,
 				PlanModifiers: []tfsdk.AttributePlanModifier{
@@ -1059,7 +1067,8 @@ func kibanaAttribute() tfsdk.Attribute {
 				// TODO
 				// DiffSuppressFunc: suppressMissingOptionalConfigurationBlock,
 				Description: `Optionally define the Kibana configuration options for the Kibana Server`,
-				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+				Validators:  []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
+				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 					"docker_image": {
 						Type:        types.StringType,
 						Description: "Optionally override the docker image the Kibana nodes will use. Note that this field will only work for internal users only.",
@@ -1095,7 +1104,8 @@ func integrationsServerAttribute() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: "Optional Integrations Server resource definition",
 		Optional:    true,
-		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+		Validators:  []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
+		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 			"elasticsearch_cluster_ref_id": {
 				Type:     types.StringType,
 				Optional: true,
@@ -1185,7 +1195,8 @@ func integrationsServerAttribute() tfsdk.Attribute {
 			"config": {
 				Description: `Optionally define the IntegrationsServer configuration options for the IntegrationsServer Server`,
 				Optional:    true,
-				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+				Validators:  []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
+				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 					// TODO
 					// DiffSuppressFunc: suppressMissingOptionalConfigurationBlock,
 					"docker_image": {
@@ -1234,7 +1245,8 @@ func observabilityAttribute() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: "Optional observability settings. Ship logs and metrics to a dedicated deployment.",
 		Optional:    true,
-		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+		Validators:  []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
+		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 			"deployment_id": {
 				Type:     types.StringType,
 				Required: true,
@@ -1286,20 +1298,23 @@ func elasticsearchTopologyConfigAttribute() tfsdk.Attribute {
 		Computed:    true,
 		PlanModifiers: tfsdk.AttributePlanModifiers{
 			resource.UseStateForUnknown(),
-			planmodifier.DefaultValue(types.Object{
+			planmodifier.DefaultValue(types.List{
 				Null: true,
-				AttrTypes: map[string]attr.Type{
-					"plugins": types.SetType{
-						ElemType: types.StringType,
+				ElemType: types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"plugins": types.SetType{
+							ElemType: types.StringType,
+						},
+						"user_settings_json":          types.StringType,
+						"user_settings_override_json": types.StringType,
+						"user_settings_yaml":          types.StringType,
+						"user_settings_override_yaml": types.StringType,
 					},
-					"user_settings_json":          types.StringType,
-					"user_settings_override_json": types.StringType,
-					"user_settings_yaml":          types.StringType,
-					"user_settings_override_yaml": types.StringType,
 				},
 			}),
 		},
-		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+		Validators: []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
+		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 			"plugins": {
 				Type: types.SetType{
 					ElemType: types.StringType,
