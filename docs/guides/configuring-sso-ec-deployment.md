@@ -73,9 +73,9 @@ You will configure the deployment alias field to be the same, so if the deployme
 Then, by using a variable in the `es.yml` file and a terraform templating mechanism, you can generate your own `es.yml` file. Your variable is named kibana_url, as seen in the ec_deployment resource:
 
 ```hcl
-    config{
+    config = [{
            user_settings_yaml = templatefile("./es.yml",{kibana_url=format("https://%s-%s.kb.us-east-1.aws.found.io:9243",var.name,substr("${random_uuid.uuid.result}",0,6))})
-        }
+        }]
 ```
 
 This specific template uses your name and UUID to determine the URL for the Elasticsearch deployment before it is even created, and stores it in the `es.yml` file.
