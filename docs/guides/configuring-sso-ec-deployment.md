@@ -64,7 +64,7 @@ resource "ec_deployment" "elastic-sso" {
 Let's take a closer look at one specific argument here:
 
 ```hcl
-format("%s-%s",var.name,substr("${random_uuid.uuid.result}",0,6))
+name = format("%s-%s",var.name,substr("${random_uuid.uuid.result}",0,6))
 ```
 
 This will tell terraform to create a string, that looks like  `<deployment-name>-<6-digits-of-uuid>`
