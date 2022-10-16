@@ -92,9 +92,11 @@ func (r Resource) read(ctx context.Context, id string, current DeploymentTF, dep
 		return nil, diags
 	}
 
-	if err := checkVersion(response.Resources.Elasticsearch[0].Info.PlanInfo.Current.Plan.Elasticsearch.Version); err != nil {
-		diags.AddError("Get resource error", err.Error())
-		return nil, diags
+	if response.Resources.Elasticsearch[0].Info.PlanInfo.Current != nil && response.Resources.Elasticsearch[0].Info.PlanInfo.Current.Plan != nil {
+		if err := checkVersion(response.Resources.Elasticsearch[0].Info.PlanInfo.Current.Plan.Elasticsearch.Version); err != nil {
+			diags.AddError("Get resource error", err.Error())
+			return nil, diags
+		}
 	}
 
 	if !hasRunningResources(response) {

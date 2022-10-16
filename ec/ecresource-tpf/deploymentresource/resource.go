@@ -572,7 +572,7 @@ func elasticsearchExtensionAttribute() tfsdk.Attribute {
 				Description: "Extension type, only `bundle` or `plugin` are supported.",
 				Type:        types.StringType,
 				Required:    true,
-				Validators:  []tfsdk.AttributeValidator{validators.OneOf([]string{"bundle", "plugin"})},
+				Validators:  []tfsdk.AttributeValidator{validators.OneOf([]string{`"bundle"`, `"plugin"`})},
 			},
 			"version": {
 				Description: "Elasticsearch compatibility version. Bundles should specify major or minor versions with wildcards, such as `7.*` or `*` but **plugins must use full version notation down to the patch level**, such as `7.10.1` and wildcards are not allowed.",
@@ -673,6 +673,10 @@ func apmTopology() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: "Optional topology attribute",
 		Optional:    true,
+		Computed:    true,
+		PlanModifiers: []tfsdk.AttributePlanModifier{
+			resource.UseStateForUnknown(),
+		},
 		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 			"instance_configuration_id": {
 				Type:     types.StringType,
@@ -872,6 +876,10 @@ func enterpriseSearchAttribute() tfsdk.Attribute {
 			"topology": {
 				Description: "Optional topology attribute",
 				Optional:    true,
+				Computed:    true,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					resource.UseStateForUnknown(),
+				},
 				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 					"instance_configuration_id": {
 						Type:     types.StringType,
@@ -1021,10 +1029,12 @@ func kibanaAttribute() tfsdk.Attribute {
 				},
 			},
 			"topology": {
-				// NestingMode: tfsdk.BlockNestingModeList,
-				// MinItems:    0,
 				Description: `Optional topology element`,
 				Optional:    true,
+				Computed:    true,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					resource.UseStateForUnknown(),
+				},
 				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 					"instance_configuration_id": {
 						Type:     types.StringType,
@@ -1155,6 +1165,10 @@ func integrationsServerAttribute() tfsdk.Attribute {
 			"topology": {
 				Description: "Optional topology attribute",
 				Optional:    true,
+				Computed:    true,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					resource.UseStateForUnknown(),
+				},
 				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 					"instance_configuration_id": {
 						Type:     types.StringType,
