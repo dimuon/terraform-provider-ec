@@ -104,7 +104,7 @@ func integrationsServerTopologyPayload(ctx context.Context, planModels []*models
 
 		elem, err := matchIntegrationsServerTopology(icID, planModels)
 		if err != nil {
-			diags.AddError("match topology error", err.Error())
+			diags.AddError("integrations_server topology payload error", err.Error())
 			return nil, diags
 		}
 
@@ -145,7 +145,7 @@ func matchIntegrationsServerTopology(id string, topologies []*models.Integration
 		}
 	}
 	return nil, fmt.Errorf(
-		`IntegrationsServer topology: invalid instance_configuration_id: "%s" doesn't match any of the deployment template instance configurations`,
+		`invalid instance_configuration_id: "%s" doesn't match any of the deployment template instance configurations`,
 		id,
 	)
 }

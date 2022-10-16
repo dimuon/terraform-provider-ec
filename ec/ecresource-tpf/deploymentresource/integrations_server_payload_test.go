@@ -32,37 +32,37 @@ import (
 	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/testutil"
 )
 
-func Test_ApmPayload(t *testing.T) {
-	tplPath := "testdata/template-aws-io-optimized-v2.json"
+func Test_IntegrationsServerPayload(t *testing.T) {
+	tplPath := "testdata/template-ece-3.0.0-default.json"
 	tpl := func() *models.DeploymentTemplateInfoV2 {
 		return testutil.ParseDeploymentTemplate(t, tplPath)
 	}
 	type args struct {
-		apms Apms
-		tpl  *models.DeploymentTemplateInfoV2
+		ess IntegrationsServers
+		tpl *models.DeploymentTemplateInfoV2
 	}
 	tests := []struct {
 		name  string
 		args  args
-		want  *models.ApmPayload
+		want  *models.IntegrationsServerPayload
 		diags diag.Diagnostics
 	}{
 		{
 			name: "returns nil when there's no resources",
 		},
 		{
-			name: "parses an APM resource with explicit topology",
+			name: "parses an Integrations Server resource with explicit topology",
 			args: args{
 				tpl: tpl(),
-				apms: Apms{
+				ess: IntegrationsServers{
 					{
-						RefId:                     ec.String("main-apm"),
+						RefId:                     ec.String("main-integrations_server"),
 						ResourceId:                &mock.ValidClusterID,
 						Region:                    ec.String("some-region"),
 						ElasticsearchClusterRefId: ec.String("somerefid"),
 						Topology: Topologies{
 							{
-								InstanceConfigurationId: ec.String("aws.apm.r5d"),
+								InstanceConfigurationId: ec.String("integrations.server"),
 								Size:                    ec.String("2g"),
 								SizeResource:            ec.String("memory"),
 								ZoneCount:               1,
@@ -71,15 +71,15 @@ func Test_ApmPayload(t *testing.T) {
 					},
 				},
 			},
-			want: &models.ApmPayload{
+			want: &models.IntegrationsServerPayload{
 				ElasticsearchClusterRefID: ec.String("somerefid"),
 				Region:                    ec.String("some-region"),
-				RefID:                     ec.String("main-apm"),
-				Plan: &models.ApmPlan{
-					Apm: &models.ApmConfiguration{},
-					ClusterTopology: []*models.ApmTopologyElement{{
+				RefID:                     ec.String("main-integrations_server"),
+				Plan: &models.IntegrationsServerPlan{
+					IntegrationsServer: &models.IntegrationsServerConfiguration{},
+					ClusterTopology: []*models.IntegrationsServerTopologyElement{{
 						ZoneCount:               1,
-						InstanceConfigurationID: "aws.apm.r5d",
+						InstanceConfigurationID: "integrations.server",
 						Size: &models.TopologySize{
 							Resource: ec.String("memory"),
 							Value:    ec.Int32(2048),
@@ -89,18 +89,18 @@ func Test_ApmPayload(t *testing.T) {
 			},
 		},
 		{
-			name: "parses an APM resource with invalid instance_configuration_id",
+			name: "parses an Integrations Server resource with invalid instance_configuration_id",
 			args: args{
 				tpl: tpl(),
-				apms: Apms{
+				ess: IntegrationsServers{
 					{
-						RefId:                     ec.String("main-apm"),
+						RefId:                     ec.String("main-integrations_server"),
 						ResourceId:                &mock.ValidClusterID,
 						Region:                    ec.String("some-region"),
 						ElasticsearchClusterRefId: ec.String("somerefid"),
 						Topology: Topologies{
 							{
-								InstanceConfigurationId: ec.String("so invalid"),
+								InstanceConfigurationId: ec.String("invalid"),
 								Size:                    ec.String("2g"),
 								SizeResource:            ec.String("memory"),
 								ZoneCount:               1,
@@ -111,50 +111,47 @@ func Test_ApmPayload(t *testing.T) {
 			},
 			diags: func() diag.Diagnostics {
 				var diags diag.Diagnostics
-				diags.AddError(
-					"cannot match topology element",
-					`apm topology: invalid instance_configuration_id: "so invalid" doesn't match any of the deployment template instance configurations`,
-				)
+				diags.AddError("integrations_server topology payload error", `invalid instance_configuration_id: "invalid" doesn't match any of the deployment template instance configurations`)
 				return diags
 			}(),
 		},
 		{
-			name: "parses an APM resource with no topology",
+			name: "parses an Integrations Server resource with no topology",
 			args: args{
 				tpl: tpl(),
-				apms: Apms{
+				ess: IntegrationsServers{
 					{
-						RefId:                     ec.String("main-apm"),
+						RefId:                     ec.String("main-integrations_server"),
 						ResourceId:                &mock.ValidClusterID,
 						Region:                    ec.String("some-region"),
 						ElasticsearchClusterRefId: ec.String("somerefid"),
 					},
 				},
 			},
-			want: &models.ApmPayload{
+			want: &models.IntegrationsServerPayload{
 				ElasticsearchClusterRefID: ec.String("somerefid"),
 				Region:                    ec.String("some-region"),
-				RefID:                     ec.String("main-apm"),
-				Plan: &models.ApmPlan{
-					Apm: &models.ApmConfiguration{},
-					ClusterTopology: []*models.ApmTopologyElement{{
+				RefID:                     ec.String("main-integrations_server"),
+				Plan: &models.IntegrationsServerPlan{
+					IntegrationsServer: &models.IntegrationsServerConfiguration{},
+					ClusterTopology: []*models.IntegrationsServerTopologyElement{{
 						ZoneCount:               1,
-						InstanceConfigurationID: "aws.apm.r5d",
+						InstanceConfigurationID: "integrations.server",
 						Size: &models.TopologySize{
 							Resource: ec.String("memory"),
-							Value:    ec.Int32(512),
+							Value:    ec.Int32(1024),
 						},
 					}},
 				},
 			},
 		},
 		{
-			name: "parses an APM resource with a topology element but no instance_configuration_id",
+			name: "parses an Integrations Server resource with a topology element but no instance_configuration_id",
 			args: args{
 				tpl: tpl(),
-				apms: Apms{
+				ess: IntegrationsServers{
 					{
-						RefId:                     ec.String("main-apm"),
+						RefId:                     ec.String("main-integrations_server"),
 						ResourceId:                &mock.ValidClusterID,
 						Region:                    ec.String("some-region"),
 						ElasticsearchClusterRefId: ec.String("somerefid"),
@@ -167,15 +164,15 @@ func Test_ApmPayload(t *testing.T) {
 					},
 				},
 			},
-			want: &models.ApmPayload{
+			want: &models.IntegrationsServerPayload{
 				ElasticsearchClusterRefID: ec.String("somerefid"),
 				Region:                    ec.String("some-region"),
-				RefID:                     ec.String("main-apm"),
-				Plan: &models.ApmPlan{
-					Apm: &models.ApmConfiguration{},
-					ClusterTopology: []*models.ApmTopologyElement{{
+				RefID:                     ec.String("main-integrations_server"),
+				Plan: &models.IntegrationsServerPlan{
+					IntegrationsServer: &models.IntegrationsServerConfiguration{},
+					ClusterTopology: []*models.IntegrationsServerTopologyElement{{
 						ZoneCount:               1,
-						InstanceConfigurationID: "aws.apm.r5d",
+						InstanceConfigurationID: "integrations.server",
 						Size: &models.TopologySize{
 							Resource: ec.String("memory"),
 							Value:    ec.Int32(2048),
@@ -185,16 +182,16 @@ func Test_ApmPayload(t *testing.T) {
 			},
 		},
 		{
-			name: "parses an APM resource with explicit topology and some config",
+			name: "parses an Integrations Server resource with explicit topology and some config",
 			args: args{
 				tpl: tpl(),
-				apms: Apms{
+				ess: IntegrationsServers{
 					{
-						RefId:                     ec.String("tertiary-apm"),
-						ElasticsearchClusterRefId: ec.String("somerefid"),
+						RefId:                     ec.String("tertiary-integrations_server"),
 						ResourceId:                &mock.ValidClusterID,
 						Region:                    ec.String("some-region"),
-						Config: ApmConfigs{
+						ElasticsearchClusterRefId: ec.String("somerefid"),
+						Config: IntegrationsServerConfigs{
 							{
 								UserSettingsYaml:         ec.String("some.setting: value"),
 								UserSettingsOverrideYaml: ec.String("some.setting: value2"),
@@ -205,7 +202,7 @@ func Test_ApmPayload(t *testing.T) {
 						},
 						Topology: Topologies{
 							{
-								InstanceConfigurationId: ec.String("aws.apm.r5d"),
+								InstanceConfigurationId: ec.String("integrations.server"),
 								Size:                    ec.String("4g"),
 								SizeResource:            ec.String("memory"),
 								ZoneCount:               1,
@@ -214,12 +211,12 @@ func Test_ApmPayload(t *testing.T) {
 					},
 				},
 			},
-			want: &models.ApmPayload{
+			want: &models.IntegrationsServerPayload{
 				ElasticsearchClusterRefID: ec.String("somerefid"),
 				Region:                    ec.String("some-region"),
-				RefID:                     ec.String("tertiary-apm"),
-				Plan: &models.ApmPlan{
-					Apm: &models.ApmConfiguration{
+				RefID:                     ec.String("tertiary-integrations_server"),
+				Plan: &models.IntegrationsServerPlan{
+					IntegrationsServer: &models.IntegrationsServerConfiguration{
 						UserSettingsYaml:         `some.setting: value`,
 						UserSettingsOverrideYaml: `some.setting: value2`,
 						UserSettingsJSON: map[string]interface{}{
@@ -228,43 +225,42 @@ func Test_ApmPayload(t *testing.T) {
 						UserSettingsOverrideJSON: map[string]interface{}{
 							"some.setting": "value2",
 						},
-						SystemSettings: &models.ApmSystemSettings{
+						SystemSettings: &models.IntegrationsServerSystemSettings{
 							DebugEnabled: ec.Bool(true),
 						},
 					},
-					ClusterTopology: []*models.ApmTopologyElement{
-						{
-							ZoneCount:               1,
-							InstanceConfigurationID: "aws.apm.r5d",
-							Size: &models.TopologySize{
-								Resource: ec.String("memory"),
-								Value:    ec.Int32(4096),
-							},
+					ClusterTopology: []*models.IntegrationsServerTopologyElement{{
+						ZoneCount:               1,
+						InstanceConfigurationID: "integrations.server",
+						Size: &models.TopologySize{
+							Resource: ec.String("memory"),
+							Value:    ec.Int32(4096),
 						},
-					},
+					}},
 				},
 			},
 		},
 		{
-			name: "tries to parse an apm resource when the template doesn't have an APM instance set.",
+			name: "tries to parse an integrations_server resource when the template doesn't have an Integrations Server instance set.",
 			args: args{
 				tpl: nil,
-				apms: Apms{
+				ess: IntegrationsServers{
 					{
-						RefId:                     ec.String("tertiary-apm"),
-						ElasticsearchClusterRefId: ec.String("somerefid"),
+						RefId:                     ec.String("tertiary-integrations_server"),
 						ResourceId:                &mock.ValidClusterID,
 						Region:                    ec.String("some-region"),
+						ElasticsearchClusterRefId: ec.String("somerefid"),
+						Config: IntegrationsServerConfigs{
+							{
+								DebugEnabled: ec.Bool(true),
+							},
+						},
 						Topology: Topologies{
 							{
-								InstanceConfigurationId: ec.String("aws.apm.r5d"),
+								InstanceConfigurationId: ec.String("integrations.server"),
 								Size:                    ec.String("4g"),
 								SizeResource:            ec.String("memory"),
 								ZoneCount:               1,
-							}},
-						Config: ApmConfigs{
-							{
-								DebugEnabled: ec.Bool(true),
 							},
 						},
 					},
@@ -272,18 +268,18 @@ func Test_ApmPayload(t *testing.T) {
 			},
 			diags: func() diag.Diagnostics {
 				var diags diag.Diagnostics
-				diags.AddError("apm payload error", "apm specified but deployment template is not configured for it. Use a different template if you wish to add apm")
+				diags.AddError("integrations_server payload error", "integrations_server specified but deployment template is not configured for it. Use a different template if you wish to add integrations_server")
 				return diags
 			}(),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var apms types.List
-			diags := tfsdk.ValueFrom(context.Background(), tt.args.apms, apmAttribute().FrameworkType(), &apms)
+			var ess types.List
+			diags := tfsdk.ValueFrom(context.Background(), tt.args.ess, integrationsServerAttribute().FrameworkType(), &ess)
 			assert.Nil(t, diags)
 
-			if got, diags := apmPayload(context.Background(), apms, tt.args.tpl); tt.diags != nil {
+			if got, diags := integrationsServerPayload(context.Background(), ess, tt.args.tpl); tt.diags != nil {
 				assert.Equal(t, tt.diags, diags)
 			} else {
 				assert.Nil(t, diags)
