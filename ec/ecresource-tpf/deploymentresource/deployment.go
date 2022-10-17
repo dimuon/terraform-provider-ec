@@ -97,7 +97,9 @@ func readDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteRes
 	}
 	dep.Name = *res.Name
 
-	dep.Tags = converters.TagsToMap(res.Metadata.Tags)
+	if res.Metadata != nil {
+		dep.Tags = converters.TagsToMap(res.Metadata.Tags)
+	}
 
 	if res.Resources == nil {
 		return nil, nil
