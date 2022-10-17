@@ -9,18 +9,18 @@ resource "ec_deployment" "basic" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "%s"
 
-  elasticsearch {
-    topology {
+  elasticsearch = [{
+    topology = [{
       id   = "hot_content"
       size = "1g"
-    }
-  }
+    }]
+  }]
 
-  kibana {}
+  kibana = [{}]
 
-  apm {}
+  apm = [{}]
 
-  enterprise_search {}
+  enterprise_search = [{}]
 
   traffic_filter = [
     ec_deployment_traffic_filter.default.id,

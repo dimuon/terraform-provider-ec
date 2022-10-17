@@ -9,23 +9,23 @@ resource "ec_deployment" "defaults" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "%s"
 
-  elasticsearch {}
+  elasticsearch = [{}]
 
-  kibana {
-    topology {
+  kibana = [{
+    topology = [{
       size = "2g"
-    }
-  }
+    }]
+  }]
 
-  apm {
-    topology {
+  apm = [{
+    topology = [{
       size = "1g"
-    }
-  }
+    }]
+  }]
 
-  enterprise_search {
-    topology {
+  enterprise_search = [{
+    topology = [{
       zone_count = 1
-    }
-  }
+    }]
+  }]
 }

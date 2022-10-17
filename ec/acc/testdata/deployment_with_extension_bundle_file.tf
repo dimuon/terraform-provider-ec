@@ -18,14 +18,14 @@ resource "ec_deployment" "with_extension" {
   version                = data.ec_stack.latest.version
   deployment_template_id = local.deployment_template
 
-  elasticsearch {
-    extension {
+  elasticsearch = [{
+    extension = [{
       type    = "bundle"
       name    = local.name
       version = data.ec_stack.latest.version
       url     = ec_deployment_extension.my_extension.url
-    }
-  }
+    }]
+  }]
 }
 
 resource "ec_deployment_extension" "my_extension" {

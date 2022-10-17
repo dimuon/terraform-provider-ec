@@ -9,12 +9,12 @@ resource "ec_deployment" "defaults" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "%s"
 
-  elasticsearch {
-    topology {
+  elasticsearch = [{
+    topology = [{
       id   = "hot_content"
       size = "1g"
-    }
-  }
+    }]
+  }]
 
-  kibana {}
+  kibana = [{}]
 }

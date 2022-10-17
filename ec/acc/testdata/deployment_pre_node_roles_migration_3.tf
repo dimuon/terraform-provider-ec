@@ -9,16 +9,19 @@ resource "ec_deployment" "pre_nr" {
   version                = data.ec_stack.pre_node_roles.version
   deployment_template_id = "%s"
 
-  elasticsearch {
-    topology {
-      id         = "hot_content"
-      size       = "1g"
-      zone_count = 1
-    }
-    topology {
-      id         = "warm"
-      size       = "2g"
-      zone_count = 1
-    }
-  }
+  elasticsearch = [{
+    topology = [
+      {
+        id         = "hot_content"
+        size       = "1g"
+        zone_count = 1
+      },
+
+      {
+        id         = "warm"
+        size       = "2g"
+        zone_count = 1
+      }
+    ]
+  }]
 }

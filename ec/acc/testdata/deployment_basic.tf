@@ -10,28 +10,28 @@ resource "ec_deployment" "basic" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "%s"
 
-  elasticsearch {
-    topology {
+  elasticsearch = [{
+    topology = [{
       id   = "hot_content"
       size = "1g"
-    }
-  }
+    }]
+  }]
 
-  kibana {
-    topology {
+  kibana = [{
+    topology = [{
       instance_configuration_id = "%s"
-    }
-  }
+    }]
+  }]
 
-  apm {
-    topology {
+  apm = [{
+    topology = [{
       instance_configuration_id = "%s"
-    }
-  }
+    }]
+  }]
 
-  enterprise_search {
-    topology {
+  enterprise_search = [{
+    topology = [{
       instance_configuration_id = "%s"
-    }
-  }
+    }]
+  }]
 }

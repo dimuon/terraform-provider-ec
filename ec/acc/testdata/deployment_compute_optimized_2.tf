@@ -9,14 +9,14 @@ resource "ec_deployment" "compute_optimized" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "%s"
 
-  elasticsearch {
-    topology {
+  elasticsearch = [{
+    topology = [{
       id   = "hot_content"
       size = "2g"
-    }
-  }
+    }]
+  }]
 
-  kibana {}
+  kibana = [{}]
 
-  apm {}
+  apm = [{}]
 }

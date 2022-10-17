@@ -14,13 +14,13 @@ resource "ec_deployment" "upgrade_retry" {
   version                = data.ec_stack.latest.version
   deployment_template_id = local.deployment_template
 
-  elasticsearch {
-    topology {
+  elasticsearch = [{
+    topology = [{
       id         = "hot_content"
       size       = "1g"
       zone_count = 1
-    }
-  }
+    }]
+  }]
 
-  kibana {}
+  kibana = [{}]
 }

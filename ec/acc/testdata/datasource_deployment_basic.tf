@@ -9,13 +9,13 @@ resource "ec_deployment" "basic_observability" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "%s"
 
-  elasticsearch {
-    topology {
+  elasticsearch = [{
+    topology = [{
       id         = "hot_content"
       size       = "1g"
       zone_count = 1
-    }
-  }
+    }]
+  }]
 }
 
 resource "ec_deployment" "basic_datasource" {
@@ -25,23 +25,23 @@ resource "ec_deployment" "basic_datasource" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "%s"
 
-  elasticsearch {
-    topology {
+  elasticsearch = [{
+    topology = [{
       id         = "hot_content"
       size       = "1g"
       zone_count = 1
-    }
-  }
+    }]
+  }]
 
-  kibana {}
+  kibana = [{}]
 
-  apm {}
+  apm = [{}]
 
-  enterprise_search {}
+  enterprise_search = [{}]
 
-  observability {
+  observability = [{
     deployment_id = ec_deployment.basic_observability.id
-  }
+  }]
 
   traffic_filter = [
     ec_deployment_traffic_filter.default.id,
@@ -66,21 +66,21 @@ data "ec_deployments" "query" {
   name_prefix            = substr(ec_deployment.basic_datasource.name, 0, 22)
   deployment_template_id = "%s"
 
-  elasticsearch {
+  elasticsearch = [{
     version = data.ec_stack.latest.version
-  }
+  }]
 
-  kibana {
+  kibana = [{
     version = data.ec_stack.latest.version
-  }
+  }]
 
-  apm {
+  apm = [{
     version = data.ec_stack.latest.version
-  }
+  }]
 
-  enterprise_search {
+  enterprise_search = [{
     version = data.ec_stack.latest.version
-  }
+  }]
 
   depends_on = [
     ec_deployment.basic_datasource,
