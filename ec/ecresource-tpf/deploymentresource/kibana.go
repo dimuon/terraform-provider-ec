@@ -158,7 +158,7 @@ func kibanaPayload(ctx context.Context, list types.List, template *models.Deploy
 // kibanaResource returns the KibanaPayload from a deployment
 // template or an empty version of the payload.
 func kibanaResource(res *models.DeploymentTemplateInfoV2) *models.KibanaPayload {
-	if len(res.DeploymentTemplate.Resources.Kibana) == 0 {
+	if res == nil || len(res.DeploymentTemplate.Resources.Kibana) == 0 {
 		return nil
 	}
 	return res.DeploymentTemplate.Resources.Kibana[0]

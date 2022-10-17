@@ -111,7 +111,7 @@ func kibanaTopologyPayload(ctx context.Context, planModels []*models.KibanaClust
 
 		elem, err := matchKibanaTopology(icID, planModels)
 		if err != nil {
-			diags.AddError("cannot match topology element", err.Error())
+			diags.AddError("kibana topology payload error", err.Error())
 			return nil, diags
 		}
 
