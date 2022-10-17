@@ -30,7 +30,7 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
 )
 
-func Test_readKibana(t *testing.T) {
+func Test_ReadKibana(t *testing.T) {
 	type args struct {
 		in []*models.KibanaResourceInfo
 	}
