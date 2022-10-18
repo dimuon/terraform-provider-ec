@@ -1382,11 +1382,88 @@ func Test_readDeployment(t *testing.T) {
 				},
 			},
 		},
-		// {
-		// 	name: "flattens a gcp plan (hot-warm)",
-		// 	args: args{d: gcpHotWarmRD, res: gcpHotWarmRes},
-		// 	want: wantGcpHotWarmDeployment,
-		// },
+		{
+			name: "flattens a gcp plan (hot-warm)",
+			args: args{res: testutil.OpenDeploymentGet(t, "testdata/deployment-gcp-hot-warm.json")},
+			want: Deployment{
+				Id:                   "123d148423864552aa57b59929d4bf4d",
+				Name:                 "up2d-hot-warm",
+				DeploymentTemplateId: "gcp-hot-warm",
+				Region:               "gcp-us-central1",
+				Version:              "7.9.2",
+				Elasticsearch: Elasticsearches{
+					{
+						RefId:         ec.String("main-elasticsearch"),
+						ResourceId:    ec.String("123e837db6ee4391bb74887be35a7a91"),
+						Region:        ec.String("gcp-us-central1"),
+						Autoscale:     ec.String("false"),
+						CloudID:       ec.String("up2d-hot-warm:someCloudID"),
+						HttpEndpoint:  ec.String("http://123e837db6ee4391bb74887be35a7a91.us-central1.gcp.cloud.es.io:9200"),
+						HttpsEndpoint: ec.String("https://123e837db6ee4391bb74887be35a7a91.us-central1.gcp.cloud.es.io:9243"),
+						Topology: ElasticsearchTopologies{
+							{
+								Id:                      "hot_content",
+								InstanceConfigurationId: ec.String("gcp.data.highio.1"),
+								Size:                    ec.String("4g"),
+								SizeResource:            ec.String("memory"),
+								NodeTypeData:            ec.String("true"),
+								NodeTypeIngest:          ec.String("true"),
+								NodeTypeMaster:          ec.String("true"),
+								NodeTypeMl:              ec.String("false"),
+								ZoneCount:               2,
+							},
+							{
+								Id:                      "warm",
+								InstanceConfigurationId: ec.String("gcp.data.highstorage.1"),
+								Size:                    ec.String("4g"),
+								SizeResource:            ec.String("memory"),
+								NodeTypeData:            ec.String("true"),
+								NodeTypeIngest:          ec.String("true"),
+								NodeTypeMaster:          ec.String("false"),
+								NodeTypeMl:              ec.String("false"),
+								ZoneCount:               2,
+							},
+						},
+					},
+				},
+				Kibana: Kibanas{
+					{
+						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+						RefId:                     ec.String("main-kibana"),
+						ResourceId:                ec.String("12372cc60d284e7e96b95ad14727c23d"),
+						Region:                    ec.String("gcp-us-central1"),
+						HttpEndpoint:              ec.String("http://12372cc60d284e7e96b95ad14727c23d.us-central1.gcp.cloud.es.io:9200"),
+						HttpsEndpoint:             ec.String("https://12372cc60d284e7e96b95ad14727c23d.us-central1.gcp.cloud.es.io:9243"),
+						Topology: Topologies{
+							{
+								InstanceConfigurationId: ec.String("gcp.kibana.1"),
+								Size:                    ec.String("1g"),
+								SizeResource:            ec.String("memory"),
+								ZoneCount:               1,
+							},
+						},
+					},
+				},
+				Apm: Apms{
+					{
+						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+						RefId:                     ec.String("main-apm"),
+						ResourceId:                ec.String("1234b68b0b9347f1b49b1e01b33bf4a4"),
+						Region:                    ec.String("gcp-us-central1"),
+						HttpEndpoint:              ec.String("http://1234b68b0b9347f1b49b1e01b33bf4a4.apm.us-central1.gcp.cloud.es.io:80"),
+						HttpsEndpoint:             ec.String("https://1234b68b0b9347f1b49b1e01b33bf4a4.apm.us-central1.gcp.cloud.es.io:443"),
+						Topology: Topologies{
+							{
+								InstanceConfigurationId: ec.String("gcp.apm.1"),
+								Size:                    ec.String("0.5g"),
+								SizeResource:            ec.String("memory"),
+								ZoneCount:               1,
+							},
+						},
+					},
+				},
+			},
+		},
 		// {
 		// 	name: "flattens a gcp plan (hot-warm) with node_roles",
 		// 	args: args{d: gcpHotWarmNodeRolesRD, res: gcpHotWarmNodeRolesRes},
