@@ -373,7 +373,7 @@ func elasticsearchTopologyAttribute() tfsdk.Attribute {
 				Computed:    true,
 				Optional:    true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
+					planmodifier.UseStateIncludingNullForUnknown(),
 				},
 			},
 			"node_type_master": {
@@ -382,7 +382,7 @@ func elasticsearchTopologyAttribute() tfsdk.Attribute {
 				Computed:    true,
 				Optional:    true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
+					planmodifier.UseStateIncludingNullForUnknown(),
 				},
 			},
 			"node_type_ingest": {
@@ -391,7 +391,7 @@ func elasticsearchTopologyAttribute() tfsdk.Attribute {
 				Computed:    true,
 				Optional:    true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
+					planmodifier.UseStateIncludingNullForUnknown(),
 				},
 			},
 			"node_type_ml": {
@@ -400,7 +400,7 @@ func elasticsearchTopologyAttribute() tfsdk.Attribute {
 				Computed:    true,
 				Optional:    true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
+					planmodifier.UseStateIncludingNullForUnknown(),
 				},
 			},
 			"node_roles": {
