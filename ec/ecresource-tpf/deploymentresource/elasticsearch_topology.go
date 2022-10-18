@@ -48,8 +48,6 @@ type ElasticsearchTopologyTF struct {
 	Config                  types.List   `tfsdk:"config"`
 }
 
-type ElasticsearchTopologiesTF types.List
-
 type ElasticsearchTopology struct {
 	Id                      string                            `tfsdk:"id"`
 	InstanceConfigurationId *string                           `tfsdk:"instance_configuration_id"`

@@ -63,7 +63,7 @@ type Deployment struct {
 	RequestId             string              `tfsdk:"request_id"`
 	ElasticsearchUsername string              `tfsdk:"elasticsearch_username"`
 	ElasticsearchPassword string              `tfsdk:"elasticsearch_password"`
-	ApmSecretToken        string              `tfsdk:"apm_secret_token"`
+	ApmSecretToken        *string             `tfsdk:"apm_secret_token"`
 	TrafficFilter         []string            `tfsdk:"traffic_filter"`
 	Tags                  map[string]string   `tfsdk:"tags"`
 	Elasticsearch         Elasticsearches     `tfsdk:"elasticsearch"`
@@ -288,11 +288,47 @@ func (dep *Deployment) parseCredentials(resources []*models.DeploymentResource) 
 		}
 
 		if res.SecretToken != "" {
-			dep.ApmSecretToken = res.SecretToken
+			dep.ApmSecretToken = &res.SecretToken
 		}
 	}
 
 	return nil
+}
+
+func (dep *Deployment) processSelfInObservability(ctx context.Context, current DeploymentTF) diag.Diagnostics {
+
+	if !current.Observability.IsNull() && !current.Observability.IsUnknown() && len(current.Observability.Elems) > 0 {
+		var observability ObservabilityTF
+
+		if diags := tfsdk.ValueAs(ctx, current.Observability.Elems[0], &observability); diags.HasError() {
+			return diags
+		}
+
+		if observability.DeploymentId.Equal(types.String{Value: "self"}) &&
+			len(dep.Observability) > 0 &&
+			dep.Observability[0].DeploymentId != nil &&
+			dep.Observability[0].DeploymentId == &dep.Id {
+
+			dep.Observability[0].DeploymentId = ec.String("self")
+		}
+	}
+
+	return nil
+}
+
+func (dep *Deployment) setCredentialsIfEmpty(current DeploymentTF) {
+
+	if dep.ElasticsearchPassword == "" && current.ElasticsearchPassword.Value != "" {
+		dep.ElasticsearchPassword = current.ElasticsearchPassword.Value
+	}
+
+	if dep.ElasticsearchUsername == "" && current.ElasticsearchUsername.Value != "" {
+		dep.ElasticsearchUsername = current.ElasticsearchUsername.Value
+	}
+
+	if (dep.ApmSecretToken == nil || *dep.ApmSecretToken == "") && current.ApmSecretToken.Value != "" {
+		dep.ApmSecretToken = &current.ApmSecretToken.Value
+	}
 }
 
 func readTrafficFilters(in *models.DeploymentSettings) ([]string, error) {

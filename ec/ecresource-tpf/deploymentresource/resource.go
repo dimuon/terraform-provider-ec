@@ -373,7 +373,7 @@ func elasticsearchTopologyAttribute() tfsdk.Attribute {
 				Computed:    true,
 				Optional:    true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					planmodifier.UseStateIncludingNullForUnknown(),
+					UseNodeTypesDefault(),
 				},
 			},
 			"node_type_master": {
@@ -382,7 +382,7 @@ func elasticsearchTopologyAttribute() tfsdk.Attribute {
 				Computed:    true,
 				Optional:    true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					planmodifier.UseStateIncludingNullForUnknown(),
+					UseNodeTypesDefault(),
 				},
 			},
 			"node_type_ingest": {
@@ -391,7 +391,7 @@ func elasticsearchTopologyAttribute() tfsdk.Attribute {
 				Computed:    true,
 				Optional:    true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					planmodifier.UseStateIncludingNullForUnknown(),
+					UseNodeTypesDefault(),
 				},
 			},
 			"node_type_ml": {
@@ -400,7 +400,7 @@ func elasticsearchTopologyAttribute() tfsdk.Attribute {
 				Computed:    true,
 				Optional:    true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					planmodifier.UseStateIncludingNullForUnknown(),
+					UseNodeTypesDefault(),
 				},
 			},
 			"node_roles": {
@@ -410,7 +410,7 @@ func elasticsearchTopologyAttribute() tfsdk.Attribute {
 				Description: `The computed list of node roles for the current topology element`,
 				Computed:    true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
+					UseNodeRolesDefault(),
 				},
 			},
 			"autoscaling": elasticsearchTopologyAutoscalingAttribute(),
@@ -481,14 +481,7 @@ func elasticsearchRemoteClusterAttribute() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: "Optional Elasticsearch remote clusters to configure for the Elasticsearch resource, can be set multiple times",
 		Optional:    true,
-		// Computed:    true,
 		Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
-
-			// return tfsdk.Block{
-			// 	NestingMode: tfsdk.BlockNestingModeSet,
-			// 	MinItems:    0,
-			// 	Description: "Optional Elasticsearch remote clusters to configure for the Elasticsearch resource, can be set multiple times",
-			// 	Attributes: map[string]tfsdk.Attribute{
 			"deployment_id": {
 				Description: "Remote deployment ID",
 				Type:        types.StringType,
@@ -1256,6 +1249,9 @@ func observabilityAttribute() tfsdk.Attribute {
 			"deployment_id": {
 				Type:     types.StringType,
 				Required: true,
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					UseSelfForObservabilityId(),
+				},
 				// TODO
 				// DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
 				// 	// The terraform config can contain 'self' as a deployment target

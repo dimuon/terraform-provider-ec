@@ -135,16 +135,10 @@ func (r Resource) read(ctx context.Context, id string, current DeploymentTF, dep
 
 	deployment.RequestId = current.RequestId.Value
 
-	if current.ElasticsearchPassword.Value != "" {
-		deployment.ElasticsearchPassword = current.ElasticsearchPassword.Value
-	}
+	deployment.setCredentialsIfEmpty(current)
 
-	if current.ElasticsearchUsername.Value != "" {
-		deployment.ElasticsearchUsername = current.ElasticsearchUsername.Value
-	}
-
-	if current.ApmSecretToken.Value != "" {
-		deployment.ApmSecretToken = current.ApmSecretToken.Value
+	if diags := deployment.processSelfInObservability(ctx, current); diags.HasError() {
+		return nil, diags
 	}
 
 	var deploymentTF DeploymentTF

@@ -15,30 +15,28 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package planmodifier
+package deploymentresource
 
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func UseStateIncludingNullForUnknown() tfsdk.AttributePlanModifier {
-	return useStateIncludingNullForUnknown{}
+// Use `self` as value of `observability`'s `deployment_id` attribute
+func UseSelfForObservabilityId() tfsdk.AttributePlanModifier {
+	return useSelfForObservabilityId{}
 }
 
-// useStateIncludingNullForUnknown implements the UseStateForUnknown
-// AttributePlanModifier.
-type useStateIncludingNullForUnknown struct{}
+type useSelfForObservabilityId struct{}
 
-// Modify copies the attribute's prior state to the attribute plan if the prior
-// state value is not null.
-func (r useStateIncludingNullForUnknown) Modify(ctx context.Context, req tfsdk.ModifyAttributePlanRequest, resp *tfsdk.ModifyAttributePlanResponse) {
+func (r useSelfForObservabilityId) Modify(ctx context.Context, req tfsdk.ModifyAttributePlanRequest, resp *tfsdk.ModifyAttributePlanResponse) {
 	if req.AttributeState == nil || resp.AttributePlan == nil || req.AttributeConfig == nil {
 		return
 	}
 
-	// if it's not planned to be the unknown value, stick with the concrete plan
 	if !resp.AttributePlan.IsUnknown() {
 		return
 	}
@@ -48,15 +46,49 @@ func (r useStateIncludingNullForUnknown) Modify(ctx context.Context, req tfsdk.M
 		return
 	}
 
-	resp.AttributePlan = req.AttributeState
+	if !req.AttributeState.Equal(types.String{Value: "self"}) {
+		return
+	}
+
+	var deploymentId types.String
+
+	diags := req.Config.GetAttribute(ctx, path.Root("id"), &deploymentId)
+
+	resp.Diagnostics = append(resp.Diagnostics, diags...)
+
+	if diags.HasError() {
+		return
+	}
+
+	if deploymentId.IsUnknown() || deploymentId.IsNull() {
+		return
+	}
+
+	var observabilityDeploymentId types.String
+
+	diags = tfsdk.ValueAs(ctx, req.AttributePlan, &observabilityDeploymentId)
+
+	resp.Diagnostics = append(resp.Diagnostics, diags...)
+
+	if diags.HasError() {
+		return
+	}
+
+	if observabilityDeploymentId.IsUnknown() || observabilityDeploymentId.IsNull() {
+		return
+	}
+
+	if observabilityDeploymentId == deploymentId {
+		resp.AttributePlan = req.AttributeState
+	}
 }
 
 // Description returns a human-readable description of the plan modifier.
-func (r useStateIncludingNullForUnknown) Description(ctx context.Context) string {
+func (r useSelfForObservabilityId) Description(ctx context.Context) string {
 	return "Once set, the value of this attribute in state will not change."
 }
 
 // MarkdownDescription returns a markdown description of the plan modifier.
-func (r useStateIncludingNullForUnknown) MarkdownDescription(ctx context.Context) string {
+func (r useSelfForObservabilityId) MarkdownDescription(ctx context.Context) string {
 	return "Once set, the value of this attribute in state will not change."
 }

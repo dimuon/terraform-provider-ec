@@ -51,7 +51,7 @@ func Test_parseCredentials(t *testing.T) {
 			want: Deployment{
 				ElasticsearchUsername: "my-username",
 				ElasticsearchPassword: "my-password",
-				ApmSecretToken:        "some-secret-token",
+				ApmSecretToken:        ec.String("some-secret-token"),
 			},
 		},
 		{
@@ -60,7 +60,7 @@ func Test_parseCredentials(t *testing.T) {
 				dep: Deployment{
 					ElasticsearchUsername: "my-username",
 					ElasticsearchPassword: "my-password",
-					ApmSecretToken:        "some-secret-token",
+					ApmSecretToken:        ec.String("some-secret-token"),
 				},
 				resources: []*models.DeploymentResource{
 					{},
@@ -69,7 +69,7 @@ func Test_parseCredentials(t *testing.T) {
 			want: Deployment{
 				ElasticsearchUsername: "my-username",
 				ElasticsearchPassword: "my-password",
-				ApmSecretToken:        "some-secret-token",
+				ApmSecretToken:        ec.String("some-secret-token"),
 			},
 		},
 	}
