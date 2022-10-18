@@ -1135,11 +1135,83 @@ func Test_readDeployment(t *testing.T) {
 				},
 			},
 		},
-		// {
-		// 	name: "flattens an aws plan (io-optimized) with tags",
-		// 	args: args{d: awsIOOptimizedTagsRD, res: awsIOOptimizedTagsRes},
-		// 	want: wantAwsIOOptimizedDeploymentTags,
-		// },
+		{
+			name: "flattens an aws plan (io-optimized) with tags",
+			args: args{res: testutil.OpenDeploymentGet(t, "testdata/deployment-aws-io-optimized-tags.json")},
+			want: Deployment{
+				Id:                   "123365f2805e46808d40849b1c0b266b",
+				Alias:                "my-deployment",
+				Name:                 "up2d",
+				DeploymentTemplateId: "aws-io-optimized-v2",
+				Region:               "aws-eu-central-1",
+				Version:              "7.9.2",
+				Tags: map[string]string{
+					"aaa":   "bbb",
+					"cost":  "rnd",
+					"owner": "elastic",
+				},
+				Elasticsearch: Elasticsearches{
+					{
+						RefId:         ec.String("main-elasticsearch"),
+						ResourceId:    ec.String("1239f7ee7196439ba2d105319ac5eba7"),
+						Region:        ec.String("aws-eu-central-1"),
+						Autoscale:     ec.String("false"),
+						CloudID:       ec.String("up2d:someCloudID"),
+						HttpEndpoint:  ec.String("http://1239f7ee7196439ba2d105319ac5eba7.eu-central-1.aws.cloud.es.io:9200"),
+						HttpsEndpoint: ec.String("https://1239f7ee7196439ba2d105319ac5eba7.eu-central-1.aws.cloud.es.io:9243"),
+						Topology: ElasticsearchTopologies{
+							{
+								Id:                      "hot_content",
+								InstanceConfigurationId: ec.String("aws.data.highio.i3"),
+								Size:                    ec.String("8g"),
+								SizeResource:            ec.String("memory"),
+								NodeTypeData:            ec.String("true"),
+								NodeTypeIngest:          ec.String("true"),
+								NodeTypeMaster:          ec.String("true"),
+								NodeTypeMl:              ec.String("false"),
+								ZoneCount:               2,
+							},
+						},
+					},
+				},
+				Kibana: Kibanas{
+					{
+						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+						RefId:                     ec.String("main-kibana"),
+						ResourceId:                ec.String("123dcfda06254ca789eb287e8b73ff4c"),
+						Region:                    ec.String("aws-eu-central-1"),
+						HttpEndpoint:              ec.String("http://123dcfda06254ca789eb287e8b73ff4c.eu-central-1.aws.cloud.es.io:9200"),
+						HttpsEndpoint:             ec.String("https://123dcfda06254ca789eb287e8b73ff4c.eu-central-1.aws.cloud.es.io:9243"),
+						Topology: Topologies{
+							{
+								InstanceConfigurationId: ec.String("aws.kibana.r5d"),
+								Size:                    ec.String("1g"),
+								SizeResource:            ec.String("memory"),
+								ZoneCount:               1,
+							},
+						},
+					},
+				},
+				Apm: Apms{
+					{
+						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+						RefId:                     ec.String("main-apm"),
+						ResourceId:                ec.String("12328579b3bf40c8b58c1a0ed5a4bd8b"),
+						Region:                    ec.String("aws-eu-central-1"),
+						HttpEndpoint:              ec.String("http://12328579b3bf40c8b58c1a0ed5a4bd8b.apm.eu-central-1.aws.cloud.es.io:80"),
+						HttpsEndpoint:             ec.String("https://12328579b3bf40c8b58c1a0ed5a4bd8b.apm.eu-central-1.aws.cloud.es.io:443"),
+						Topology: Topologies{
+							{
+								InstanceConfigurationId: ec.String("aws.apm.r5d"),
+								Size:                    ec.String("0.5g"),
+								SizeResource:            ec.String("memory"),
+								ZoneCount:               1,
+							},
+						},
+					},
+				},
+			},
+		},
 		// {
 		// 	name: "flattens a gcp plan (io-optimized)",
 		// 	args: args{d: gcpIOOptimizedRD, res: gcpIOOptimizedRes},
