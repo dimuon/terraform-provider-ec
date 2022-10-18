@@ -1212,11 +1212,78 @@ func Test_readDeployment(t *testing.T) {
 				},
 			},
 		},
-		// {
-		// 	name: "flattens a gcp plan (io-optimized)",
-		// 	args: args{d: gcpIOOptimizedRD, res: gcpIOOptimizedRes},
-		// 	want: wantGcpIOOptimizedDeployment,
-		// },
+		{
+			name: "flattens a gcp plan (io-optimized)",
+			args: args{res: testutil.OpenDeploymentGet(t, "testdata/deployment-gcp-io-optimized.json")},
+			want: Deployment{
+				Id:                   "1239e402d6df471ea374bd68e3f91cc5",
+				Alias:                "my-deployment",
+				Name:                 "up2d",
+				DeploymentTemplateId: "gcp-io-optimized",
+				Region:               "gcp-asia-east1",
+				Version:              "7.9.2",
+				Elasticsearch: Elasticsearches{
+					{
+						RefId:         ec.String("main-elasticsearch"),
+						ResourceId:    ec.String("123695e76d914005bf90b717e668ad4b"),
+						Region:        ec.String("gcp-asia-east1"),
+						Autoscale:     ec.String("false"),
+						CloudID:       ec.String("up2d:someCloudID"),
+						HttpEndpoint:  ec.String("http://123695e76d914005bf90b717e668ad4b.asia-east1.gcp.elastic-cloud.com:9200"),
+						HttpsEndpoint: ec.String("https://123695e76d914005bf90b717e668ad4b.asia-east1.gcp.elastic-cloud.com:9243"),
+						Topology: ElasticsearchTopologies{
+							{
+								Id:                      "hot_content",
+								InstanceConfigurationId: ec.String("gcp.data.highio.1"),
+								Size:                    ec.String("8g"),
+								SizeResource:            ec.String("memory"),
+								NodeTypeData:            ec.String("true"),
+								NodeTypeIngest:          ec.String("true"),
+								NodeTypeMaster:          ec.String("true"),
+								NodeTypeMl:              ec.String("false"),
+								ZoneCount:               2,
+							},
+						},
+					},
+				},
+				Kibana: Kibanas{
+					{
+						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+						RefId:                     ec.String("main-kibana"),
+						ResourceId:                ec.String("12365046781e4d729a07df64fe67c8c6"),
+						Region:                    ec.String("gcp-asia-east1"),
+						HttpEndpoint:              ec.String("http://12365046781e4d729a07df64fe67c8c6.asia-east1.gcp.elastic-cloud.com:9200"),
+						HttpsEndpoint:             ec.String("https://12365046781e4d729a07df64fe67c8c6.asia-east1.gcp.elastic-cloud.com:9243"),
+						Topology: Topologies{
+							{
+								InstanceConfigurationId: ec.String("gcp.kibana.1"),
+								Size:                    ec.String("1g"),
+								SizeResource:            ec.String("memory"),
+								ZoneCount:               1,
+							},
+						},
+					},
+				},
+				Apm: Apms{
+					{
+						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+						RefId:                     ec.String("main-apm"),
+						ResourceId:                ec.String("12307c6c304949b8a9f3682b80900879"),
+						Region:                    ec.String("gcp-asia-east1"),
+						HttpEndpoint:              ec.String("http://12307c6c304949b8a9f3682b80900879.apm.asia-east1.gcp.elastic-cloud.com:80"),
+						HttpsEndpoint:             ec.String("https://12307c6c304949b8a9f3682b80900879.apm.asia-east1.gcp.elastic-cloud.com:443"),
+						Topology: Topologies{
+							{
+								InstanceConfigurationId: ec.String("gcp.apm.1"),
+								Size:                    ec.String("0.5g"),
+								SizeResource:            ec.String("memory"),
+								ZoneCount:               1,
+							},
+						},
+					},
+				},
+			},
+		},
 		// {
 		// 	name: "flattens a gcp plan with autoscale set (io-optimized)",
 		// 	args: args{d: gcpIOOptimizedRD, res: gcpIOOptimizedAutoscaleRes},
