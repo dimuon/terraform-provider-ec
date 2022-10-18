@@ -77,11 +77,15 @@ func Test_createDeploymentWithEmptyFields(t *testing.T) {
 
 	r.UnitTest(t, r.TestCase{
 		ProtoV6ProviderFactories: protoV6ProviderFactoriesWithMockClient(
-			api.NewMock(
+			api.NewDebugMock(
+				os.Stdout,
 				getTemplate(t, templateFileName),
 				createDeployment(t, readFile(t, "testdata/aws-io-optimized-v2-empty-config-create-expected-payload.json"), createDeploymentResponseJson, requestId),
 				mock.New200Response(readTestData(t, "testdata/aws-io-optimized-v2-empty-config-expected-deployment1.json")),
 				mock.New200Response(readTestData(t, "testdata/aws-io-optimized-v2-empty-config-expected-deployment2.json")),
+				mock.New200Response(readTestData(t, "testdata/aws-io-optimized-v2-empty-config-expected-deployment3.json")),
+				mock.New200Response(readTestData(t, "testdata/aws-io-optimized-v2-empty-config-expected-deployment3.json")),
+				mock.New200Response(readTestData(t, "testdata/aws-io-optimized-v2-empty-config-expected-deployment3.json")),
 				mock.New200Response(readTestData(t, "testdata/aws-io-optimized-v2-empty-config-expected-deployment3.json")),
 				readRemoteClusters(t),
 				mock.New200Response(readTestData(t, "testdata/aws-io-optimized-v2-empty-config-expected-deployment3.json")),
