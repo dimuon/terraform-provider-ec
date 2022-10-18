@@ -1550,11 +1550,85 @@ func Test_readDeployment(t *testing.T) {
 				},
 			},
 		},
-		// {
-		// 	name: "flattens an aws plan (Cross Cluster Search)",
-		// 	args: args{d: awsCCSRD, res: awsCCSRes, remotes: argCCSRemotes},
-		// 	want: wantAWSCCSDeployment,
-		// },
+		{
+			name: "flattens an aws plan (Cross Cluster Search)",
+			args: args{
+				res: testutil.OpenDeploymentGet(t, "testdata/deployment-aws-ccs.json"),
+				remotes: models.RemoteResources{Resources: []*models.RemoteResourceRef{
+					{
+						Alias:              ec.String("alias"),
+						DeploymentID:       ec.String("someid"),
+						ElasticsearchRefID: ec.String("main-elasticsearch"),
+						SkipUnavailable:    ec.Bool(true),
+					},
+					{
+						DeploymentID:       ec.String("some other id"),
+						ElasticsearchRefID: ec.String("main-elasticsearch"),
+					},
+				}},
+			},
+			want: Deployment{
+				Id:                   "123987dee8d54505974295e07fc7d13e",
+				Name:                 "ccs",
+				DeploymentTemplateId: "aws-cross-cluster-search-v2",
+				Region:               "eu-west-1",
+				Version:              "7.9.2",
+				Elasticsearch: Elasticsearches{
+					{
+						RefId:         ec.String("main-elasticsearch"),
+						ResourceId:    ec.String("1230b3ae633b4f51a432d50971f7f1c1"),
+						Region:        ec.String("eu-west-1"),
+						Autoscale:     ec.String("false"),
+						CloudID:       ec.String("ccs:someCloudID"),
+						HttpEndpoint:  ec.String("http://1230b3ae633b4f51a432d50971f7f1c1.eu-west-1.aws.found.io:9200"),
+						HttpsEndpoint: ec.String("https://1230b3ae633b4f51a432d50971f7f1c1.eu-west-1.aws.found.io:9243"),
+						RemoteCluster: ElasticsearchRemoteClusters{
+							{
+								Alias:           ec.String("alias"),
+								DeploymentId:    ec.String("someid"),
+								RefId:           ec.String("main-elasticsearch"),
+								SkipUnavailable: ec.Bool(true),
+							},
+							{
+								DeploymentId: ec.String("some other id"),
+								RefId:        ec.String("main-elasticsearch"),
+							},
+						},
+						Topology: ElasticsearchTopologies{
+							{
+								Id:                      "hot_content",
+								InstanceConfigurationId: ec.String("aws.ccs.r5d"),
+								Size:                    ec.String("1g"),
+								SizeResource:            ec.String("memory"),
+								ZoneCount:               1,
+								NodeTypeData:            ec.String("true"),
+								NodeTypeIngest:          ec.String("true"),
+								NodeTypeMaster:          ec.String("true"),
+								NodeTypeMl:              ec.String("false"),
+							},
+						},
+					},
+				},
+				Kibana: Kibanas{
+					{
+						ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+						RefId:                     ec.String("main-kibana"),
+						ResourceId:                ec.String("12317425e9e14491b74ee043db3402eb"),
+						Region:                    ec.String("eu-west-1"),
+						HttpEndpoint:              ec.String("http://12317425e9e14491b74ee043db3402eb.eu-west-1.aws.found.io:9200"),
+						HttpsEndpoint:             ec.String("https://12317425e9e14491b74ee043db3402eb.eu-west-1.aws.found.io:9243"),
+						Topology: Topologies{
+							{
+								InstanceConfigurationId: ec.String("aws.kibana.r5d"),
+								Size:                    ec.String("1g"),
+								SizeResource:            ec.String("memory"),
+								ZoneCount:               1,
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
