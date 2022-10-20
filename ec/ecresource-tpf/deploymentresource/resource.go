@@ -151,7 +151,7 @@ func (t *Resource) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostic
 				Computed:  true,
 				Sensitive: true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
+					planmodifier.UseStateIncludingNullForUnknown(),
 				},
 			},
 			"traffic_filter": {
@@ -1249,20 +1249,6 @@ func observabilityAttribute() tfsdk.Attribute {
 			"deployment_id": {
 				Type:     types.StringType,
 				Required: true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					UseSelfForObservabilityId(),
-				},
-				// TODO
-				// DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
-				// 	// The terraform config can contain 'self' as a deployment target
-				// 	// However the API will return the actual deployment-id.
-				// 	// This overrides 'self' with the deployment-id so the diff will work correctly.
-				// 	var deploymentID = d.Id()
-				// 	var mappedOldValue = mapSelfToDeploymentID(oldValue, deploymentID)
-				// 	var mappedNewValue = mapSelfToDeploymentID(newValue, deploymentID)
-
-				// 	return mappedOldValue == mappedNewValue
-				// },
 			},
 			"ref_id": {
 				Type:     types.StringType,

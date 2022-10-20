@@ -42,7 +42,7 @@ func TestAccDeployment_observability_createWithSelfObservability(t *testing.T) {
 				// After creation, the target-deployment-id should be the id of the created deployment
 				Config: config,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrPair(resName, "observability.0.deployment_id", resName, "id"),
+					resource.TestCheckResourceAttr(resName, "observability.0.deployment_id", "self"),
 					resource.TestCheckResourceAttr(resName, "observability.0.metrics", "true"),
 					resource.TestCheckResourceAttr(resName, "observability.0.logs", "true"),
 				),

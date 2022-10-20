@@ -137,9 +137,7 @@ func (r Resource) read(ctx context.Context, id string, current DeploymentTF, dep
 
 	deployment.setCredentialsIfEmpty(current)
 
-	if diags := deployment.processSelfInObservability(ctx, current); diags.HasError() {
-		return nil, diags
-	}
+	deployment.processSelfInObservability()
 
 	var deploymentTF DeploymentTF
 	schema, diags := r.GetSchema(ctx)

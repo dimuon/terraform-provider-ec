@@ -295,25 +295,19 @@ func (dep *Deployment) parseCredentials(resources []*models.DeploymentResource) 
 	return nil
 }
 
-func (dep *Deployment) processSelfInObservability(ctx context.Context, current DeploymentTF) diag.Diagnostics {
+func (dep *Deployment) processSelfInObservability() {
 
-	if !current.Observability.IsNull() && !current.Observability.IsUnknown() && len(current.Observability.Elems) > 0 {
-		var observability ObservabilityTF
-
-		if diags := tfsdk.ValueAs(ctx, current.Observability.Elems[0], &observability); diags.HasError() {
-			return diags
-		}
-
-		if observability.DeploymentId.Equal(types.String{Value: "self"}) &&
-			len(dep.Observability) > 0 &&
-			dep.Observability[0].DeploymentId != nil &&
-			dep.Observability[0].DeploymentId == &dep.Id {
-
-			dep.Observability[0].DeploymentId = ec.String("self")
-		}
+	if len(dep.Observability) == 0 {
+		return
 	}
 
-	return nil
+	if dep.Observability[0].DeploymentId == nil {
+		return
+	}
+
+	if *dep.Observability[0].DeploymentId == dep.Id {
+		*dep.Observability[0].DeploymentId = "self"
+	}
 }
 
 func (dep *Deployment) setCredentialsIfEmpty(current DeploymentTF) {
