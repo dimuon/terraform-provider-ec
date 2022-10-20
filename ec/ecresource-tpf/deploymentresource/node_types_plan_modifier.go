@@ -153,10 +153,10 @@ func isElasticTopologyChanged(ctx context.Context, p path.Path, req tfsdk.Modify
 		return false, diags
 	}
 
-	return elasticTopologiesChanged(ctx, planTopology, stateTopology)
+	return elasticTopologyConfigChanged(ctx, planTopology, stateTopology)
 }
 
-func elasticTopologiesChanged(ctx context.Context, plan, state []ElasticsearchTopologyTF) (bool, diag.Diagnostics) {
+func elasticTopologyConfigChanged(ctx context.Context, plan, state []ElasticsearchTopologyTF) (bool, diag.Diagnostics) {
 	if len(plan) != len(state) {
 		return true, nil
 	}
@@ -206,33 +206,3 @@ func elasticsearchTopologiesToSet(topologies []ElasticsearchTopologyTF) map[stri
 
 	return set
 }
-
-/*
-func EqualLists(l, other types.List) bool {
-	if l.Unknown != other.Unknown {
-		return false
-	}
-	if l.Null != other.Null {
-		return false
-	}
-	if l.ElemType == nil && other.ElemType != nil {
-		return false
-	}
-	if l.ElemType != nil && !l.ElemType.Equal(other.ElemType) {
-		return false
-	}
-	if len(l.Elems) != len(other.Elems) {
-		return false
-	}
-	for pos, lElem := range l.Elems {
-		if lElem.IsUnknown() {
-			continue
-		}
-		oElem := other.Elems[pos]
-		if !lElem.Equal(oElem) {
-			return false
-		}
-	}
-	return true
-}
-*/

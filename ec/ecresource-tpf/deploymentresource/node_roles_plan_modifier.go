@@ -75,11 +75,11 @@ func (r nodeRolesDefault) Modify(ctx context.Context, req tfsdk.ModifyAttributeP
 		return
 	}
 
-	nodeRolesPath := req.AttributePath.ParentPath().AtName("node_type_data")
+	nodeTypePath := req.AttributePath.ParentPath().AtName("node_type_data")
 
 	var nodeTypeState types.String
 
-	diags = req.State.GetAttribute(ctx, nodeRolesPath, &nodeTypeState)
+	diags = req.State.GetAttribute(ctx, nodeTypePath, &nodeTypeState)
 
 	resp.Diagnostics = append(resp.Diagnostics, diags...)
 
