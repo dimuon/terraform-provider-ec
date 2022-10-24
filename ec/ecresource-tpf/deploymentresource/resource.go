@@ -151,7 +151,8 @@ func (t *Resource) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostic
 				Computed:  true,
 				Sensitive: true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					planmodifier.UseStateIncludingNullForUnknown(),
+					// resource.UseStateForUnknown(),
+					planmodifier.UseStateForNoChange(),
 				},
 			},
 			"traffic_filter": {
@@ -760,7 +761,8 @@ func apmAttribute() tfsdk.Attribute {
 				Computed: true,
 				PlanModifiers: []tfsdk.AttributePlanModifier{
 					planmodifier.DefaultValue(types.String{Value: "main-elasticsearch"}),
-					resource.UseStateForUnknown(),
+					// resource.UseStateForUnknown(),
+					planmodifier.UseStateForNoChange(),
 				},
 			},
 			"ref_id": {
@@ -769,35 +771,40 @@ func apmAttribute() tfsdk.Attribute {
 				Computed: true,
 				PlanModifiers: []tfsdk.AttributePlanModifier{
 					planmodifier.DefaultValue(types.String{Value: "main-apm"}),
-					resource.UseStateForUnknown(),
+					// resource.UseStateForUnknown(),
+					planmodifier.UseStateForNoChange(),
 				},
 			},
 			"resource_id": {
 				Type:     types.StringType,
 				Computed: true,
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					resource.UseStateForUnknown(),
+					// resource.UseStateForUnknown(),
+					planmodifier.UseStateForNoChange(),
 				},
 			},
 			"region": {
 				Type:     types.StringType,
 				Computed: true,
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					resource.UseStateForUnknown(),
+					// resource.UseStateForUnknown(),
+					planmodifier.UseStateForNoChange(),
 				},
 			},
 			"http_endpoint": {
 				Type:     types.StringType,
 				Computed: true,
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					resource.UseStateForUnknown(),
+					// resource.UseStateForUnknown(),
+					planmodifier.UseStateForNoChange(),
 				},
 			},
 			"https_endpoint": {
 				Type:     types.StringType,
 				Computed: true,
 				PlanModifiers: []tfsdk.AttributePlanModifier{
-					resource.UseStateForUnknown(),
+					// resource.UseStateForUnknown(),
+					planmodifier.UseStateForNoChange(),
 				},
 			},
 			"topology": apmTopology(),
