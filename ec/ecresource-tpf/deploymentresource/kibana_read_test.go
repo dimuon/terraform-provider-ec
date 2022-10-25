@@ -176,7 +176,7 @@ func Test_ReadKibana(t *testing.T) {
 			assert.Equal(t, tt.want, kibanas)
 
 			var kibanasTF types.List
-			diags := tfsdk.ValueFrom(context.Background(), kibanas, kibanaAttribute().FrameworkType(), &kibanasTF)
+			diags := tfsdk.ValueFrom(context.Background(), kibanas, kibanaSchema().Type(), &kibanasTF)
 			assert.Nil(t, diags)
 		})
 	}

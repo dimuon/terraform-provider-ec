@@ -280,7 +280,7 @@ func Test_ApmPayload(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var apms types.List
-			diags := tfsdk.ValueFrom(context.Background(), tt.args.apms, apmAttribute().FrameworkType(), &apms)
+			diags := tfsdk.ValueFrom(context.Background(), tt.args.apms, apmSchema().FrameworkType(), &apms)
 			assert.Nil(t, diags)
 
 			if got, diags := apmPayload(context.Background(), apms, tt.args.tpl); tt.diags != nil {

@@ -270,7 +270,7 @@ func Test_KibanaPayload(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var kibanas types.List
-			diags := tfsdk.ValueFrom(context.Background(), tt.args.kibanas, kibanaAttribute().FrameworkType(), &kibanas)
+			diags := tfsdk.ValueFrom(context.Background(), tt.args.kibanas, kibanaSchema().Type(), &kibanas)
 			assert.Nil(t, diags)
 
 			if got, diags := kibanaPayload(context.Background(), kibanas, tt.args.tpl); tt.diags != nil {
