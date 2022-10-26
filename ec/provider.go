@@ -76,10 +76,7 @@ func LegacyProvider() *schema.Provider {
 		ConfigureContextFunc: configureAPI,
 		Schema:               newSchema(),
 		DataSourcesMap:       map[string]*schema.Resource{},
-		ResourcesMap: map[string]*schema.Resource{
-			"ec_deployment":           deploymentresource.Resource(),
-			"ec_deployment_extension": extensionresource.Resource(),
-		},
+		ResourcesMap:         map[string]*schema.Resource{},
 	}
 }
 
