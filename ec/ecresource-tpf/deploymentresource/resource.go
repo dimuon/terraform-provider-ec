@@ -88,9 +88,9 @@ func (t *Resource) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostic
 				Type:                types.StringType,
 				Computed:            true,
 				MarkdownDescription: "Unique identifier of this resource.",
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
-				},
+				// PlanModifiers: tfsdk.AttributePlanModifiers{
+				// 	resource.UseStateForUnknown(),
+				// },
 			},
 			"alias": {
 				Type:     types.StringType,
@@ -133,27 +133,27 @@ func (t *Resource) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostic
 				Type:        types.StringType,
 				Description: "Computed username obtained upon creating the Elasticsearch resource",
 				Computed:    true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
-				},
+				// PlanModifiers: tfsdk.AttributePlanModifiers{
+				// 	resource.UseStateForUnknown(),
+				// },
 			},
 			"elasticsearch_password": {
 				Type:        types.StringType,
 				Description: "Computed password obtained upon creating the Elasticsearch resource",
 				Computed:    true,
 				Sensitive:   true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
-				},
+				// PlanModifiers: tfsdk.AttributePlanModifiers{
+				// 	resource.UseStateForUnknown(),
+				// },
 			},
 			"apm_secret_token": {
 				Type:      types.StringType,
 				Computed:  true,
 				Sensitive: true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					// resource.UseStateForUnknown(),
-					planmodifier.UseStateForNoChange(),
-				},
+				// PlanModifiers: tfsdk.AttributePlanModifiers{
+				// 	// resource.UseStateForUnknown(),
+				// 	planmodifier.UseStateForNoChange(),
+				// },
 			},
 			"traffic_filter": {
 				Type: types.SetType{
@@ -216,17 +216,17 @@ func elasticsearchAttribute() tfsdk.Attribute {
 				Type:        types.StringType,
 				Description: "The Elasticsearch resource unique identifier",
 				Computed:    true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
-				},
+				// PlanModifiers: tfsdk.AttributePlanModifiers{
+				// 	resource.UseStateForUnknown(),
+				// },
 			},
 			"region": {
 				Type:        types.StringType,
 				Description: "The Elasticsearch resource region",
 				Computed:    true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
-				},
+				// PlanModifiers: tfsdk.AttributePlanModifiers{
+				// 	resource.UseStateForUnknown(),
+				// },
 			},
 			"cloud_id": {
 				Type:        types.StringType,
@@ -243,17 +243,17 @@ func elasticsearchAttribute() tfsdk.Attribute {
 				Type:        types.StringType,
 				Description: "The Elasticsearch resource HTTP endpoint",
 				Computed:    true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
-				},
+				// PlanModifiers: tfsdk.AttributePlanModifiers{
+				// 	resource.UseStateForUnknown(),
+				// },
 			},
 			"https_endpoint": {
 				Type:        types.StringType,
 				Description: "The Elasticsearch resource HTTPs endpoint",
 				Computed:    true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
-				},
+				// PlanModifiers: tfsdk.AttributePlanModifiers{
+				// 	resource.UseStateForUnknown(),
+				// },
 			},
 			"topology": elasticsearchTopologyAttribute(),
 
@@ -336,73 +336,73 @@ func elasticsearchTopologyAttribute() tfsdk.Attribute {
 				Type:        types.StringType,
 				Description: `Computed Instance Configuration ID of the topology element`,
 				Computed:    true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
-				},
+				// PlanModifiers: tfsdk.AttributePlanModifiers{
+				// 	resource.UseStateForUnknown(),
+				// },
 			},
 			"size": {
 				Type:        types.StringType,
 				Description: `Optional amount of memory per node in the "<size in GB>g" notation`,
 				Computed:    true,
 				Optional:    true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
-				},
+				// PlanModifiers: tfsdk.AttributePlanModifiers{
+				// 	resource.UseStateForUnknown(),
+				// },
 			},
 			"size_resource": {
 				Type:        types.StringType,
 				Description: `Optional size type, defaults to "memory".`,
 				Optional:    true,
 				Computed:    true,
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					resource.UseStateForUnknown(),
-					planmodifier.DefaultValue(types.String{Value: "memory"}),
-				},
+				// PlanModifiers: []tfsdk.AttributePlanModifier{
+				// 	resource.UseStateForUnknown(),
+				// 	planmodifier.DefaultValue(types.String{Value: "memory"}),
+				// },
 			},
 			"zone_count": {
 				Type:        types.Int64Type,
 				Description: `Optional number of zones that the Elasticsearch cluster will span. This is used to set HA`,
 				Computed:    true,
 				Optional:    true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
-				},
+				// PlanModifiers: tfsdk.AttributePlanModifiers{
+				// 	resource.UseStateForUnknown(),
+				// },
 			},
 			"node_type_data": {
 				Type:        types.StringType,
 				Description: `The node type for the Elasticsearch Topology element (data node)`,
 				Computed:    true,
 				Optional:    true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					UseNodeTypesDefault(),
-				},
+				// PlanModifiers: tfsdk.AttributePlanModifiers{
+				// 	UseNodeTypesDefault(),
+				// },
 			},
 			"node_type_master": {
 				Type:        types.StringType,
 				Description: `The node type for the Elasticsearch Topology element (master node)`,
 				Computed:    true,
 				Optional:    true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					UseNodeTypesDefault(),
-				},
+				// PlanModifiers: tfsdk.AttributePlanModifiers{
+				// 	UseNodeTypesDefault(),
+				// },
 			},
 			"node_type_ingest": {
 				Type:        types.StringType,
 				Description: `The node type for the Elasticsearch Topology element (ingest node)`,
 				Computed:    true,
 				Optional:    true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					UseNodeTypesDefault(),
-				},
+				// PlanModifiers: tfsdk.AttributePlanModifiers{
+				// 	UseNodeTypesDefault(),
+				// },
 			},
 			"node_type_ml": {
 				Type:        types.StringType,
 				Description: `The node type for the Elasticsearch Topology element (machine learning node)`,
 				Computed:    true,
 				Optional:    true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					UseNodeTypesDefault(),
-				},
+				// PlanModifiers: tfsdk.AttributePlanModifiers{
+				// 	UseNodeTypesDefault(),
+				// },
 			},
 			"node_roles": {
 				Type: types.SetType{
@@ -410,9 +410,9 @@ func elasticsearchTopologyAttribute() tfsdk.Attribute {
 				},
 				Description: `The computed list of node roles for the current topology element`,
 				Computed:    true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					UseNodeRolesDefault(),
-				},
+				// PlanModifiers: tfsdk.AttributePlanModifiers{
+				// 	UseNodeRolesDefault(),
+				// },
 			},
 			"autoscaling": elasticsearchTopologyAutoscalingAttribute(),
 			"config":      elasticsearchTopologyConfigAttribute(),
@@ -425,9 +425,9 @@ func elasticsearchTopologyAutoscalingAttribute() tfsdk.Attribute {
 		Description: "Optional Elasticsearch autoscaling settings, such a maximum and minimum size and resources.",
 		Optional:    true,
 		Computed:    true,
-		PlanModifiers: tfsdk.AttributePlanModifiers{
-			resource.UseStateForUnknown(),
-		},
+		// PlanModifiers: tfsdk.AttributePlanModifiers{
+		// 	resource.UseStateForUnknown(),
+		// },
 		Validators: []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
 		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 			"max_size_resource": {
@@ -435,44 +435,44 @@ func elasticsearchTopologyAutoscalingAttribute() tfsdk.Attribute {
 				Type:        types.StringType,
 				Optional:    true,
 				Computed:    true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
-				},
+				// PlanModifiers: tfsdk.AttributePlanModifiers{
+				// 	resource.UseStateForUnknown(),
+				// },
 			},
 			"max_size": {
 				Description: "Maximum size value for the maximum autoscaling setting.",
 				Type:        types.StringType,
 				Optional:    true,
 				Computed:    true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
-				},
+				// PlanModifiers: tfsdk.AttributePlanModifiers{
+				// 	resource.UseStateForUnknown(),
+				// },
 			},
 			"min_size_resource": {
 				Description: "Minimum resource type for the minimum autoscaling setting.",
 				Type:        types.StringType,
 				Optional:    true,
 				Computed:    true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
-				},
+				// PlanModifiers: tfsdk.AttributePlanModifiers{
+				// 	resource.UseStateForUnknown(),
+				// },
 			},
 			"min_size": {
 				Description: "Minimum size value for the minimum autoscaling setting.",
 				Type:        types.StringType,
 				Optional:    true,
 				Computed:    true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
-				},
+				// PlanModifiers: tfsdk.AttributePlanModifiers{
+				// 	resource.UseStateForUnknown(),
+				// },
 			},
 			"policy_override_json": {
 				Type:        types.StringType,
 				Description: "Computed policy overrides set directly via the API or other clients.",
 				Computed:    true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
-				},
+				// PlanModifiers: tfsdk.AttributePlanModifiers{
+				// 	resource.UseStateForUnknown(),
+				// },
 			},
 		}),
 	}
