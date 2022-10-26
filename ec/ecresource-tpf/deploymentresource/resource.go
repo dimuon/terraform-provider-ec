@@ -152,8 +152,7 @@ func (t *Resource) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostic
 				Sensitive: true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
 					// resource.UseStateForUnknown(),
-					// UseStateForNoChange(),
-					UseApmTokenDefault(),
+					planmodifier.UseStateForNoChange(),
 				},
 			},
 			"traffic_filter": {
@@ -170,15 +169,12 @@ func (t *Resource) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostic
 				},
 				Optional: true,
 			},
-			"apm":                 apmSchema(),
-			"integrations_server": integrationsServerSchema(),
-			"enterprise_search":   enterpriseSearchSchema(),
-			"observability":       observabilitySchema(),
-		},
-
-		Blocks: map[string]tfsdk.Block{
-			"elasticsearch": elasticsearchSchema(),
-			"kibana":        kibanaSchema(),
+			"elasticsearch":       elasticsearchAttribute(),
+			"kibana":              kibanaAttribute(),
+			"apm":                 apmAttribute(),
+			"integrations_server": integrationsServerAttribute(),
+			"enterprise_search":   enterpriseSearchAttribute(),
+			"observability":       observabilityAttribute(),
 		},
 	}, nil
 }
@@ -191,13 +187,12 @@ func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequ
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-func elasticsearchSchema() tfsdk.Block {
-	return tfsdk.Block{
+func elasticsearchAttribute() tfsdk.Attribute {
+	return tfsdk.Attribute{
 		Description: "Required Elasticsearch resource definition",
-		MinItems:    1,
-		MaxItems:    1,
-		NestingMode: tfsdk.BlockNestingModeList,
-		Attributes: map[string]tfsdk.Attribute{
+		Required:    true,
+		Validators:  []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
+		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 			"autoscale": {
 				Type:        types.StringType,
 				Description: `Enable or disable autoscaling. Defaults to the setting coming from the deployment template. Accepted values are "true" or "false".`,
@@ -275,7 +270,7 @@ func elasticsearchSchema() tfsdk.Block {
 			"extension": elasticsearchExtensionAttribute(),
 
 			"strategy": elasticsearchStrategyAttribute(),
-		},
+		}),
 	}
 }
 
@@ -754,7 +749,7 @@ func apmConfig() tfsdk.Attribute {
 	}
 }
 
-func apmSchema() tfsdk.Attribute {
+func apmAttribute() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: "Optional APM resource definition",
 		Optional:    true,
@@ -767,7 +762,7 @@ func apmSchema() tfsdk.Attribute {
 				PlanModifiers: []tfsdk.AttributePlanModifier{
 					planmodifier.DefaultValue(types.String{Value: "main-elasticsearch"}),
 					// resource.UseStateForUnknown(),
-					UseStateForNoChange(),
+					planmodifier.UseStateForNoChange(),
 				},
 			},
 			"ref_id": {
@@ -777,7 +772,7 @@ func apmSchema() tfsdk.Attribute {
 				PlanModifiers: []tfsdk.AttributePlanModifier{
 					planmodifier.DefaultValue(types.String{Value: "main-apm"}),
 					// resource.UseStateForUnknown(),
-					UseStateForNoChange(),
+					planmodifier.UseStateForNoChange(),
 				},
 			},
 			"resource_id": {
@@ -785,7 +780,7 @@ func apmSchema() tfsdk.Attribute {
 				Computed: true,
 				PlanModifiers: []tfsdk.AttributePlanModifier{
 					// resource.UseStateForUnknown(),
-					UseStateForNoChange(),
+					planmodifier.UseStateForNoChange(),
 				},
 			},
 			"region": {
@@ -793,7 +788,7 @@ func apmSchema() tfsdk.Attribute {
 				Computed: true,
 				PlanModifiers: []tfsdk.AttributePlanModifier{
 					// resource.UseStateForUnknown(),
-					UseStateForNoChange(),
+					planmodifier.UseStateForNoChange(),
 				},
 			},
 			"http_endpoint": {
@@ -801,7 +796,7 @@ func apmSchema() tfsdk.Attribute {
 				Computed: true,
 				PlanModifiers: []tfsdk.AttributePlanModifier{
 					// resource.UseStateForUnknown(),
-					UseStateForNoChange(),
+					planmodifier.UseStateForNoChange(),
 				},
 			},
 			"https_endpoint": {
@@ -809,7 +804,7 @@ func apmSchema() tfsdk.Attribute {
 				Computed: true,
 				PlanModifiers: []tfsdk.AttributePlanModifier{
 					// resource.UseStateForUnknown(),
-					UseStateForNoChange(),
+					planmodifier.UseStateForNoChange(),
 				},
 			},
 			"topology": apmTopology(),
@@ -818,7 +813,7 @@ func apmSchema() tfsdk.Attribute {
 	}
 }
 
-func enterpriseSearchSchema() tfsdk.Attribute {
+func enterpriseSearchAttribute() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: "Optional Enterprise Search resource definition",
 		Optional:    true,
@@ -973,17 +968,12 @@ func enterpriseSearchSchema() tfsdk.Attribute {
 	}
 }
 
-func kibanaSchema() tfsdk.Block {
-	return tfsdk.Block{
+func kibanaAttribute() tfsdk.Attribute {
+	return tfsdk.Attribute{
 		Description: "Optional Kibana resource definition",
-		MinItems:    0,
-		MaxItems:    1,
-		NestingMode: tfsdk.BlockNestingModeList,
-		PlanModifiers: []tfsdk.AttributePlanModifier{
-			UseStateIfEmptyCollection(),
-			// resource.UseStateForUnknown(),
-		},
-		Attributes: map[string]tfsdk.Attribute{
+		Optional:    true,
+		Validators:  []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
+		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 			"elasticsearch_cluster_ref_id": {
 				Type: types.StringType,
 				PlanModifiers: []tfsdk.AttributePlanModifier{
@@ -1108,11 +1098,11 @@ func kibanaSchema() tfsdk.Block {
 					},
 				}),
 			},
-		},
+		}),
 	}
 }
 
-func integrationsServerSchema() tfsdk.Attribute {
+func integrationsServerAttribute() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: "Optional Integrations Server resource definition",
 		Optional:    true,
@@ -1257,7 +1247,7 @@ func integrationsServerSchema() tfsdk.Attribute {
 	}
 }
 
-func observabilitySchema() tfsdk.Attribute {
+func observabilityAttribute() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: "Optional observability settings. Ship logs and metrics to a dedicated deployment.",
 		Optional:    true,

@@ -13,7 +13,7 @@ resource "ec_deployment" "observability" {
     deployment_id = "self"
   }]
 
-  elasticsearch {
+  elasticsearch = [{
     autoscale = "false"
 
     topology = [{
@@ -21,7 +21,7 @@ resource "ec_deployment" "observability" {
       size       = "1g"
       zone_count = 1
     }]
-  }
+  }]
 
   kibana = [{
     topology = [{

@@ -269,8 +269,8 @@ func Test_readElasticsearch(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Equal(t, tt.want, got)
 
-			var ess types.List
-			diags := tfsdk.ValueFrom(context.Background(), got, elasticsearchSchema().Type(), &ess)
+			var esObj types.Object
+			diags := tfsdk.ValueFrom(context.Background(), got, elasticsearchAttribute().FrameworkType(), &esObj)
 			if tt.diags.HasError() {
 				assert.Equal(t, tt.diags, diags)
 			}

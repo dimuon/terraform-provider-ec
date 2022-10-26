@@ -276,7 +276,7 @@ func Test_IntegrationsServerPayload(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var ess types.List
-			diags := tfsdk.ValueFrom(context.Background(), tt.args.ess, integrationsServerSchema().FrameworkType(), &ess)
+			diags := tfsdk.ValueFrom(context.Background(), tt.args.ess, integrationsServerAttribute().FrameworkType(), &ess)
 			assert.Nil(t, diags)
 
 			if got, diags := integrationsServerPayload(context.Background(), ess, tt.args.tpl); tt.diags != nil {

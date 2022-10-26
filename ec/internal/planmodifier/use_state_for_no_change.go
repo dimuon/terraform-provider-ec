@@ -15,15 +15,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package deploymentresource
+package planmodifier
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 // Use `self` as value of `observability`'s `deployment_id` attribute
@@ -53,20 +50,6 @@ func (r useStateForNoChange) Modify(ctx context.Context, req tfsdk.ModifyAttribu
 		return
 	}
 
-	var plan types.Object
-
-	if diags := req.Plan.Get(ctx, &plan); diags.HasError() {
-		resp.Diagnostics.Append(diags...)
-		return
-	}
-
-	var state DeploymentTF
-
-	if diags := req.Plan.Get(ctx, &state); diags.HasError() {
-		resp.Diagnostics.Append(diags...)
-		return
-	}
-
 	diffs, err := req.Plan.Raw.Diff(req.State.Raw)
 
 	if err != nil {
@@ -76,12 +59,9 @@ func (r useStateForNoChange) Modify(ctx context.Context, req tfsdk.ModifyAttribu
 
 	for _, dif := range diffs {
 
-		if dif.Value1 == nil || dif.Value1.IsNull() {
+		if dif.Value1 == nil {
 			continue
 		}
-
-		// if dif.Value1.Type().Is(tftypes.List{}) {
-		// }
 
 		if dif.Value1.IsKnown() {
 			return
@@ -99,60 +79,4 @@ func (r useStateForNoChange) Description(ctx context.Context) string {
 // MarkdownDescription returns a markdown description of the plan modifier.
 func (r useStateForNoChange) MarkdownDescription(ctx context.Context) string {
 	return "Use state value if there is no change in config."
-}
-
-func planIsChanged(ctx context.Context, plan, state types.Object) (bool, error) {
-	if plan.IsUnknown() {
-		return false, nil
-	}
-
-	if plan.IsNull() && state.IsNull() {
-		return false, nil
-	}
-
-	for planKey, planVal := range plan.Attrs {
-		if planVal.IsUnknown() {
-			continue
-		}
-
-		stateVal, exist := state.Attrs[planKey]
-
-		if !exist {
-			return true, nil
-		}
-
-		if _, isObject := stateVal.Type(ctx).(attr.TypeWithAttributeTypes); isObject {
-
-			newState, ok := stateVal.(types.Object)
-
-			if !ok {
-				return true, fmt.Errorf("cannot convert '%v' to object", stateVal)
-			}
-
-			newPlan, ok := planVal.(types.Object)
-
-			if !ok {
-				return true, fmt.Errorf("cannot convert '%v' to object", planVal)
-			}
-
-			changed, err := planIsChanged(ctx, newPlan, newState)
-
-			if err != nil {
-				return true, err
-			}
-
-			if changed {
-				return true, nil
-			}
-		}
-
-		if _, isCollection := stateVal.Type(ctx).(attr.TypeWithElementType); isCollection {
-
-			// tfsdk.ValueAs(ctx, stateVal, )
-			// stateCollection, ok := stateVal.
-
-		}
-	}
-
-	return false, nil
 }

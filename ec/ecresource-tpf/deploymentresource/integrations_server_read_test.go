@@ -320,7 +320,7 @@ func Test_readIntegrationsServer(t *testing.T) {
 			assert.Equal(t, tt.want, srvs)
 
 			var srvsTF types.List
-			diags := tfsdk.ValueFrom(context.Background(), srvs, integrationsServerSchema().FrameworkType(), &srvsTF)
+			diags := tfsdk.ValueFrom(context.Background(), srvs, integrationsServerAttribute().FrameworkType(), &srvsTF)
 			assert.Nil(t, diags)
 		})
 	}
