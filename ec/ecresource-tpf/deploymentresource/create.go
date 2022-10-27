@@ -65,6 +65,7 @@ func (r Resource) Create(ctx context.Context, req resource.CreateRequest, resp *
 	})
 
 	if err != nil {
+		resp.Diagnostics.AddError("failed creating deployment", err.Error())
 		resp.Diagnostics.AddError("failed creating deployment", newCreationError(requestId).Error())
 		return
 	}
