@@ -354,10 +354,10 @@ func elasticsearchTopologyAttribute() tfsdk.Attribute {
 				Description: `Optional size type, defaults to "memory".`,
 				Optional:    true,
 				Computed:    true,
-				// PlanModifiers: []tfsdk.AttributePlanModifier{
-				// 	resource.UseStateForUnknown(),
-				// 	planmodifier.DefaultValue(types.String{Value: "memory"}),
-				// },
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					// 	resource.UseStateForUnknown(),
+					planmodifier.DefaultValue(types.String{Value: "memory"}),
+				},
 			},
 			"zone_count": {
 				Type:        types.Int64Type,
