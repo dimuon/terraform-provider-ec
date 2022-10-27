@@ -171,7 +171,7 @@ func elasticTopologyConfigChanged(ctx context.Context, plan, state []Elasticsear
 			return true, nil
 		}
 
-		typ := elasticsearchTopologySchema().Type().(types.ListType).ElemType
+		typ := elasticsearchTopologyAttribute().FrameworkType().(types.ListType).ElemType
 
 		var planObj types.Object
 		if diags := tfsdk.ValueFrom(ctx, pl, typ, &planObj); diags.HasError() {

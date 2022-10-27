@@ -169,16 +169,12 @@ func (t *Resource) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostic
 				},
 				Optional: true,
 			},
-
+			"elasticsearch":       elasticsearchSchema(),
 			"kibana":              kibanaAttribute(),
 			"apm":                 apmAttribute(),
 			"integrations_server": integrationsServerAttribute(),
 			"enterprise_search":   enterpriseSearchAttribute(),
 			"observability":       observabilityAttribute(),
-		},
-
-		Blocks: map[string]tfsdk.Block{
-			"elasticsearch": elasticsearchSchema(),
 		},
 	}, nil
 }
@@ -191,15 +187,12 @@ func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequ
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-func elasticsearchSchema() tfsdk.Block {
-	return tfsdk.Block{
+func elasticsearchSchema() tfsdk.Attribute {
+	return tfsdk.Attribute{
 		Description: "Required Elasticsearch resource definition",
-		// Required:    true,
-		MinItems:    1,
-		MaxItems:    1,
-		NestingMode: tfsdk.BlockNestingModeList,
-		// Validators:  []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
-		Attributes: map[string]tfsdk.Attribute{
+		Required:    true,
+		Validators:  []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
+		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 			"autoscale": {
 				Type:        types.StringType,
 				Description: `Enable or disable autoscaling. Defaults to the setting coming from the deployment template. Accepted values are "true" or "false".`,
@@ -262,6 +255,7 @@ func elasticsearchSchema() tfsdk.Block {
 				// 	resource.UseStateForUnknown(),
 				// },
 			},
+			"topology": elasticsearchTopologyAttribute(),
 
 			"trust_account": elasticsearchTrustAccountAttribute(),
 
@@ -276,11 +270,7 @@ func elasticsearchSchema() tfsdk.Block {
 			"extension": elasticsearchExtensionAttribute(),
 
 			"strategy": elasticsearchStrategyAttribute(),
-		},
-
-		Blocks: map[string]tfsdk.Block{
-			"topology": elasticsearchTopologySchema(),
-		},
+		}),
 	}
 }
 
@@ -328,16 +318,15 @@ func elasticsearchConfigAttribute() tfsdk.Attribute {
 	}
 }
 
-func elasticsearchTopologySchema() tfsdk.Block {
-	return tfsdk.Block{
-		MinItems:    0,
-		NestingMode: tfsdk.BlockNestingModeList,
+func elasticsearchTopologyAttribute() tfsdk.Attribute {
+	return tfsdk.Attribute{
+		Computed:    true,
+		Optional:    true,
 		Description: `Optional topology element which must be set once but can be set multiple times to compose complex topologies`,
 		PlanModifiers: tfsdk.AttributePlanModifiers{
-			// resource.UseStateForUnknown(),
-			UseUnknownTopologyBlockIfEmpty(),
+			resource.UseStateForUnknown(),
 		},
-		Attributes: map[string]tfsdk.Attribute{
+		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 			"id": {
 				Type:        types.StringType,
 				Description: `Required topology ID from the deployment template`,
@@ -427,7 +416,7 @@ func elasticsearchTopologySchema() tfsdk.Block {
 			},
 			"autoscaling": elasticsearchTopologyAutoscalingAttribute(),
 			"config":      elasticsearchTopologyConfigAttribute(),
-		},
+		}),
 	}
 }
 
