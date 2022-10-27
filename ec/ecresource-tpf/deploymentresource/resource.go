@@ -169,7 +169,7 @@ func (t *Resource) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostic
 				},
 				Optional: true,
 			},
-			"elasticsearch":       elasticsearchSchema(),
+			"elasticsearch":       elasticsearchAttribute(),
 			"kibana":              kibanaAttribute(),
 			"apm":                 apmAttribute(),
 			"integrations_server": integrationsServerAttribute(),
@@ -187,7 +187,7 @@ func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequ
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-func elasticsearchSchema() tfsdk.Attribute {
+func elasticsearchAttribute() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: "Required Elasticsearch resource definition",
 		Required:    true,
