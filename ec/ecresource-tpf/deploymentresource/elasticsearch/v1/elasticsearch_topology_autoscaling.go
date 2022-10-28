@@ -50,8 +50,8 @@ type ElasticsearchTopologyAutoscalingV1 struct {
 
 type ElasticsearchTopologyAutoscalings []ElasticsearchTopologyAutoscalingV1
 
-func readElasticsearchTopologyAutoscalings(in *models.ElasticsearchClusterTopologyElement) (ElasticsearchTopologyAutoscalings, error) {
-	autoscaling, err := readElasticsearchTopologyAutoscaling(in)
+func ReadElasticsearchTopologyAutoscalings(in *models.ElasticsearchClusterTopologyElement) (ElasticsearchTopologyAutoscalings, error) {
+	autoscaling, err := ReadElasticsearchTopologyAutoscaling(in)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func readElasticsearchTopologyAutoscalings(in *models.ElasticsearchClusterTopolo
 	return ElasticsearchTopologyAutoscalings{*autoscaling}, nil
 }
 
-func elasticsearchTopologyAutoscalingPayload(ctx context.Context, autos types.List, topologyID string, elem *models.ElasticsearchClusterTopologyElement) diag.Diagnostics {
+func ElasticsearchTopologyAutoscalingPayload(ctx context.Context, autos types.List, topologyID string, elem *models.ElasticsearchClusterTopologyElement) diag.Diagnostics {
 	var diag diag.Diagnostics
 
 	if len(autos.Elems) == 0 {
@@ -114,7 +114,7 @@ func elasticsearchTopologyAutoscalingPayload(ctx context.Context, autos types.Li
 	return diag
 }
 
-func readElasticsearchTopologyAutoscaling(topology *models.ElasticsearchClusterTopologyElement) (*ElasticsearchTopologyAutoscalingV1, error) {
+func ReadElasticsearchTopologyAutoscaling(topology *models.ElasticsearchClusterTopologyElement) (*ElasticsearchTopologyAutoscalingV1, error) {
 	var a ElasticsearchTopologyAutoscalingV1
 
 	if ascale := topology.AutoscalingMax; ascale != nil {

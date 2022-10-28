@@ -48,7 +48,7 @@ type ElasticsearchTopologyConfig struct {
 
 type ElasticsearchTopologyConfigs []ElasticsearchTopologyConfig
 
-func elasticsearchTopologyConfigPayload(ctx context.Context, list types.List, model *models.ElasticsearchConfiguration) (*models.ElasticsearchConfiguration, diag.Diagnostics) {
+func ElasticsearchTopologyConfigPayload(ctx context.Context, list types.List, model *models.ElasticsearchConfiguration) (*models.ElasticsearchConfiguration, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	var cfg *ElasticsearchTopologyConfigTF
@@ -97,7 +97,7 @@ func (c *ElasticsearchTopologyConfig) isEmpty() bool {
 	return c == nil || reflect.ValueOf(*c).IsZero()
 }
 
-func readElasticsearchTopologyConfig(in *models.ElasticsearchConfiguration) (ElasticsearchTopologyConfigs, error) {
+func ReadElasticsearchTopologyConfig(in *models.ElasticsearchConfiguration) (ElasticsearchTopologyConfigs, error) {
 	var config ElasticsearchTopologyConfig
 	if in == nil {
 		return nil, nil

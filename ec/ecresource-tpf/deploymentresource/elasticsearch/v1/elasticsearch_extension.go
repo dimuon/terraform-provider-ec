@@ -45,7 +45,7 @@ type ElasticsearchExtension struct {
 
 type ElasticsearchExtensions []ElasticsearchExtension
 
-func readElasticsearchExtensions(in *models.ElasticsearchConfiguration) (ElasticsearchExtensions, error) {
+func ReadElasticsearchExtensions(in *models.ElasticsearchConfiguration) (ElasticsearchExtensions, error) {
 	if len(in.UserBundles) == 0 && len(in.UserPlugins) == 0 {
 		return nil, nil
 	}
@@ -53,7 +53,7 @@ func readElasticsearchExtensions(in *models.ElasticsearchConfiguration) (Elastic
 	extensions := make(ElasticsearchExtensions, 0, len(in.UserBundles)+len(in.UserPlugins))
 
 	for _, model := range in.UserBundles {
-		extension, err := readFromUserBundle(model)
+		extension, err := ReadFromUserBundle(model)
 		if err != nil {
 			return nil, err
 		}
@@ -62,7 +62,7 @@ func readElasticsearchExtensions(in *models.ElasticsearchConfiguration) (Elastic
 	}
 
 	for _, model := range in.UserPlugins {
-		extension, err := readFromUserPlugin(model)
+		extension, err := ReadFromUserPlugin(model)
 		if err != nil {
 			return nil, err
 		}
@@ -73,7 +73,7 @@ func readElasticsearchExtensions(in *models.ElasticsearchConfiguration) (Elastic
 	return extensions, nil
 }
 
-func elasticsearchExtensionPayload(ctx context.Context, extensions types.Set, es *models.ElasticsearchConfiguration) diag.Diagnostics {
+func ElasticsearchExtensionPayload(ctx context.Context, extensions types.Set, es *models.ElasticsearchConfiguration) diag.Diagnostics {
 	for _, elem := range extensions.Elems {
 		var extension ElasticsearchExtensionTF
 
@@ -104,7 +104,7 @@ func elasticsearchExtensionPayload(ctx context.Context, extensions types.Set, es
 	return nil
 }
 
-func readFromUserBundle(in *models.ElasticsearchUserBundle) (*ElasticsearchExtension, error) {
+func ReadFromUserBundle(in *models.ElasticsearchUserBundle) (*ElasticsearchExtension, error) {
 	var ext ElasticsearchExtension
 
 	ext.Type = "bundle"
@@ -127,7 +127,7 @@ func readFromUserBundle(in *models.ElasticsearchUserBundle) (*ElasticsearchExten
 	return &ext, nil
 }
 
-func readFromUserPlugin(in *models.ElasticsearchUserPlugin) (*ElasticsearchExtension, error) {
+func ReadFromUserPlugin(in *models.ElasticsearchUserPlugin) (*ElasticsearchExtension, error) {
 	var ext ElasticsearchExtension
 
 	ext.Type = "plugin"

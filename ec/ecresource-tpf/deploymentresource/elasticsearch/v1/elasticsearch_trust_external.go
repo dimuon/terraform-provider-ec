@@ -40,7 +40,7 @@ type ElasticsearchTrustExternal struct {
 
 type ElasticsearchTrustExternals []ElasticsearchTrustExternal
 
-func readElasticsearchTrustExternals(in *models.ElasticsearchClusterSettings) (ElasticsearchTrustExternals, error) {
+func ReadElasticsearchTrustExternals(in *models.ElasticsearchClusterSettings) (ElasticsearchTrustExternals, error) {
 	if in == nil || in.Trust == nil {
 		return nil, nil
 	}
@@ -48,7 +48,7 @@ func readElasticsearchTrustExternals(in *models.ElasticsearchClusterSettings) (E
 	externals := make(ElasticsearchTrustExternals, 0, len(in.Trust.External))
 
 	for _, model := range in.Trust.External {
-		external, err := readElasticsearchTrustExternal(model)
+		external, err := ReadElasticsearchTrustExternal(model)
 		if err != nil {
 			return nil, err
 		}
@@ -58,7 +58,7 @@ func readElasticsearchTrustExternals(in *models.ElasticsearchClusterSettings) (E
 	return externals, nil
 }
 
-func elasticsearchTrustExternalPayload(ctx context.Context, externals types.Set, model *models.ElasticsearchClusterSettings) (*models.ElasticsearchClusterSettings, diag.Diagnostics) {
+func ElasticsearchTrustExternalPayload(ctx context.Context, externals types.Set, model *models.ElasticsearchClusterSettings) (*models.ElasticsearchClusterSettings, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	payloads := make([]*models.ExternalTrustRelationship, 0, len(externals.Elems))
@@ -110,7 +110,7 @@ func elasticsearchTrustExternalPayload(ctx context.Context, externals types.Set,
 	return model, nil
 }
 
-func readElasticsearchTrustExternal(in *models.ExternalTrustRelationship) (*ElasticsearchTrustExternal, error) {
+func ReadElasticsearchTrustExternal(in *models.ExternalTrustRelationship) (*ElasticsearchTrustExternal, error) {
 	var ext ElasticsearchTrustExternal
 
 	if in.TrustRelationshipID != nil {

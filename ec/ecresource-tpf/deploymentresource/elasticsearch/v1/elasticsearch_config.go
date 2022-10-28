@@ -50,7 +50,7 @@ type ElasticsearchConfig struct {
 
 type ElasticsearchConfigs []ElasticsearchConfig
 
-func elasticsearchConfigPayload(ctx context.Context, cfgList types.List, model *models.ElasticsearchConfiguration) (*models.ElasticsearchConfiguration, diag.Diagnostics) {
+func ElasticsearchConfigPayload(ctx context.Context, cfgList types.List, model *models.ElasticsearchConfiguration) (*models.ElasticsearchConfiguration, diag.Diagnostics) {
 	if cfgList.IsNull() || cfgList.IsUnknown() || len(cfgList.Elems) == 0 {
 		return model, nil
 	}
@@ -106,7 +106,7 @@ func (c *ElasticsearchConfig) isEmpty() bool {
 	return c == nil || reflect.ValueOf(*c).IsZero()
 }
 
-func readElasticsearchConfig(in *models.ElasticsearchConfiguration) (ElasticsearchConfigs, error) {
+func ReadElasticsearchConfig(in *models.ElasticsearchConfiguration) (ElasticsearchConfigs, error) {
 	var config ElasticsearchConfig
 	if in == nil {
 		return nil, nil

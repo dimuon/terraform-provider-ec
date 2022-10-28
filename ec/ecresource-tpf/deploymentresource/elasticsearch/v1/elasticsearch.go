@@ -130,7 +130,7 @@ func ReadElasticsearch(in *models.ElasticsearchResourceInfo, remotes *models.Rem
 	plan := in.Info.PlanInfo.Current.Plan
 	var err error
 
-	topologies, err := readElasticsearchTopologies(plan)
+	topologies, err := ReadElasticsearchTopologies(plan)
 	if err != nil {
 		return nil, err
 	}
@@ -146,30 +146,30 @@ func ReadElasticsearch(in *models.ElasticsearchResourceInfo, remotes *models.Rem
 
 	es.HttpEndpoint, es.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
 
-	es.Config, err = readElasticsearchConfig(plan.Elasticsearch)
+	es.Config, err = ReadElasticsearchConfig(plan.Elasticsearch)
 	if err != nil {
 		return nil, err
 	}
 
-	clusters, err := readElasticsearchRemoteClusters(remotes.Resources)
+	clusters, err := ReadElasticsearchRemoteClusters(remotes.Resources)
 	if err != nil {
 		return nil, err
 	}
 	es.RemoteCluster = clusters
 
-	extensions, err := readElasticsearchExtensions(plan.Elasticsearch)
+	extensions, err := ReadElasticsearchExtensions(plan.Elasticsearch)
 	if err != nil {
 		return nil, err
 	}
 	es.Extension = extensions
 
-	accounts, err := readElasticsearchTrustAccounts(in.Info.Settings)
+	accounts, err := ReadElasticsearchTrustAccounts(in.Info.Settings)
 	if err != nil {
 		return nil, err
 	}
 	es.TrustAccount = accounts
 
-	externals, err := readElasticsearchTrustExternals(in.Info.Settings)
+	externals, err := ReadElasticsearchTrustExternals(in.Info.Settings)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +196,7 @@ func (es *ElasticsearchTF) Payload(ctx context.Context, res *models.Elasticsearc
 	var ds diag.Diagnostics
 
 	if !skipTopologies {
-		res.Plan.ClusterTopology, ds = elasticsearchTopologiesPayload(ctx, es.Topology, res.Plan.ClusterTopology)
+		ds = ElasticsearchTopologiesPayload(ctx, es.Topology, res.Plan.ClusterTopology)
 		diags.Append(ds...)
 	}
 
@@ -204,12 +204,12 @@ func (es *ElasticsearchTF) Payload(ctx context.Context, res *models.Elasticsearc
 	// list when these are set as a dedicated tier as a topology element.
 	updateNodeRolesOnDedicatedTiers(res.Plan.ClusterTopology)
 
-	res.Plan.Elasticsearch, ds = elasticsearchConfigPayload(ctx, es.Config, res.Plan.Elasticsearch)
+	res.Plan.Elasticsearch, ds = ElasticsearchConfigPayload(ctx, es.Config, res.Plan.Elasticsearch)
 	diags = append(diags, ds...)
 
-	diags.Append(elasticsearchSnapshotSourcePayload(ctx, es.SnapshotSource, res.Plan)...)
+	diags.Append(ElasticsearchSnapshotSourcePayload(ctx, es.SnapshotSource, res.Plan)...)
 
-	diags.Append(elasticsearchExtensionPayload(ctx, es.Extension, res.Plan.Elasticsearch)...)
+	diags.Append(ElasticsearchExtensionPayload(ctx, es.Extension, res.Plan.Elasticsearch)...)
 
 	if es.Autoscale.Value != "" {
 		autoscaleBool, err := strconv.ParseBool(es.Autoscale.Value)
@@ -220,13 +220,13 @@ func (es *ElasticsearchTF) Payload(ctx context.Context, res *models.Elasticsearc
 		}
 	}
 
-	res.Settings, ds = elasticsearchTrustAccountPayload(ctx, es.TrustAccount, res.Settings)
+	res.Settings, ds = ElasticsearchTrustAccountPayload(ctx, es.TrustAccount, res.Settings)
 	diags = append(diags, ds...)
 
-	res.Settings, ds = elasticsearchTrustExternalPayload(ctx, es.TrustExternal, res.Settings)
+	res.Settings, ds = ElasticsearchTrustExternalPayload(ctx, es.TrustExternal, res.Settings)
 	diags = append(diags, ds...)
 
-	diags.Append(elasticsearchStrategyPayload(ctx, es.Strategy, res.Plan)...)
+	diags.Append(ElasticsearchStrategyPayload(ctx, es.Strategy, res.Plan)...)
 
 	return res, diags
 }

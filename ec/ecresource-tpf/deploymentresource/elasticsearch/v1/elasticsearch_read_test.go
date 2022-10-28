@@ -396,7 +396,7 @@ func Test_readElasticsearchTopology(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := readElasticsearchTopologies(tt.args.plan)
+			got, err := ReadElasticsearchTopologies(tt.args.plan)
 			if err != nil && !assert.EqualError(t, err, tt.err) {
 				t.Error(err)
 			}
@@ -432,7 +432,7 @@ func Test_readElasticsearchConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := readElasticsearchConfig(tt.args.cfg)
+			got, err := ReadElasticsearchConfig(tt.args.cfg)
 			assert.Nil(t, err)
 			assert.Equal(t, tt.want, got)
 

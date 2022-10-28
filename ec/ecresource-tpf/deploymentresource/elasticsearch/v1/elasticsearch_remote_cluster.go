@@ -42,7 +42,7 @@ type ElasticsearchRemoteCluster struct {
 
 type ElasticsearchRemoteClusters []ElasticsearchRemoteCluster
 
-func readElasticsearchRemoteClusters(in []*models.RemoteResourceRef) (ElasticsearchRemoteClusters, error) {
+func ReadElasticsearchRemoteClusters(in []*models.RemoteResourceRef) (ElasticsearchRemoteClusters, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}
@@ -50,7 +50,7 @@ func readElasticsearchRemoteClusters(in []*models.RemoteResourceRef) (Elasticsea
 	clusters := make([]ElasticsearchRemoteCluster, 0, len(in))
 
 	for _, model := range in {
-		cluster, err := readElasticsearchRemoteCluster(model)
+		cluster, err := ReadElasticsearchRemoteCluster(model)
 		if err != nil {
 			return nil, err
 		}
@@ -94,7 +94,7 @@ func ElasticsearchRemoteClustersPayload(ctx context.Context, clusters types.Set)
 	return &payloads, nil
 }
 
-func readElasticsearchRemoteCluster(in *models.RemoteResourceRef) (*ElasticsearchRemoteCluster, error) {
+func ReadElasticsearchRemoteCluster(in *models.RemoteResourceRef) (*ElasticsearchRemoteCluster, error) {
 	var cluster ElasticsearchRemoteCluster
 
 	if in.DeploymentID != nil && *in.DeploymentID != "" {

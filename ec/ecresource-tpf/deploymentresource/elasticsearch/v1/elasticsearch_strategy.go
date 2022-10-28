@@ -38,7 +38,7 @@ type ElasticsearchStrategy struct {
 
 type ElasticsearchStrategiesV1 []ElasticsearchStrategy
 
-func elasticsearchStrategyPayload(ctx context.Context, strategies types.List, payload *models.ElasticsearchClusterPlan) diag.Diagnostics {
+func ElasticsearchStrategyPayload(ctx context.Context, strategies types.List, payload *models.ElasticsearchClusterPlan) diag.Diagnostics {
 	if len(strategies.Elems) == 0 {
 		return nil
 	}

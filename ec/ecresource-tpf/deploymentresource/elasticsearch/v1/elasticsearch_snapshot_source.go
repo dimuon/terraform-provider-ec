@@ -38,7 +38,7 @@ type ElasticsearchSnapshotSource struct {
 
 type ElasticsearchSnapshotSources []ElasticsearchSnapshotSource
 
-func elasticsearchSnapshotSourcePayload(ctx context.Context, list types.List, payload *models.ElasticsearchClusterPlan) diag.Diagnostics {
+func ElasticsearchSnapshotSourcePayload(ctx context.Context, list types.List, payload *models.ElasticsearchClusterPlan) diag.Diagnostics {
 	var snapshot *ElasticsearchSnapshotSourceTF
 
 	if diags := utils.GetFirst(ctx, list, &snapshot); diags.HasError() {
