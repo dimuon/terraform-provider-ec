@@ -499,7 +499,7 @@ func Test_readDeployment(t *testing.T) {
 		{
 			name: "flattens an azure plan (io-optimized)",
 			args: args{
-				res: testutil.OpenDeploymentGet(t, "testdata/deployment-azure-io-optimized.json"),
+				res: testutil.OpenDeploymentGet(t, "../../testdata/deployment-azure-io-optimized.json"),
 			},
 			want: Deployment{
 				Id:                   "123e79d8109c4a0790b0b333110bf715",
@@ -572,7 +572,7 @@ func Test_readDeployment(t *testing.T) {
 		},
 		{
 			name: "flattens an aws plan (io-optimized)",
-			args: args{res: testutil.OpenDeploymentGet(t, "testdata/deployment-aws-io-optimized.json")},
+			args: args{res: testutil.OpenDeploymentGet(t, "../../testdata/deployment-aws-io-optimized.json")},
 			want: Deployment{
 				Id:                   "123365f2805e46808d40849b1c0b266b",
 				Alias:                "my-deployment",
@@ -645,7 +645,7 @@ func Test_readDeployment(t *testing.T) {
 		{
 			name: "flattens an aws plan with extensions (io-optimized)",
 			args: args{
-				res: testutil.OpenDeploymentGet(t, "testdata/deployment-aws-io-optimized-extension.json"),
+				res: testutil.OpenDeploymentGet(t, "../../testdata/deployment-aws-io-optimized-extension.json"),
 			},
 			want: Deployment{
 				Id:                   "123365f2805e46808d40849b1c0b266b",
@@ -1143,7 +1143,7 @@ func Test_readDeployment(t *testing.T) {
 		},
 		{
 			name: "flattens an aws plan (io-optimized) with tags",
-			args: args{res: testutil.OpenDeploymentGet(t, "testdata/deployment-aws-io-optimized-tags.json")},
+			args: args{res: testutil.OpenDeploymentGet(t, "../../testdata/deployment-aws-io-optimized-tags.json")},
 			want: Deployment{
 				Id:                   "123365f2805e46808d40849b1c0b266b",
 				Alias:                "my-deployment",
@@ -1220,7 +1220,7 @@ func Test_readDeployment(t *testing.T) {
 		},
 		{
 			name: "flattens a gcp plan (io-optimized)",
-			args: args{res: testutil.OpenDeploymentGet(t, "testdata/deployment-gcp-io-optimized.json")},
+			args: args{res: testutil.OpenDeploymentGet(t, "../../testdata/deployment-gcp-io-optimized.json")},
 			want: Deployment{
 				Id:                   "1239e402d6df471ea374bd68e3f91cc5",
 				Alias:                "my-deployment",
@@ -1292,7 +1292,7 @@ func Test_readDeployment(t *testing.T) {
 		},
 		{
 			name: "flattens a gcp plan with autoscale set (io-optimized)",
-			args: args{res: testutil.OpenDeploymentGet(t, "testdata/deployment-gcp-io-optimized-autoscale.json")},
+			args: args{res: testutil.OpenDeploymentGet(t, "../../testdata/deployment-gcp-io-optimized-autoscale.json")},
 			want: Deployment{
 				Id:                   "1239e402d6df471ea374bd68e3f91cc5",
 				Alias:                "",
@@ -1390,7 +1390,7 @@ func Test_readDeployment(t *testing.T) {
 		},
 		{
 			name: "flattens a gcp plan (hot-warm)",
-			args: args{res: testutil.OpenDeploymentGet(t, "testdata/deployment-gcp-hot-warm.json")},
+			args: args{res: testutil.OpenDeploymentGet(t, "../../testdata/deployment-gcp-hot-warm.json")},
 			want: Deployment{
 				Id:                   "123d148423864552aa57b59929d4bf4d",
 				Name:                 "up2d-hot-warm",
@@ -1472,7 +1472,7 @@ func Test_readDeployment(t *testing.T) {
 		},
 		{
 			name: "flattens a gcp plan (hot-warm) with node_roles",
-			args: args{res: testutil.OpenDeploymentGet(t, "testdata/deployment-gcp-hot-warm-node_roles.json")},
+			args: args{res: testutil.OpenDeploymentGet(t, "../../testdata/deployment-gcp-hot-warm-node_roles.json")},
 			want: Deployment{
 				Id:                   "123d148423864552aa57b59929d4bf4d",
 				Name:                 "up2d-hot-warm",
@@ -1559,7 +1559,7 @@ func Test_readDeployment(t *testing.T) {
 		{
 			name: "flattens an aws plan (Cross Cluster Search)",
 			args: args{
-				res: testutil.OpenDeploymentGet(t, "testdata/deployment-aws-ccs.json"),
+				res: testutil.OpenDeploymentGet(t, "../../testdata/deployment-aws-ccs.json"),
 				remotes: models.RemoteResources{Resources: []*models.RemoteResourceRef{
 					{
 						Alias:              ec.String("alias"),
