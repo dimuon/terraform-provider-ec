@@ -78,21 +78,21 @@ func Test_createDeploymentWithEmptyFields(t *testing.T) {
 	}	
 	`)
 
-	templateFileName := "testdata/aws-io-optimized-v2.json"
+	templateFileName := "../../testdata/aws-io-optimized-v2.json"
 
 	r.UnitTest(t, r.TestCase{
 		ProtoV6ProviderFactories: protoV6ProviderFactoriesWithMockClient(
 			api.NewMock(
 				getTemplate(t, templateFileName),
-				createDeployment(t, readFile(t, "testdata/aws-io-optimized-v2-empty-config-create-expected-payload.json"), createDeploymentResponseJson, requestId),
-				mock.New200Response(readTestData(t, "testdata/aws-io-optimized-v2-empty-config-expected-deployment1.json")),
-				mock.New200Response(readTestData(t, "testdata/aws-io-optimized-v2-empty-config-expected-deployment2.json")),
-				mock.New200Response(readTestData(t, "testdata/aws-io-optimized-v2-empty-config-expected-deployment3.json")),
-				mock.New200Response(readTestData(t, "testdata/aws-io-optimized-v2-empty-config-expected-deployment3.json")),
-				mock.New200Response(readTestData(t, "testdata/aws-io-optimized-v2-empty-config-expected-deployment3.json")),
-				mock.New200Response(readTestData(t, "testdata/aws-io-optimized-v2-empty-config-expected-deployment3.json")),
+				createDeployment(t, readFile(t, "../../testdata/aws-io-optimized-v2-empty-config-create-expected-payload.json"), createDeploymentResponseJson, requestId),
+				mock.New200Response(readTestData(t, "../../testdata/aws-io-optimized-v2-empty-config-expected-deployment1.json")),
+				mock.New200Response(readTestData(t, "../../testdata/aws-io-optimized-v2-empty-config-expected-deployment2.json")),
+				mock.New200Response(readTestData(t, "../../testdata/aws-io-optimized-v2-empty-config-expected-deployment3.json")),
+				mock.New200Response(readTestData(t, "../../testdata/aws-io-optimized-v2-empty-config-expected-deployment3.json")),
+				mock.New200Response(readTestData(t, "../../testdata/aws-io-optimized-v2-empty-config-expected-deployment3.json")),
+				mock.New200Response(readTestData(t, "../../testdata/aws-io-optimized-v2-empty-config-expected-deployment3.json")),
 				readRemoteClusters(t),
-				mock.New200Response(readTestData(t, "testdata/aws-io-optimized-v2-empty-config-expected-deployment3.json")),
+				mock.New200Response(readTestData(t, "../../testdata/aws-io-optimized-v2-empty-config-expected-deployment3.json")),
 				readRemoteClusters(t),
 			),
 		),
