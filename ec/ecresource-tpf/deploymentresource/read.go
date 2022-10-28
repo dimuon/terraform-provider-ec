@@ -29,6 +29,9 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi/esremoteclustersapi"
 	"github.com/elastic/cloud-sdk-go/pkg/client/deployments"
 	"github.com/elastic/cloud-sdk-go/pkg/models"
+	deploymentv1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/deployment/v1"
+	elasticsearchv1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/elasticsearch/v1"
+	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/utils"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -39,7 +42,7 @@ func (r Resource) Read(ctx context.Context, request resource.ReadRequest, respon
 		return
 	}
 
-	var curState DeploymentTF
+	var curState deploymentv1.DeploymentTF
 
 	diags := request.State.Get(ctx, &curState)
 	response.Diagnostics.Append(diags...)
@@ -48,7 +51,7 @@ func (r Resource) Read(ctx context.Context, request resource.ReadRequest, respon
 		return
 	}
 
-	var newState *DeploymentTF
+	var newState *deploymentv1.DeploymentTF
 	var err error
 
 	if newState, diags = r.read(ctx, curState.Id.Value, curState, nil); err != nil {
@@ -66,7 +69,7 @@ func (r Resource) Read(ctx context.Context, request resource.ReadRequest, respon
 	response.Diagnostics.Append(diags...)
 }
 
-func (r Resource) read(ctx context.Context, id string, current DeploymentTF, deploymentResources []*models.DeploymentResource) (*DeploymentTF, diag.Diagnostics) {
+func (r Resource) read(ctx context.Context, id string, current deploymentv1.DeploymentTF, deploymentResources []*models.DeploymentResource) (*deploymentv1.DeploymentTF, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	response, err := deploymentapi.Get(deploymentapi.GetParams{
@@ -99,15 +102,15 @@ func (r Resource) read(ctx context.Context, id string, current DeploymentTF, dep
 		}
 	}
 
-	if !hasRunningResources(response) {
+	if !utils.HasRunningResources(response) {
 		return nil, nil
 	}
 
 	refId := ""
 
-	var elasticsearch *ElasticsearchTF
+	var elasticsearch *elasticsearchv1.ElasticsearchTF
 
-	if diags = getFirst(ctx, current.Elasticsearch, &elasticsearch); diags.HasError() {
+	if diags = utils.GetFirst(ctx, current.Elasticsearch, &elasticsearch); diags.HasError() {
 		return nil, diags
 	}
 
@@ -127,7 +130,7 @@ func (r Resource) read(ctx context.Context, id string, current DeploymentTF, dep
 		remotes = &models.RemoteResources{}
 	}
 
-	deployment, err := readDeployment(response, remotes, deploymentResources)
+	deployment, err := deploymentv1.ReadDeployment(response, remotes, deploymentResources)
 	if err != nil {
 		diags.AddError("Deployment read error", err.Error())
 		return nil, diags
@@ -135,11 +138,11 @@ func (r Resource) read(ctx context.Context, id string, current DeploymentTF, dep
 
 	deployment.RequestId = current.RequestId.Value
 
-	deployment.setCredentialsIfEmpty(current)
+	deployment.SetCredentialsIfEmpty(current)
 
-	deployment.processSelfInObservability()
+	deployment.ProcessSelfInObservability()
 
-	var deploymentTF DeploymentTF
+	var deploymentTF deploymentv1.DeploymentTF
 	schema, diags := r.GetSchema(ctx)
 	if diags.HasError() {
 		return nil, diags

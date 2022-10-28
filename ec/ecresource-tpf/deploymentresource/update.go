@@ -22,14 +22,14 @@ import (
 
 	"github.com/elastic/cloud-sdk-go/pkg/api"
 	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi"
-	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi/esremoteclustersapi"
 	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi/trafficfilterapi"
+	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/deployment/v1"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 )
 
 func (r Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan DeploymentTF
+	var plan v1.DeploymentTF
 
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
@@ -38,14 +38,14 @@ func (r Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *
 		return
 	}
 
-	var state DeploymentTF
+	var state v1.DeploymentTF
 	diags = req.State.Get(ctx, &state)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	updateReq, diags := plan.updateRequest(ctx, r.client, state)
+	updateReq, diags := plan.UpdateRequest(ctx, r.client, state)
 	if diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return
@@ -72,7 +72,7 @@ func (r Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *
 
 	resp.Diagnostics.Append(handleTrafficFilterChange(ctx, r.client, plan, state)...)
 
-	resp.Diagnostics.Append(handleRemoteClusters(ctx, r.client, plan, state)...)
+	resp.Diagnostics.Append(v1.HandleRemoteClusters(ctx, r.client, plan, state)...)
 
 	deployment, diags := r.read(ctx, plan.Id.Value, plan, res.Resources)
 	resp.Diagnostics.Append(diags...)
@@ -85,7 +85,7 @@ func (r Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *
 	resp.Diagnostics.Append(diags...)
 }
 
-func handleTrafficFilterChange(ctx context.Context, client *api.API, plan, state DeploymentTF) diag.Diagnostics {
+func handleTrafficFilterChange(ctx context.Context, client *api.API, plan, state v1.DeploymentTF) diag.Diagnostics {
 	if plan.TrafficFilter.IsNull() || plan.TrafficFilter.Equal(state.TrafficFilter) {
 		return nil
 	}
@@ -161,44 +161,5 @@ func associateRule(ruleID, deploymentID string, client *api.API) error {
 	}); err != nil {
 		return err
 	}
-	return nil
-}
-
-func handleRemoteClusters(ctx context.Context, client *api.API, plan, state DeploymentTF) diag.Diagnostics {
-	if plan.Elasticsearch.Equal(state.Elasticsearch) {
-		return nil
-	}
-
-	var es *ElasticsearchTF
-
-	var diags diag.Diagnostics
-
-	if diags = getFirst(ctx, plan.Elasticsearch, &es); diags.HasError() {
-		return diags
-	}
-
-	if es == nil {
-		return nil
-	}
-
-	if len(es.RemoteCluster.Elems) == 0 {
-		return nil
-	}
-
-	remoteRes, diags := elasticsearchRemoteClustersPayload(ctx, es.RemoteCluster)
-	if diags.HasError() {
-		return diags
-	}
-
-	if err := esremoteclustersapi.Update(esremoteclustersapi.UpdateParams{
-		API:             client,
-		DeploymentID:    plan.Id.Value,
-		RefID:           es.RefId.Value,
-		RemoteResources: remoteRes,
-	}); err != nil {
-		diags.AddError("cannot update remote clusters", err.Error())
-		return diags
-	}
-
 	return nil
 }

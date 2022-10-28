@@ -19,41 +19,19 @@ package deploymentresource
 
 import (
 	"context"
-	"strings"
 
 	"github.com/elastic/cloud-sdk-go/pkg/api"
+	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/deployment/v1"
 	"github.com/elastic/terraform-provider-ec/ec/internal"
-	"github.com/elastic/terraform-provider-ec/ec/internal/planmodifier"
-	"github.com/elastic/terraform-provider-ec/ec/internal/validators"
-	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
 // var _ tpfprovider.ResourceType = DeploymentResourceType{}
 var _ resource.ResourceWithImportState = &Resource{}
-
-// These constants are only used to determine whether or not a dedicated
-// tier of masters or ingest (coordinating) nodes are set.
-const (
-	dataTierRolePrefix   = "data_"
-	ingestDataTierRole   = "ingest"
-	masterDataTierRole   = "master"
-	autodetect           = "autodetect"
-	growAndShrink        = "grow_and_shrink"
-	rollingGrowAndShrink = "rolling_grow_and_shrink"
-	rollingAll           = "rolling_all"
-)
-
-// List of update strategies availables.
-var strategiesList = []string{
-	autodetect, growAndShrink, rollingGrowAndShrink, rollingAll,
-}
 
 type Resource struct {
 	client *api.API
@@ -78,105 +56,106 @@ func (r *Resource) Configure(ctx context.Context, request resource.ConfigureRequ
 }
 
 func (t *Resource) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
-		Version: 1,
-		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "Elastic Cloud Deployment resource",
+	return v1.DeploymentSchema(), nil
+	// return tfsdk.Schema{
+	// 	Version: 1,
+	// 	// This description is used by the documentation generator and the language server.
+	// 	MarkdownDescription: "Elastic Cloud Deployment resource",
 
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:                types.StringType,
-				Computed:            true,
-				MarkdownDescription: "Unique identifier of this resource.",
-				// PlanModifiers: tfsdk.AttributePlanModifiers{
-				// 	resource.UseStateForUnknown(),
-				// },
-			},
-			"alias": {
-				Type:     types.StringType,
-				Computed: true,
-				Optional: true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
-				},
-			},
-			"version": {
-				Type:        types.StringType,
-				Description: "Required Elastic Stack version to use for all of the deployment resources",
-				Required:    true,
-			},
-			"region": {
-				Type:        types.StringType,
-				Description: `Required ESS region where to create the deployment, for ECE environments "ece-region" must be set`,
-				Required:    true,
-			},
-			"deployment_template_id": {
-				Type:        types.StringType,
-				Description: "Required Deployment Template identifier to create the deployment from",
-				Required:    true,
-			},
-			"name": {
-				Type:        types.StringType,
-				Description: "Optional name for the deployment",
-				Optional:    true,
-			},
-			"request_id": {
-				Type:        types.StringType,
-				Description: "Optional request_id to set on the create operation, only use when previous create attempts return with an error and a request_id is returned as part of the error",
-				Optional:    true,
-				Computed:    true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
-				},
-			},
-			"elasticsearch_username": {
-				Type:        types.StringType,
-				Description: "Computed username obtained upon creating the Elasticsearch resource",
-				Computed:    true,
-				// PlanModifiers: tfsdk.AttributePlanModifiers{
-				// 	resource.UseStateForUnknown(),
-				// },
-			},
-			"elasticsearch_password": {
-				Type:        types.StringType,
-				Description: "Computed password obtained upon creating the Elasticsearch resource",
-				Computed:    true,
-				Sensitive:   true,
-				// PlanModifiers: tfsdk.AttributePlanModifiers{
-				// 	resource.UseStateForUnknown(),
-				// },
-			},
-			"apm_secret_token": {
-				Type:      types.StringType,
-				Computed:  true,
-				Sensitive: true,
-				// PlanModifiers: tfsdk.AttributePlanModifiers{
-				// 	// resource.UseStateForUnknown(),
-				// 	planmodifier.UseStateForNoChange(),
-				// },
-			},
-			"traffic_filter": {
-				Type: types.SetType{
-					ElemType: types.StringType,
-				},
-				Optional:    true,
-				Description: "Optional list of traffic filters to apply to this deployment.",
-			},
-			"tags": {
-				Description: "Optional map of deployment tags",
-				Type: types.MapType{
-					ElemType: types.StringType,
-				},
-				Optional: true,
-			},
-			"elasticsearch":       elasticsearchAttribute(),
-			"kibana":              kibanaAttribute(),
-			"apm":                 apmAttribute(),
-			"integrations_server": integrationsServerAttribute(),
-			"enterprise_search":   enterpriseSearchAttribute(),
-			"observability":       observabilityAttribute(),
-		},
-	}, nil
+	// 	Attributes: map[string]tfsdk.Attribute{
+	// 		"id": {
+	// 			Type:                types.StringType,
+	// 			Computed:            true,
+	// 			MarkdownDescription: "Unique identifier of this resource.",
+	// 			// PlanModifiers: tfsdk.AttributePlanModifiers{
+	// 			// 	resource.UseStateForUnknown(),
+	// 			// },
+	// 		},
+	// 		"alias": {
+	// 			Type:     types.StringType,
+	// 			Computed: true,
+	// 			Optional: true,
+	// 			PlanModifiers: tfsdk.AttributePlanModifiers{
+	// 				resource.UseStateForUnknown(),
+	// 			},
+	// 		},
+	// 		"version": {
+	// 			Type:        types.StringType,
+	// 			Description: "Required Elastic Stack version to use for all of the deployment resources",
+	// 			Required:    true,
+	// 		},
+	// 		"region": {
+	// 			Type:        types.StringType,
+	// 			Description: `Required ESS region where to create the deployment, for ECE environments "ece-region" must be set`,
+	// 			Required:    true,
+	// 		},
+	// 		"deployment_template_id": {
+	// 			Type:        types.StringType,
+	// 			Description: "Required Deployment Template identifier to create the deployment from",
+	// 			Required:    true,
+	// 		},
+	// 		"name": {
+	// 			Type:        types.StringType,
+	// 			Description: "Optional name for the deployment",
+	// 			Optional:    true,
+	// 		},
+	// 		"request_id": {
+	// 			Type:        types.StringType,
+	// 			Description: "Optional request_id to set on the create operation, only use when previous create attempts return with an error and a request_id is returned as part of the error",
+	// 			Optional:    true,
+	// 			Computed:    true,
+	// 			PlanModifiers: tfsdk.AttributePlanModifiers{
+	// 				resource.UseStateForUnknown(),
+	// 			},
+	// 		},
+	// 		"elasticsearch_username": {
+	// 			Type:        types.StringType,
+	// 			Description: "Computed username obtained upon creating the Elasticsearch resource",
+	// 			Computed:    true,
+	// 			// PlanModifiers: tfsdk.AttributePlanModifiers{
+	// 			// 	resource.UseStateForUnknown(),
+	// 			// },
+	// 		},
+	// 		"elasticsearch_password": {
+	// 			Type:        types.StringType,
+	// 			Description: "Computed password obtained upon creating the Elasticsearch resource",
+	// 			Computed:    true,
+	// 			Sensitive:   true,
+	// 			// PlanModifiers: tfsdk.AttributePlanModifiers{
+	// 			// 	resource.UseStateForUnknown(),
+	// 			// },
+	// 		},
+	// 		"apm_secret_token": {
+	// 			Type:      types.StringType,
+	// 			Computed:  true,
+	// 			Sensitive: true,
+	// 			// PlanModifiers: tfsdk.AttributePlanModifiers{
+	// 			// 	// resource.UseStateForUnknown(),
+	// 			// 	planmodifier.UseStateForNoChange(),
+	// 			// },
+	// 		},
+	// 		"traffic_filter": {
+	// 			Type: types.SetType{
+	// 				ElemType: types.StringType,
+	// 			},
+	// 			Optional:    true,
+	// 			Description: "Optional list of traffic filters to apply to this deployment.",
+	// 		},
+	// 		"tags": {
+	// 			Description: "Optional map of deployment tags",
+	// 			Type: types.MapType{
+	// 				ElemType: types.StringType,
+	// 			},
+	// 			Optional: true,
+	// 		},
+	// 		"elasticsearch":       ElasticsearchSchema(),
+	// 		"kibana":              KibanaSchema(),
+	// 		"apm":                 ApmSchema(),
+	// 		"integrations_server": IntegrationsServerSchema(),
+	// 		"enterprise_search":   EnterpriseSearchSchema(),
+	// 		"observability":       ObservabilitySchema(),
+	// 	},
+	// }, nil
 }
 
 func (r *Resource) Metadata(ctx context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
@@ -187,7 +166,8 @@ func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequ
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-func elasticsearchAttribute() tfsdk.Attribute {
+/*
+func ElasticsearchSchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: "Required Elasticsearch resource definition",
 		Required:    true,
@@ -255,7 +235,7 @@ func elasticsearchAttribute() tfsdk.Attribute {
 				// 	resource.UseStateForUnknown(),
 				// },
 			},
-			"topology": elasticsearchTopologyAttribute(),
+			"topology": ElasticsearchTopologySchema(),
 
 			"trust_account": elasticsearchTrustAccountAttribute(),
 
@@ -263,7 +243,7 @@ func elasticsearchAttribute() tfsdk.Attribute {
 
 			"config": elasticsearchConfigAttribute(),
 
-			"remote_cluster": elasticsearchRemoteClusterAttribute(),
+			"remote_cluster": ElasticsearchRemoteClusterShema(),
 
 			"snapshot_source": elasticsearchSnapshotSourceAttribute(),
 
@@ -318,7 +298,7 @@ func elasticsearchConfigAttribute() tfsdk.Attribute {
 	}
 }
 
-func elasticsearchTopologyAttribute() tfsdk.Attribute {
+func ElasticsearchTopologySchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Computed:    true,
 		Optional:    true,
@@ -478,7 +458,7 @@ func elasticsearchTopologyAutoscalingAttribute() tfsdk.Attribute {
 	}
 }
 
-func elasticsearchRemoteClusterAttribute() tfsdk.Attribute {
+func ElasticsearchRemoteClusterShema() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: "Optional Elasticsearch remote clusters to configure for the Elasticsearch resource, can be set multiple times",
 		Optional:    true,
@@ -749,7 +729,7 @@ func apmConfig() tfsdk.Attribute {
 	}
 }
 
-func apmAttribute() tfsdk.Attribute {
+func ApmSchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: "Optional APM resource definition",
 		Optional:    true,
@@ -813,7 +793,7 @@ func apmAttribute() tfsdk.Attribute {
 	}
 }
 
-func enterpriseSearchAttribute() tfsdk.Attribute {
+func EnterpriseSearchSchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: "Optional Enterprise Search resource definition",
 		Optional:    true,
@@ -968,7 +948,7 @@ func enterpriseSearchAttribute() tfsdk.Attribute {
 	}
 }
 
-func kibanaAttribute() tfsdk.Attribute {
+func KibanaSchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: "Optional Kibana resource definition",
 		Optional:    true,
@@ -1102,7 +1082,7 @@ func kibanaAttribute() tfsdk.Attribute {
 	}
 }
 
-func integrationsServerAttribute() tfsdk.Attribute {
+func IntegrationsServerSchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: "Optional Integrations Server resource definition",
 		Optional:    true,
@@ -1247,7 +1227,7 @@ func integrationsServerAttribute() tfsdk.Attribute {
 	}
 }
 
-func observabilityAttribute() tfsdk.Attribute {
+func ObservabilitySchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: "Optional observability settings. Ship logs and metrics to a dedicated deployment.",
 		Optional:    true,
@@ -1355,3 +1335,4 @@ func elasticsearchTopologyConfigAttribute() tfsdk.Attribute {
 		}),
 	}
 }
+*/

@@ -25,6 +25,7 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi"
 	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi/trafficfilterapi"
 	"github.com/elastic/cloud-sdk-go/pkg/client/deployments"
+	deploymentv1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/deployment/v1"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 )
@@ -34,7 +35,7 @@ func (r Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *
 		return
 	}
 
-	var state DeploymentTF
+	var state deploymentv1.DeploymentTF
 
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)

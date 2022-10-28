@@ -24,7 +24,7 @@ import (
 	"testing"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
-	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/util"
+	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/utils"
 )
 
 // parseDeploymentTemplate is a test helper which parse a file by path and
@@ -95,7 +95,7 @@ func ReaderToESPayload(t *testing.T, rc io.Reader, nr bool) *models.Elasticsearc
 		t.Fatal(err)
 	}
 
-	return util.EnrichElasticsearchTemplate(
+	return utils.EnrichElasticsearchTemplate(
 		tpl.DeploymentTemplate.Resources.Elasticsearch[0],
 		*tpl.ID,
 		"",
