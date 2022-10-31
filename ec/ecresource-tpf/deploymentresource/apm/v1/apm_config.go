@@ -48,7 +48,7 @@ type ApmConfig struct {
 
 type ApmConfigs []ApmConfig
 
-func readApmConfigs(in *models.ApmConfiguration) (ApmConfigs, error) {
+func ReadApmConfigs(in *models.ApmConfiguration) (ApmConfigs, error) {
 	var cfg ApmConfig
 
 	if in.UserSettingsYaml != "" {

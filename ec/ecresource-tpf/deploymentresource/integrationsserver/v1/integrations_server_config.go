@@ -24,12 +24,13 @@ import (
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
-	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/utils"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type IntegrationsServerConfigV1TF struct {
+type IntegrationsServerConfigTF struct {
 	DockerImage              types.String `tfsdk:"docker_image"`
 	DebugEnabled             types.Bool   `tfsdk:"debug_enabled"`
 	UserSettingsJson         types.String `tfsdk:"user_settings_json"`
@@ -38,7 +39,7 @@ type IntegrationsServerConfigV1TF struct {
 	UserSettingsOverrideYaml types.String `tfsdk:"user_settings_override_yaml"`
 }
 
-type IntegrationsServerConfigV1 struct {
+type IntegrationsServerConfig struct {
 	DockerImage              *string `tfsdk:"docker_image"`
 	DebugEnabled             *bool   `tfsdk:"debug_enabled"`
 	UserSettingsJson         *string `tfsdk:"user_settings_json"`
@@ -47,10 +48,10 @@ type IntegrationsServerConfigV1 struct {
 	UserSettingsOverrideYaml *string `tfsdk:"user_settings_override_yaml"`
 }
 
-type IntegrationsServerConfigsV1 []IntegrationsServerConfigV1
+type IntegrationsServerConfigs []IntegrationsServerConfig
 
-func readIntegrationsServerConfig(in *models.IntegrationsServerConfiguration) (IntegrationsServerConfigsV1, error) {
-	var cfg IntegrationsServerConfigV1
+func ReadIntegrationsServerConfigs(in *models.IntegrationsServerConfiguration) (IntegrationsServerConfigs, error) {
+	var cfg IntegrationsServerConfig
 
 	if in.UserSettingsYaml != "" {
 		cfg.UserSettingsYaml = &in.UserSettingsYaml
@@ -82,19 +83,31 @@ func readIntegrationsServerConfig(in *models.IntegrationsServerConfiguration) (I
 		}
 	}
 
-	if cfg == (IntegrationsServerConfigV1{}) {
+	if cfg == (IntegrationsServerConfig{}) {
 		return nil, nil
 	}
 
-	return IntegrationsServerConfigsV1{cfg}, nil
+	return IntegrationsServerConfigs{cfg}, nil
 }
 
-func payloadIntegrationsServerConfig(ctx context.Context, list types.List, res *models.IntegrationsServerConfiguration) diag.Diagnostics {
+func IntegrationsServerConfigsPayload(ctx context.Context, list types.List, res *models.IntegrationsServerConfiguration) diag.Diagnostics {
+	if list.IsNull() || list.IsUnknown() || len(list.Elems) == 0 {
+		return nil
+	}
+
+	return IntegrationsServerConfigPayload(ctx, list.Elems[0], res)
+}
+
+func IntegrationsServerConfigPayload(ctx context.Context, cfgObj attr.Value, res *models.IntegrationsServerConfiguration) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	var cfg *IntegrationsServerConfigV1TF
+	if cfgObj.IsNull() || cfgObj.IsUnknown() {
+		return nil
+	}
 
-	if diags = utils.GetFirst(ctx, list, &cfg); diags.HasError() {
+	var cfg *IntegrationsServerConfigTF
+
+	if diags = tfsdk.ValueAs(ctx, cfgObj, &cfg); diags.HasError() {
 		return nil
 	}
 

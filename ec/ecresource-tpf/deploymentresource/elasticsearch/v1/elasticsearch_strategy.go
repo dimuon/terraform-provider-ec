@@ -38,7 +38,7 @@ type ElasticsearchStrategy struct {
 
 type ElasticsearchStrategiesV1 []ElasticsearchStrategy
 
-func ElasticsearchStrategyPayload(ctx context.Context, strategies types.List, payload *models.ElasticsearchClusterPlan) diag.Diagnostics {
+func ElasticsearchStrategiesPayload(ctx context.Context, strategies types.List, payload *models.ElasticsearchClusterPlan) diag.Diagnostics {
 	if len(strategies.Elems) == 0 {
 		return nil
 	}
@@ -54,19 +54,23 @@ func ElasticsearchStrategyPayload(ctx context.Context, strategies types.List, pa
 		if diags := tfsdk.ValueAs(ctx, elem, &strategy); diags.HasError() {
 			return diags
 		}
-		switch strategy.Type.Value {
-		case autodetect:
-			payload.Transient.Strategy.Autodetect = new(models.AutodetectStrategyConfig)
-		case growAndShrink:
-			payload.Transient.Strategy.GrowAndShrink = new(models.GrowShrinkStrategyConfig)
-		case rollingGrowAndShrink:
-			payload.Transient.Strategy.RollingGrowAndShrink = new(models.RollingGrowShrinkStrategyConfig)
-		case rollingAll:
-			payload.Transient.Strategy.Rolling = &models.RollingStrategyConfig{
-				GroupBy: "__all__",
-			}
-		}
+		ElasticsearchStrategyPayload(strategy.Type, payload)
 	}
 
 	return nil
+}
+
+func ElasticsearchStrategyPayload(strategy types.String, payload *models.ElasticsearchClusterPlan) {
+	switch strategy.Value {
+	case autodetect:
+		payload.Transient.Strategy.Autodetect = new(models.AutodetectStrategyConfig)
+	case growAndShrink:
+		payload.Transient.Strategy.GrowAndShrink = new(models.GrowShrinkStrategyConfig)
+	case rollingGrowAndShrink:
+		payload.Transient.Strategy.RollingGrowAndShrink = new(models.RollingGrowShrinkStrategyConfig)
+	case rollingAll:
+		payload.Transient.Strategy.Rolling = &models.RollingStrategyConfig{
+			GroupBy: "__all__",
+		}
+	}
 }

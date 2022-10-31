@@ -15,16 +15,16 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package v1
+package v2
 
 import (
 	"context"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
+	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/integrationsserver/v1"
 	topologyv1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/topology/v1"
 	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/utils"
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
-	"github.com/elastic/terraform-provider-ec/ec/internal/util"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -36,42 +36,19 @@ type IntegrationsServerTF struct {
 	Region                    types.String `tfsdk:"region"`
 	HttpEndpoint              types.String `tfsdk:"http_endpoint"`
 	HttpsEndpoint             types.String `tfsdk:"https_endpoint"`
-	Topology                  types.List   `tfsdk:"topology"`
-	Config                    types.List   `tfsdk:"config"`
+	Topology                  types.Object `tfsdk:"topology"`
+	Config                    types.Object `tfsdk:"config"`
 }
 
 type IntegrationsServer struct {
-	ElasticsearchClusterRefId *string                   `tfsdk:"elasticsearch_cluster_ref_id"`
-	RefId                     *string                   `tfsdk:"ref_id"`
-	ResourceId                *string                   `tfsdk:"resource_id"`
-	Region                    *string                   `tfsdk:"region"`
-	HttpEndpoint              *string                   `tfsdk:"http_endpoint"`
-	HttpsEndpoint             *string                   `tfsdk:"https_endpoint"`
-	Topology                  topologyv1.Topologies     `tfsdk:"topology"`
-	Config                    IntegrationsServerConfigs `tfsdk:"config"`
-}
-
-type IntegrationsServers []IntegrationsServer
-
-func ReadIntegrationsServers(in []*models.IntegrationsServerResourceInfo) (IntegrationsServers, error) {
-	if len(in) == 0 {
-		return nil, nil
-	}
-
-	for _, model := range in {
-		if util.IsCurrentIntegrationsServerPlanEmpty(model) || utils.IsIntegrationsServerResourceStopped(model) {
-			continue
-		}
-
-		srv, err := ReadIntegrationsServer(model)
-		if err != nil {
-			return nil, err
-		}
-
-		return IntegrationsServers{*srv}, nil
-	}
-
-	return nil, nil
+	ElasticsearchClusterRefId *string                      `tfsdk:"elasticsearch_cluster_ref_id"`
+	RefId                     *string                      `tfsdk:"ref_id"`
+	ResourceId                *string                      `tfsdk:"resource_id"`
+	Region                    *string                      `tfsdk:"region"`
+	HttpEndpoint              *string                      `tfsdk:"http_endpoint"`
+	HttpsEndpoint             *string                      `tfsdk:"https_endpoint"`
+	Topology                  *topologyv1.Topology         `tfsdk:"topology"`
+	Config                    *v1.IntegrationsServerConfig `tfsdk:"config"`
 }
 
 func ReadIntegrationsServer(in *models.IntegrationsServerResourceInfo) (*IntegrationsServer, error) {
@@ -85,25 +62,36 @@ func ReadIntegrationsServer(in *models.IntegrationsServerResourceInfo) (*Integra
 
 	plan := in.Info.PlanInfo.Current.Plan
 
-	var err error
-	if srv.Topology, err = ReadIntegrationsServerTopologies(plan.ClusterTopology); err != nil {
+	topologies, err := v1.ReadIntegrationsServerTopologies(plan.ClusterTopology)
+
+	if err != nil {
 		return nil, err
+	}
+
+	if len(topologies) > 0 {
+		srv.Topology = &topologies[0]
 	}
 
 	srv.ElasticsearchClusterRefId = in.ElasticsearchClusterRefID
 
 	srv.HttpEndpoint, srv.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
 
-	cfg, err := ReadIntegrationsServerConfigs(plan.IntegrationsServer)
+	cfgs, err := v1.ReadIntegrationsServerConfigs(plan.IntegrationsServer)
+
 	if err != nil {
 		return nil, err
 	}
-	srv.Config = cfg
+
+	if len(cfgs) > 0 {
+		srv.Config = &cfgs[0]
+	}
 
 	return &srv, nil
 }
 
 func (srv IntegrationsServerTF) Payload(ctx context.Context, payload models.IntegrationsServerPayload) (*models.IntegrationsServerPayload, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
 	if !srv.ElasticsearchClusterRefId.IsNull() {
 		payload.ElasticsearchClusterRefID = &srv.ElasticsearchClusterRefId.Value
 	}
@@ -116,16 +104,14 @@ func (srv IntegrationsServerTF) Payload(ctx context.Context, payload models.Inte
 		payload.Region = &srv.Region.Value
 	}
 
-	if diags := IntegrationsServerConfigsPayload(ctx, srv.Config, payload.Plan.IntegrationsServer); diags.HasError() {
-		return nil, diags
-	}
+	ds := v1.IntegrationsServerConfigPayload(ctx, srv.Config, payload.Plan.IntegrationsServer)
+	diags.Append(ds...)
 
-	var diags diag.Diagnostics
+	toplogyPayload, ds := v1.IntegrationsServerTopologyPayload(ctx, v1.DefaultIntegrationsServerTopology(payload.Plan.ClusterTopology), 0, srv.Topology)
+	diags.Append(ds...)
 
-	payload.Plan.ClusterTopology, diags = IntegrationsServerTopologiesPayload(ctx, payload.Plan.ClusterTopology, &srv.Topology)
-
-	if diags.HasError() {
-		return nil, diags
+	if !ds.HasError() && toplogyPayload != nil {
+		payload.Plan.ClusterTopology = []*models.IntegrationsServerTopologyElement{toplogyPayload}
 	}
 
 	return &payload, nil

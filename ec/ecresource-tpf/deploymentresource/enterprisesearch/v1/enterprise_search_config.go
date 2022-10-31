@@ -46,7 +46,21 @@ type EnterpriseSearchConfig struct {
 
 type EnterpriseSearchConfigs []EnterpriseSearchConfig
 
-func readEnterpriseSearchConfig(in *models.EnterpriseSearchConfiguration) (EnterpriseSearchConfigs, error) {
+func ReadEnterpriseSearchConfigs(in *models.EnterpriseSearchConfiguration) (EnterpriseSearchConfigs, error) {
+	cfg, err := ReadEnterpriseSearchConfig(in)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if cfg == nil {
+		return nil, nil
+	}
+
+	return EnterpriseSearchConfigs{*cfg}, nil
+}
+
+func ReadEnterpriseSearchConfig(in *models.EnterpriseSearchConfiguration) (*EnterpriseSearchConfig, error) {
 	var cfg EnterpriseSearchConfig
 
 	if in == nil {
@@ -81,7 +95,7 @@ func readEnterpriseSearchConfig(in *models.EnterpriseSearchConfiguration) (Enter
 		return nil, nil
 	}
 
-	return EnterpriseSearchConfigs{cfg}, nil
+	return &cfg, nil
 }
 
 func (cfg EnterpriseSearchConfigTF) Payload(ctx context.Context, res *models.EnterpriseSearchConfiguration) diag.Diagnostics {

@@ -25,6 +25,7 @@ import (
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -50,26 +51,26 @@ type ElasticsearchConfig struct {
 
 type ElasticsearchConfigs []ElasticsearchConfig
 
-func ElasticsearchConfigPayload(ctx context.Context, cfgList types.List, model *models.ElasticsearchConfiguration) (*models.ElasticsearchConfiguration, diag.Diagnostics) {
+func ElasticsearchConfigsPayload(ctx context.Context, cfgList types.List, model *models.ElasticsearchConfiguration) (*models.ElasticsearchConfiguration, diag.Diagnostics) {
 	if cfgList.IsNull() || cfgList.IsUnknown() || len(cfgList.Elems) == 0 {
 		return model, nil
 	}
 
-	if cfgList.Elems[0].IsUnknown() || cfgList.Elems[0].IsNull() {
+	return ElasticsearchConfigPayload(ctx, cfgList.Elems[0], model)
+}
+
+func ElasticsearchConfigPayload(ctx context.Context, cfgObj attr.Value, model *models.ElasticsearchConfiguration) (*models.ElasticsearchConfiguration, diag.Diagnostics) {
+	if cfgObj.IsNull() || cfgObj.IsUnknown() {
 		return model, nil
 	}
 
 	var cfg ElasticsearchConfigTF
 
-	diags := tfsdk.ValueAs(ctx, cfgList.Elems[0], &cfg)
+	diags := tfsdk.ValueAs(ctx, cfgObj, &cfg)
 
 	if diags.HasError() {
 		return nil, diags
 	}
-
-	// if model == nil {
-	// 	model = &models.ElasticsearchConfiguration{}
-	// }
 
 	if cfg.UserSettingsJson.Value != "" {
 		if err := json.Unmarshal([]byte(cfg.UserSettingsJson.Value), &model.UserSettingsJSON); err != nil {
@@ -106,8 +107,23 @@ func (c *ElasticsearchConfig) isEmpty() bool {
 	return c == nil || reflect.ValueOf(*c).IsZero()
 }
 
-func ReadElasticsearchConfig(in *models.ElasticsearchConfiguration) (ElasticsearchConfigs, error) {
+func ReadElasticsearchConfigs(in *models.ElasticsearchConfiguration) (ElasticsearchConfigs, error) {
+	config, err := ReadElasticsearchConfig(in)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if config == nil {
+		return nil, nil
+	}
+
+	return ElasticsearchConfigs{*config}, nil
+}
+
+func ReadElasticsearchConfig(in *models.ElasticsearchConfiguration) (*ElasticsearchConfig, error) {
 	var config ElasticsearchConfig
+
 	if in == nil {
 		return nil, nil
 	}
@@ -144,5 +160,5 @@ func ReadElasticsearchConfig(in *models.ElasticsearchConfiguration) (Elasticsear
 		return nil, nil
 	}
 
-	return ElasticsearchConfigs{config}, nil
+	return &config, nil
 }

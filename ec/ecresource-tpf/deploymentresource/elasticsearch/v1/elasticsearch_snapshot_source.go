@@ -21,8 +21,9 @@ import (
 	"context"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
-	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/utils"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -38,10 +39,22 @@ type ElasticsearchSnapshotSource struct {
 
 type ElasticsearchSnapshotSources []ElasticsearchSnapshotSource
 
-func ElasticsearchSnapshotSourcePayload(ctx context.Context, list types.List, payload *models.ElasticsearchClusterPlan) diag.Diagnostics {
+func ElasticsearchSnapshotSourcesPayload(ctx context.Context, list types.List, payload *models.ElasticsearchClusterPlan) diag.Diagnostics {
+	if list.IsNull() || list.IsUnknown() || len(list.Elems) == 0 {
+		return nil
+	}
+
+	return ElasticsearchSnapshotSourcePayload(ctx, list.Elems[0], payload)
+}
+
+func ElasticsearchSnapshotSourcePayload(ctx context.Context, srcObj attr.Value, payload *models.ElasticsearchClusterPlan) diag.Diagnostics {
 	var snapshot *ElasticsearchSnapshotSourceTF
 
-	if diags := utils.GetFirst(ctx, list, &snapshot); diags.HasError() {
+	if srcObj.IsNull() || srcObj.IsUnknown() {
+		return nil
+	}
+
+	if diags := tfsdk.ValueAs(ctx, srcObj, &snapshot); diags.HasError() {
 		return diags
 	}
 

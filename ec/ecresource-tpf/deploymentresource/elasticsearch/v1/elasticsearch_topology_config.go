@@ -25,8 +25,9 @@ import (
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
-	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/utils"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -48,17 +49,25 @@ type ElasticsearchTopologyConfig struct {
 
 type ElasticsearchTopologyConfigs []ElasticsearchTopologyConfig
 
-func ElasticsearchTopologyConfigPayload(ctx context.Context, list types.List, model *models.ElasticsearchConfiguration) (*models.ElasticsearchConfiguration, diag.Diagnostics) {
+func ElasticsearchTopologyConfigsPayload(ctx context.Context, list types.List, model *models.ElasticsearchConfiguration) (*models.ElasticsearchConfiguration, diag.Diagnostics) {
+	if list.IsNull() || list.IsUnknown() || len(list.Elems) == 0 {
+		return model, nil
+	}
+
+	return ElasticsearchTopologyConfigPayload(ctx, list.Elems[0], model)
+}
+
+func ElasticsearchTopologyConfigPayload(ctx context.Context, cfgObj attr.Value, model *models.ElasticsearchConfiguration) (*models.ElasticsearchConfiguration, diag.Diagnostics) {
 	var diags diag.Diagnostics
+
+	if cfgObj.IsNull() || cfgObj.IsUnknown() {
+		return model, nil
+	}
 
 	var cfg *ElasticsearchTopologyConfigTF
 
-	if diags = utils.GetFirst(ctx, list, &cfg); diags.HasError() {
+	if diags := tfsdk.ValueAs(ctx, cfgObj, &cfg); diags.HasError() {
 		return nil, diags
-	}
-
-	if cfg == nil {
-		return model, nil
 	}
 
 	if model == nil {
@@ -66,7 +75,6 @@ func ElasticsearchTopologyConfigPayload(ctx context.Context, list types.List, mo
 	}
 
 	if cfg.UserSettingsJson.Value != "" {
-
 		if err := json.Unmarshal([]byte(cfg.UserSettingsJson.Value), &model.UserSettingsJSON); err != nil {
 			diags.AddError("failed expanding elasticsearch user_settings_json", err.Error())
 		}
@@ -97,7 +105,20 @@ func (c *ElasticsearchTopologyConfig) isEmpty() bool {
 	return c == nil || reflect.ValueOf(*c).IsZero()
 }
 
-func ReadElasticsearchTopologyConfig(in *models.ElasticsearchConfiguration) (ElasticsearchTopologyConfigs, error) {
+func ReadElasticsearchTopologyConfigs(in *models.ElasticsearchConfiguration) (ElasticsearchTopologyConfigs, error) {
+	cfg, err := ReadElasticsearchTopologyConfig(in)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if cfg == nil {
+		return nil, nil
+	}
+	return ElasticsearchTopologyConfigs{*cfg}, nil
+}
+
+func ReadElasticsearchTopologyConfig(in *models.ElasticsearchConfiguration) (*ElasticsearchTopologyConfig, error) {
 	var config ElasticsearchTopologyConfig
 	if in == nil {
 		return nil, nil
@@ -131,5 +152,5 @@ func ReadElasticsearchTopologyConfig(in *models.ElasticsearchConfiguration) (Ela
 		return nil, nil
 	}
 
-	return ElasticsearchTopologyConfigs{config}, nil
+	return &config, nil
 }

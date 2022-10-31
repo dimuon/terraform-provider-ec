@@ -26,6 +26,7 @@ import (
 	topologyv1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/topology/v1"
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -37,7 +38,7 @@ const (
 	minimumKibanaSize = 1024
 )
 
-func readKibanaTopology(in *models.KibanaClusterTopologyElement) (*topologyv1.Topology, error) {
+func ReadKibanaTopology(in *models.KibanaClusterTopologyElement) (*topologyv1.Topology, error) {
 	var top topologyv1.Topology
 
 	if in.InstanceConfigurationID != "" {
@@ -56,7 +57,7 @@ func readKibanaTopology(in *models.KibanaClusterTopologyElement) (*topologyv1.To
 
 type KibanaTopologiesTF []*topologyv1.TopologyTF
 
-func readKibanaTopologies(in []*models.KibanaClusterTopologyElement) (topologyv1.Topologies, error) {
+func ReadKibanaTopologies(in []*models.KibanaClusterTopologyElement) (topologyv1.Topologies, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}
@@ -67,7 +68,7 @@ func readKibanaTopologies(in []*models.KibanaClusterTopologyElement) (topologyv1
 			continue
 		}
 
-		top, err := readKibanaTopology(model)
+		top, err := ReadKibanaTopology(model)
 		if err != nil {
 			return nil, err
 		}
@@ -78,61 +79,78 @@ func readKibanaTopologies(in []*models.KibanaClusterTopologyElement) (topologyv1
 	return tops, nil
 }
 
-func kibanaTopologyPayload(ctx context.Context, planModels []*models.KibanaClusterTopologyElement, tops *types.List) ([]*models.KibanaClusterTopologyElement, diag.Diagnostics) {
+func KibanaTopologiesPayload(ctx context.Context, planModels []*models.KibanaClusterTopologyElement, tops *types.List) ([]*models.KibanaClusterTopologyElement, diag.Diagnostics) {
 	if len(tops.Elems) == 0 {
-		return defaultKibanaTopology(planModels), nil
+		return DefaultKibanaTopology(planModels), nil
 	}
 
-	planModels = defaultKibanaTopology(planModels)
+	planModels = DefaultKibanaTopology(planModels)
 
 	var payloads = make([]*models.KibanaClusterTopologyElement, 0, len(tops.Elems))
 
 	for i, elem := range tops.Elems {
-		var topology topologyv1.TopologyTF
-		if diags := tfsdk.ValueAs(ctx, elem, &topology); diags.HasError() {
-			return nil, diags
-		}
-		icID := topology.InstanceConfigurationId.Value
+		payload, diags := KibanaTopologyPayload(ctx, planModels, i, elem)
 
-		// When a topology element is set but no instance_configuration_id
-		// is set, then obtain the instance_configuration_id from the topology
-		// element.
-		if icID == "" && i < len(planModels) {
-			icID = planModels[i].InstanceConfigurationID
-		}
-
-		size, err := converters.ParseTopologySize(topology.Size, topology.SizeResource)
-
-		var diags diag.Diagnostics
-		if err != nil {
-			diags.AddError("size parsing error", err.Error())
+		if diags.HasError() {
 			return nil, diags
 		}
 
-		elem, err := matchKibanaTopology(icID, planModels)
-		if err != nil {
-			diags.AddError("kibana topology payload error", err.Error())
-			return nil, diags
+		if payload != nil {
+			payloads = append(payloads, payload)
 		}
-
-		if size != nil {
-			elem.Size = size
-		}
-
-		if topology.ZoneCount.Value > 0 {
-			elem.ZoneCount = int32(topology.ZoneCount.Value)
-		}
-
-		payloads = append(payloads, elem)
 	}
 
 	return payloads, nil
 }
 
+func KibanaTopologyPayload(ctx context.Context, planModels []*models.KibanaClusterTopologyElement, index int, topObj attr.Value) (*models.KibanaClusterTopologyElement, diag.Diagnostics) {
+	if topObj.IsNull() || topObj.IsUnknown() {
+		return nil, nil
+	}
+
+	var topology topologyv1.TopologyTF
+
+	if diags := tfsdk.ValueAs(ctx, topObj, &topology); diags.HasError() {
+		return nil, diags
+	}
+	icID := topology.InstanceConfigurationId.Value
+
+	// When a topology element is set but no instance_configuration_id
+	// is set, then obtain the instance_configuration_id from the topology
+	// element.
+	if icID == "" && index < len(planModels) {
+		icID = planModels[index].InstanceConfigurationID
+	}
+
+	size, err := converters.ParseTopologySize(topology.Size, topology.SizeResource)
+
+	var diags diag.Diagnostics
+	if err != nil {
+		diags.AddError("size parsing error", err.Error())
+		return nil, diags
+	}
+
+	elem, err := matchKibanaTopology(icID, planModels)
+	if err != nil {
+		diags.AddError("kibana topology payload error", err.Error())
+		return nil, diags
+	}
+
+	if size != nil {
+		elem.Size = size
+	}
+
+	if topology.ZoneCount.Value > 0 {
+		elem.ZoneCount = int32(topology.ZoneCount.Value)
+	}
+
+	return elem, nil
+}
+
 // defaultApmTopology iterates over all the templated topology elements and
 // sets the size to the default when the template size is greater than the
 // local terraform default, the same is done on the ZoneCount.
-func defaultKibanaTopology(topology []*models.KibanaClusterTopologyElement) []*models.KibanaClusterTopologyElement {
+func DefaultKibanaTopology(topology []*models.KibanaClusterTopologyElement) []*models.KibanaClusterTopologyElement {
 	for _, t := range topology {
 		if *t.Size.Value > minimumKibanaSize {
 			t.Size.Value = ec.Int32(minimumKibanaSize)

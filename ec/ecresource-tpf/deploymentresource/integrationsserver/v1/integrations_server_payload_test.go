@@ -192,7 +192,7 @@ func Test_IntegrationsServerPayload(t *testing.T) {
 						ResourceId:                &mock.ValidClusterID,
 						Region:                    ec.String("some-region"),
 						ElasticsearchClusterRefId: ec.String("somerefid"),
-						Config: IntegrationsServerConfigsV1{
+						Config: IntegrationsServerConfigs{
 							{
 								UserSettingsYaml:         ec.String("some.setting: value"),
 								UserSettingsOverrideYaml: ec.String("some.setting: value2"),
@@ -251,7 +251,7 @@ func Test_IntegrationsServerPayload(t *testing.T) {
 						ResourceId:                &mock.ValidClusterID,
 						Region:                    ec.String("some-region"),
 						ElasticsearchClusterRefId: ec.String("somerefid"),
-						Config: IntegrationsServerConfigsV1{
+						Config: IntegrationsServerConfigs{
 							{
 								DebugEnabled: ec.Bool(true),
 							},

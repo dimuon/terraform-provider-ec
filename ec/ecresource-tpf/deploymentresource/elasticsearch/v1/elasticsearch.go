@@ -146,7 +146,7 @@ func ReadElasticsearch(in *models.ElasticsearchResourceInfo, remotes *models.Rem
 
 	es.HttpEndpoint, es.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
 
-	es.Config, err = ReadElasticsearchConfig(plan.Elasticsearch)
+	es.Config, err = ReadElasticsearchConfigs(plan.Elasticsearch)
 	if err != nil {
 		return nil, err
 	}
@@ -204,10 +204,10 @@ func (es *ElasticsearchTF) Payload(ctx context.Context, res *models.Elasticsearc
 	// list when these are set as a dedicated tier as a topology element.
 	updateNodeRolesOnDedicatedTiers(res.Plan.ClusterTopology)
 
-	res.Plan.Elasticsearch, ds = ElasticsearchConfigPayload(ctx, es.Config, res.Plan.Elasticsearch)
+	res.Plan.Elasticsearch, ds = ElasticsearchConfigsPayload(ctx, es.Config, res.Plan.Elasticsearch)
 	diags = append(diags, ds...)
 
-	diags.Append(ElasticsearchSnapshotSourcePayload(ctx, es.SnapshotSource, res.Plan)...)
+	diags.Append(ElasticsearchSnapshotSourcesPayload(ctx, es.SnapshotSource, res.Plan)...)
 
 	diags.Append(ElasticsearchExtensionPayload(ctx, es.Extension, res.Plan.Elasticsearch)...)
 
@@ -226,7 +226,7 @@ func (es *ElasticsearchTF) Payload(ctx context.Context, res *models.Elasticsearc
 	res.Settings, ds = ElasticsearchTrustExternalPayload(ctx, es.TrustExternal, res.Settings)
 	diags = append(diags, ds...)
 
-	diags.Append(ElasticsearchStrategyPayload(ctx, es.Strategy, res.Plan)...)
+	diags.Append(ElasticsearchStrategiesPayload(ctx, es.Strategy, res.Plan)...)
 
 	return res, diags
 }

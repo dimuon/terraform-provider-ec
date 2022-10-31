@@ -15,16 +15,18 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package v1
+package v2
 
 import (
 	"context"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
+	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/enterprisesearch/v1"
 	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/utils"
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -35,19 +37,19 @@ type EnterpriseSearchTF struct {
 	Region                    types.String `tfsdk:"region"`
 	HttpEndpoint              types.String `tfsdk:"http_endpoint"`
 	HttpsEndpoint             types.String `tfsdk:"https_endpoint"`
-	Topology                  types.List   `tfsdk:"topology"`
-	Config                    types.List   `tfsdk:"config"`
+	Topology                  types.Object `tfsdk:"topology"`
+	Config                    types.Object `tfsdk:"config"`
 }
 
 type EnterpriseSearch struct {
-	ElasticsearchClusterRefId *string                    `tfsdk:"elasticsearch_cluster_ref_id"`
-	RefId                     *string                    `tfsdk:"ref_id"`
-	ResourceId                *string                    `tfsdk:"resource_id"`
-	Region                    *string                    `tfsdk:"region"`
-	HttpEndpoint              *string                    `tfsdk:"http_endpoint"`
-	HttpsEndpoint             *string                    `tfsdk:"https_endpoint"`
-	Topology                  EnterpriseSearchTopologies `tfsdk:"topology"`
-	Config                    EnterpriseSearchConfigs    `tfsdk:"config"`
+	ElasticsearchClusterRefId *string                      `tfsdk:"elasticsearch_cluster_ref_id"`
+	RefId                     *string                      `tfsdk:"ref_id"`
+	ResourceId                *string                      `tfsdk:"resource_id"`
+	Region                    *string                      `tfsdk:"region"`
+	HttpEndpoint              *string                      `tfsdk:"http_endpoint"`
+	HttpsEndpoint             *string                      `tfsdk:"https_endpoint"`
+	Topology                  *v1.EnterpriseSearchTopology `tfsdk:"topology"`
+	Config                    *v1.EnterpriseSearchConfig   `tfsdk:"config"`
 }
 
 type EnterpriseSearches []EnterpriseSearch
@@ -62,16 +64,22 @@ func ReadEnterpriseSearch(in *models.EnterpriseSearchResourceInfo) (*EnterpriseS
 	ess.Region = in.Region
 
 	plan := in.Info.PlanInfo.Current.Plan
-	var err error
-	if ess.Topology, err = ReadEnterpriseSearchTopologies(plan.ClusterTopology); err != nil {
+
+	topologies, err := v1.ReadEnterpriseSearchTopologies(plan.ClusterTopology)
+
+	if err != nil {
 		return nil, err
+	}
+
+	if len(topologies) > 0 {
+		ess.Topology = &topologies[0]
 	}
 
 	ess.ElasticsearchClusterRefId = in.ElasticsearchClusterRefID
 
 	ess.HttpEndpoint, ess.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
 
-	cfg, err := ReadEnterpriseSearchConfigs(plan.EnterpriseSearch)
+	cfg, err := v1.ReadEnterpriseSearchConfig(plan.EnterpriseSearch)
 	if err != nil {
 		return nil, err
 	}
@@ -95,19 +103,25 @@ func (es *EnterpriseSearchTF) Payload(ctx context.Context, payload models.Enterp
 		payload.Region = &es.Region.Value
 	}
 
-	var config *EnterpriseSearchConfigTF
+	if !es.Config.IsNull() && !es.Config.IsUnknown() {
+		var config *v1.EnterpriseSearchConfigTF
 
-	ds := utils.GetFirst(ctx, es.Config, &config)
+		ds := tfsdk.ValueAs(ctx, es.Config, &config)
 
-	diags.Append(ds...)
+		diags.Append(ds...)
 
-	if !ds.HasError() && config != nil {
-		diags.Append(config.Payload(ctx, payload.Plan.EnterpriseSearch)...)
+		if !ds.HasError() && config != nil {
+			diags.Append(config.Payload(ctx, payload.Plan.EnterpriseSearch)...)
+		}
 	}
 
-	payload.Plan.ClusterTopology, ds = EnterpriseSearchTopologiesPayload(ctx, es.Topology, payload.Plan.ClusterTopology)
+	topology, ds := v1.EnterpriseSearchTopologyPayload(ctx, v1.DefaultEssTopology(payload.Plan.ClusterTopology), 0, es.Topology)
 
 	diags = append(diags, ds...)
+
+	if topology != nil {
+		payload.Plan.ClusterTopology = []*models.EnterpriseSearchTopologyElement{topology}
+	}
 
 	return &payload, diags
 }

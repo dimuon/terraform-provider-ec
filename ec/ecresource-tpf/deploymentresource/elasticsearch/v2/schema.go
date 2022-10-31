@@ -298,8 +298,7 @@ func ElasticsearchTopologyAutoscalingSchema() tfsdk.Attribute {
 		// PlanModifiers: tfsdk.AttributePlanModifiers{
 		// 	resource.UseStateForUnknown(),
 		// },
-		Validators: []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
-		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
 			"max_size_resource": {
 				Description: "Maximum resource type for the maximum autoscaling setting.",
 				Type:        types.StringType,

@@ -27,12 +27,13 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type ElasticsearchTopologyAutoscalingV1TF struct {
+type ElasticsearchTopologyAutoscalingTF struct {
 	MaxSizeResource    types.String `tfsdk:"max_size_resource"`
 	MaxSize            types.String `tfsdk:"max_size"`
 	MinSizeResource    types.String `tfsdk:"min_size_resource"`
@@ -40,7 +41,7 @@ type ElasticsearchTopologyAutoscalingV1TF struct {
 	PolicyOverrideJson types.String `tfsdk:"policy_override_json"`
 }
 
-type ElasticsearchTopologyAutoscalingV1 struct {
+type ElasticsearchTopologyAutoscaling struct {
 	MaxSizeResource    *string `tfsdk:"max_size_resource"`
 	MaxSize            *string `tfsdk:"max_size"`
 	MinSizeResource    *string `tfsdk:"min_size_resource"`
@@ -48,7 +49,7 @@ type ElasticsearchTopologyAutoscalingV1 struct {
 	PolicyOverrideJson *string `tfsdk:"policy_override_json"`
 }
 
-type ElasticsearchTopologyAutoscalings []ElasticsearchTopologyAutoscalingV1
+type ElasticsearchTopologyAutoscalings []ElasticsearchTopologyAutoscaling
 
 func ReadElasticsearchTopologyAutoscalings(in *models.ElasticsearchClusterTopologyElement) (ElasticsearchTopologyAutoscalings, error) {
 	autoscaling, err := ReadElasticsearchTopologyAutoscaling(in)
@@ -63,48 +64,57 @@ func ReadElasticsearchTopologyAutoscalings(in *models.ElasticsearchClusterTopolo
 	return ElasticsearchTopologyAutoscalings{*autoscaling}, nil
 }
 
-func ElasticsearchTopologyAutoscalingPayload(ctx context.Context, autos types.List, topologyID string, elem *models.ElasticsearchClusterTopologyElement) diag.Diagnostics {
-	var diag diag.Diagnostics
-
+func ElasticsearchTopologyAutoscalingsPayload(ctx context.Context, autos types.List, topologyID string, payload *models.ElasticsearchClusterTopologyElement) diag.Diagnostics {
 	if len(autos.Elems) == 0 {
 		return nil
 	}
 
+	return ElasticsearchTopologyAutoscalingPayload(ctx, autos.Elems[0], topologyID, payload)
+}
+
+func ElasticsearchTopologyAutoscalingPayload(ctx context.Context, autoObj attr.Value, topologyID string, payload *models.ElasticsearchClusterTopologyElement) diag.Diagnostics {
+	var diag diag.Diagnostics
+
+	if autoObj.IsNull() || autoObj.IsUnknown() {
+		return nil
+	}
+
 	// it should be only one element if any
-	var autoscale ElasticsearchTopologyAutoscalingV1TF
-	tfsdk.ValueAs(ctx, autos.Elems[0], &autoscale)
+	var autoscale ElasticsearchTopologyAutoscalingTF
 
-	if elem.AutoscalingMax == nil {
-		elem.AutoscalingMax = new(models.TopologySize)
+	tfsdk.ValueAs(ctx, autoObj, &autoscale)
+
+	if payload.AutoscalingMax == nil {
+		payload.AutoscalingMax = new(models.TopologySize)
 	}
 
-	if elem.AutoscalingMin == nil {
-		elem.AutoscalingMin = new(models.TopologySize)
+	if payload.AutoscalingMin == nil {
+		payload.AutoscalingMin = new(models.TopologySize)
 	}
 
-	err := autoscale.ExpandAutoscalingDimension(elem.AutoscalingMax, autoscale.MaxSize, autoscale.MaxSizeResource)
+	err := autoscale.ExpandAutoscalingDimension(payload.AutoscalingMax, autoscale.MaxSize, autoscale.MaxSizeResource)
 	if err != nil {
 		diag.AddError("fail to parse autoscale max size", err.Error())
 		return diag
 	}
 
-	err = autoscale.ExpandAutoscalingDimension(elem.AutoscalingMin, autoscale.MinSize, autoscale.MinSizeResource)
+	err = autoscale.ExpandAutoscalingDimension(payload.AutoscalingMin, autoscale.MinSize, autoscale.MinSizeResource)
 	if err != nil {
 		diag.AddError("fail to parse autoscale min size", err.Error())
 		return diag
 	}
 
 	// Ensure that if the Min and Max are empty, they're nil.
-	if reflect.DeepEqual(elem.AutoscalingMin, new(models.TopologySize)) {
-		elem.AutoscalingMin = nil
+	if reflect.DeepEqual(payload.AutoscalingMin, new(models.TopologySize)) {
+		payload.AutoscalingMin = nil
 	}
-	if reflect.DeepEqual(elem.AutoscalingMax, new(models.TopologySize)) {
-		elem.AutoscalingMax = nil
+	if reflect.DeepEqual(payload.AutoscalingMax, new(models.TopologySize)) {
+		payload.AutoscalingMax = nil
 	}
 
 	if autoscale.PolicyOverrideJson.Value != "" {
 		if err := json.Unmarshal([]byte(autoscale.PolicyOverrideJson.Value),
-			&elem.AutoscalingPolicyOverrideJSON,
+			&payload.AutoscalingPolicyOverrideJSON,
 		); err != nil {
 			diag.AddError(fmt.Sprintf("elasticsearch topology %s: unable to load policy_override_json", topologyID), err.Error())
 			return diag
@@ -114,8 +124,8 @@ func ElasticsearchTopologyAutoscalingPayload(ctx context.Context, autos types.Li
 	return diag
 }
 
-func ReadElasticsearchTopologyAutoscaling(topology *models.ElasticsearchClusterTopologyElement) (*ElasticsearchTopologyAutoscalingV1, error) {
-	var a ElasticsearchTopologyAutoscalingV1
+func ReadElasticsearchTopologyAutoscaling(topology *models.ElasticsearchClusterTopologyElement) (*ElasticsearchTopologyAutoscaling, error) {
+	var a ElasticsearchTopologyAutoscaling
 
 	if ascale := topology.AutoscalingMax; ascale != nil {
 		a.MaxSizeResource = ascale.Resource
@@ -138,7 +148,7 @@ func ReadElasticsearchTopologyAutoscaling(topology *models.ElasticsearchClusterT
 	return &a, nil
 }
 
-func (a ElasticsearchTopologyAutoscalingV1) isEmpty() bool {
+func (a ElasticsearchTopologyAutoscaling) isEmpty() bool {
 	return reflect.ValueOf(a).IsZero()
 }
 
@@ -147,7 +157,7 @@ func (a ElasticsearchTopologyAutoscalingV1) isEmpty() bool {
 // to work around this limitation, this function will default the %_size_resource attribute to `memory`.
 // Without this default, setting autoscaling limits on tiers which do not have those limits in the deployment
 // template leads to an API error due to the empty resource field on the TopologySize model.
-func (autoscale ElasticsearchTopologyAutoscalingV1TF) ExpandAutoscalingDimension(model *models.TopologySize, size, sizeResource types.String) error {
+func (autoscale ElasticsearchTopologyAutoscalingTF) ExpandAutoscalingDimension(model *models.TopologySize, size, sizeResource types.String) error {
 	if size.Value != "" {
 		val, err := deploymentsize.ParseGb(size.Value)
 		if err != nil {

@@ -26,6 +26,7 @@ import (
 	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/utils"
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -113,69 +114,86 @@ func EnterpriseSearchTopologiesPayload(ctx context.Context, tops types.List, pla
 	var diags diag.Diagnostics
 
 	if len(tops.Elems) == 0 {
-		return defaultEssTopology(planModels), nil
+		return DefaultEssTopology(planModels), nil
 	}
 
-	planModels = defaultEssTopology(planModels)
+	planModels = DefaultEssTopology(planModels)
 
-	res := make([]*models.EnterpriseSearchTopologyElement, 0, len(tops.Elems))
+	payloads := make([]*models.EnterpriseSearchTopologyElement, 0, len(tops.Elems))
 
 	for i, elem := range tops.Elems {
-		var topology EnterpriseSearchTopologyTF
+		payload, diags := EnterpriseSearchTopologyPayload(ctx, planModels, i, elem)
 
-		ds := tfsdk.ValueAs(ctx, elem, &topology)
-		diags.Append(ds...)
-
-		if ds.HasError() {
-			continue
+		if diags.HasError() {
+			return nil, diags
 		}
 
-		icID := topology.InstanceConfigurationId.Value
-
-		// When a topology element is set but no instance_configuration_id
-		// is set, then obtain the instance_configuration_id from the topology
-		// element.
-		if icID == "" && i < len(planModels) {
-			icID = planModels[i].InstanceConfigurationID
+		if payload != nil {
+			payloads = append(payloads, payload)
 		}
-
-		elem, err := matchEssTopology(icID, planModels)
-		if err != nil {
-			diags.AddError("cannot match enterprise search topology", err.Error())
-			continue
-		}
-
-		size, err := converters.ParseTopologySize(topology.Size, topology.SizeResource)
-		if err != nil {
-			diags.AddError("failed parse enterprise search topology size", err.Error())
-		} else {
-			// Since Enterprise Search is not enabled by default in the template,
-			// if the size == nil, it means that the size hasn't been specified in
-			// the definition.
-			if size == nil {
-				size = &models.TopologySize{
-					Resource: ec.String("memory"),
-					Value:    ec.Int32(minimumEnterpriseSearchSize),
-				}
-			}
-
-			elem.Size = size
-		}
-
-		if topology.ZoneCount.Value > 0 {
-			elem.ZoneCount = int32(topology.ZoneCount.Value)
-		}
-
-		res = append(res, elem)
 	}
 
-	return res, diags
+	return payloads, diags
+}
+
+func EnterpriseSearchTopologyPayload(ctx context.Context, planModels []*models.EnterpriseSearchTopologyElement, index int, topObj attr.Value) (*models.EnterpriseSearchTopologyElement, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	if topObj.IsNull() || topObj.IsUnknown() {
+		return nil, nil
+	}
+
+	var topology EnterpriseSearchTopologyTF
+
+	if diags := tfsdk.ValueAs(ctx, topObj, &topology); diags.HasError() {
+		return nil, diags
+	}
+
+	icID := topology.InstanceConfigurationId.Value
+
+	// When a topology element is set but no instance_configuration_id
+	// is set, then obtain the instance_configuration_id from the topology
+	// element.
+	if icID == "" && index < len(planModels) {
+		icID = planModels[index].InstanceConfigurationID
+	}
+
+	elem, err := matchEssTopology(icID, planModels)
+	if err != nil {
+		diags.AddError("cannot match enterprise search topology", err.Error())
+		return nil, diags
+	}
+
+	size, err := converters.ParseTopologySize(topology.Size, topology.SizeResource)
+
+	if err != nil {
+		diags.AddError("failed parse enterprise search topology size", err.Error())
+		return nil, diags
+	}
+
+	// Since Enterprise Search is not enabled by default in the template,
+	// if the size == nil, it means that the size hasn't been specified in
+	// the definition.
+	if size == nil {
+		size = &models.TopologySize{
+			Resource: ec.String("memory"),
+			Value:    ec.Int32(minimumEnterpriseSearchSize),
+		}
+	}
+
+	elem.Size = size
+
+	if topology.ZoneCount.Value > 0 {
+		elem.ZoneCount = int32(topology.ZoneCount.Value)
+	}
+
+	return elem, nil
 }
 
 // defaultApmTopology iterates over all the templated topology elements and
 // sets the size to the default when the template size is smaller than the
 // deployment template default, the same is done on the ZoneCount.
-func defaultEssTopology(topology []*models.EnterpriseSearchTopologyElement) []*models.EnterpriseSearchTopologyElement {
+func DefaultEssTopology(topology []*models.EnterpriseSearchTopologyElement) []*models.EnterpriseSearchTopologyElement {
 	for _, t := range topology {
 		if *t.Size.Value < minimumEnterpriseSearchSize || *t.Size.Value == 0 {
 			t.Size.Value = ec.Int32(minimumEnterpriseSearchSize)

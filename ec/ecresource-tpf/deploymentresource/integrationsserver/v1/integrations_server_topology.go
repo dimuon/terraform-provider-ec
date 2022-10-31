@@ -23,10 +23,11 @@ import (
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
-	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/topology/v1"
+	topologyv1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/topology/v1"
 	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/utils"
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -36,8 +37,8 @@ const (
 	minimumIntegrationsServerSize = 1024
 )
 
-func readIntegrationsServerTopology(in *models.IntegrationsServerTopologyElement) (*v1.Topology, error) {
-	var top v1.Topology
+func ReadIntegrationsServerTopology(in *models.IntegrationsServerTopologyElement) (*topologyv1.Topology, error) {
+	var top topologyv1.Topology
 
 	if in.InstanceConfigurationID != "" {
 		top.InstanceConfigurationId = &in.InstanceConfigurationID
@@ -53,18 +54,18 @@ func readIntegrationsServerTopology(in *models.IntegrationsServerTopologyElement
 	return &top, nil
 }
 
-func readIntegrationsServerTopologies(in []*models.IntegrationsServerTopologyElement) (v1.Topologies, error) {
+func ReadIntegrationsServerTopologies(in []*models.IntegrationsServerTopologyElement) (topologyv1.Topologies, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}
 
-	tops := make(v1.Topologies, 0, len(in))
+	tops := make(topologyv1.Topologies, 0, len(in))
 	for _, model := range in {
 		if model.Size == nil || model.Size.Value == nil || *model.Size.Value == 0 {
 			continue
 		}
 
-		top, err := readIntegrationsServerTopology(model)
+		top, err := ReadIntegrationsServerTopology(model)
 		if err != nil {
 			return nil, err
 		}
@@ -75,63 +76,34 @@ func readIntegrationsServerTopologies(in []*models.IntegrationsServerTopologyEle
 	return tops, nil
 }
 
-func integrationsServerTopologyPayload(ctx context.Context, planModels []*models.IntegrationsServerTopologyElement, tops *types.List) ([]*models.IntegrationsServerTopologyElement, diag.Diagnostics) {
+func IntegrationsServerTopologiesPayload(ctx context.Context, planModels []*models.IntegrationsServerTopologyElement, tops *types.List) ([]*models.IntegrationsServerTopologyElement, diag.Diagnostics) {
 	if len(tops.Elems) == 0 {
-		return defaultIntegrationsServerTopology(planModels), nil
+		return DefaultIntegrationsServerTopology(planModels), nil
 	}
 
-	planModels = defaultIntegrationsServerTopology(planModels)
+	planModels = DefaultIntegrationsServerTopology(planModels)
 
-	res := make([]*models.IntegrationsServerTopologyElement, 0, len(tops.Elems))
+	payloads := make([]*models.IntegrationsServerTopologyElement, 0, len(tops.Elems))
 
 	for i, elem := range tops.Elems {
-		var top v1.TopologyTF
+		payload, diags := IntegrationsServerTopologyPayload(ctx, planModels, i, elem)
 
-		if diags := tfsdk.ValueAs(ctx, elem, &top); diags.HasError() {
+		if diags.HasError() {
 			return nil, diags
 		}
 
-		icID := top.InstanceConfigurationId.Value
-
-		// When a topology element is set but no instance_configuration_id
-		// is set, then obtain the instance_configuration_id from the topology
-		// element.
-		if icID == "" && i < len(planModels) {
-			icID = planModels[i].InstanceConfigurationID
+		if payload != nil {
+			payloads = append(payloads, payload)
 		}
-
-		var diags diag.Diagnostics
-
-		size, err := converters.ParseTopologySize(top.Size, top.SizeResource)
-		if err != nil {
-			diags.AddError("parse topology error", err.Error())
-			return nil, diags
-		}
-
-		elem, err := matchIntegrationsServerTopology(icID, planModels)
-		if err != nil {
-			diags.AddError("integrations_server topology payload error", err.Error())
-			return nil, diags
-		}
-
-		if size != nil {
-			elem.Size = size
-		}
-
-		if top.ZoneCount.Value > 0 {
-			elem.ZoneCount = int32(top.ZoneCount.Value)
-		}
-
-		res = append(res, elem)
 	}
 
-	return res, nil
+	return payloads, nil
 }
 
-// defaultIntegrationsServerTopology iterates over all the templated topology elements and
+// DefaultIntegrationsServerTopology iterates over all the templated topology elements and
 // sets the size to the default when the template size is smaller than the
 // deployment template default, the same is done on the ZoneCount.
-func defaultIntegrationsServerTopology(topology []*models.IntegrationsServerTopologyElement) []*models.IntegrationsServerTopologyElement {
+func DefaultIntegrationsServerTopology(topology []*models.IntegrationsServerTopologyElement) []*models.IntegrationsServerTopologyElement {
 	for _, t := range topology {
 		if *t.Size.Value < minimumIntegrationsServerSize {
 			t.Size.Value = ec.Int32(minimumIntegrationsServerSize)
@@ -142,6 +114,51 @@ func defaultIntegrationsServerTopology(topology []*models.IntegrationsServerTopo
 	}
 
 	return topology
+}
+
+func IntegrationsServerTopologyPayload(ctx context.Context, planModels []*models.IntegrationsServerTopologyElement, index int, topObj attr.Value) (*models.IntegrationsServerTopologyElement, diag.Diagnostics) {
+	if topObj.IsNull() || topObj.IsUnknown() {
+		return nil, nil
+	}
+
+	var top topologyv1.TopologyTF
+
+	if diags := tfsdk.ValueAs(ctx, topObj, &top); diags.HasError() {
+		return nil, diags
+	}
+
+	icID := top.InstanceConfigurationId.Value
+
+	// When a topology element is set but no instance_configuration_id
+	// is set, then obtain the instance_configuration_id from the topology
+	// element.
+	if icID == "" && index < len(planModels) {
+		icID = planModels[index].InstanceConfigurationID
+	}
+
+	var diags diag.Diagnostics
+
+	size, err := converters.ParseTopologySize(top.Size, top.SizeResource)
+	if err != nil {
+		diags.AddError("parse topology error", err.Error())
+		return nil, diags
+	}
+
+	elem, err := matchIntegrationsServerTopology(icID, planModels)
+	if err != nil {
+		diags.AddError("integrations_server topology payload error", err.Error())
+		return nil, diags
+	}
+
+	if size != nil {
+		elem.Size = size
+	}
+
+	if top.ZoneCount.Value > 0 {
+		elem.ZoneCount = int32(top.ZoneCount.Value)
+	}
+
+	return elem, nil
 }
 
 func matchIntegrationsServerTopology(id string, topologies []*models.IntegrationsServerTopologyElement) (*models.IntegrationsServerTopologyElement, error) {

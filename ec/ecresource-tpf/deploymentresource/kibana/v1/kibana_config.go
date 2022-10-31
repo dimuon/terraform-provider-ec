@@ -84,11 +84,19 @@ func ReadKibanaConfig(in *models.KibanaConfiguration) (KibanaConfigs, error) {
 func KibanaConfigPayload(ctx context.Context, list types.List, model *models.KibanaConfiguration) diag.Diagnostics {
 	var cfg *KibanaConfigTF
 
-	diags := utils.GetFirst(ctx, list, &cfg)
-
-	if diags.HasError() {
+	if diags := utils.GetFirst(ctx, list, &cfg); diags.HasError() {
 		return diags
 	}
+
+	if cfg == nil {
+		return nil
+	}
+
+	return cfg.Payload(model)
+}
+
+func (cfg *KibanaConfigTF) Payload(model *models.KibanaConfiguration) diag.Diagnostics {
+	var diags diag.Diagnostics
 
 	if cfg == nil {
 		return nil

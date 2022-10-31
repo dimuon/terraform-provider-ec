@@ -432,7 +432,7 @@ func Test_readElasticsearchConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ReadElasticsearchConfig(tt.args.cfg)
+			got, err := ReadElasticsearchConfigs(tt.args.cfg)
 			assert.Nil(t, err)
 			assert.Equal(t, tt.want, got)
 

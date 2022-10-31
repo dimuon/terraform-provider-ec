@@ -224,7 +224,7 @@ func Test_readIntegrationsServer(t *testing.T) {
 							ZoneCount:               1,
 						},
 					},
-					Config: IntegrationsServerConfigsV1{
+					Config: IntegrationsServerConfigs{
 						{
 							UserSettingsYaml:         ec.String("some.setting: value"),
 							UserSettingsOverrideYaml: ec.String("some.setting: value2"),
@@ -301,7 +301,7 @@ func Test_readIntegrationsServer(t *testing.T) {
 							ZoneCount:               1,
 						},
 					},
-					Config: IntegrationsServerConfigsV1{
+					Config: IntegrationsServerConfigs{
 						{
 							UserSettingsYaml:         ec.String("some.setting: value"),
 							UserSettingsOverrideYaml: ec.String("some.setting: value2"),

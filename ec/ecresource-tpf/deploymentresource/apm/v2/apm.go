@@ -15,17 +15,18 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package v1
+package v2
 
 import (
 	"context"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
-	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/topology/v1"
+	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/apm/v1"
+	topologyv1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/topology/v1"
 	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/utils"
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
-	"github.com/elastic/terraform-provider-ec/ec/internal/util"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -36,22 +37,20 @@ type ApmTF struct {
 	Region                    types.String `tfsdk:"region"`
 	HttpEndpoint              types.String `tfsdk:"http_endpoint"`
 	HttpsEndpoint             types.String `tfsdk:"https_endpoint"`
-	Topology                  types.List   `tfsdk:"topology"`
-	Config                    types.List   `tfsdk:"config"`
+	Topology                  types.Object `tfsdk:"topology"`
+	Config                    types.Object `tfsdk:"config"`
 }
 
 type Apm struct {
-	ElasticsearchClusterRefId *string       `tfsdk:"elasticsearch_cluster_ref_id"`
-	RefId                     *string       `tfsdk:"ref_id"`
-	ResourceId                *string       `tfsdk:"resource_id"`
-	Region                    *string       `tfsdk:"region"`
-	HttpEndpoint              *string       `tfsdk:"http_endpoint"`
-	HttpsEndpoint             *string       `tfsdk:"https_endpoint"`
-	Topology                  v1.Topologies `tfsdk:"topology"`
-	Config                    ApmConfigs    `tfsdk:"config"`
+	ElasticsearchClusterRefId *string              `tfsdk:"elasticsearch_cluster_ref_id"`
+	RefId                     *string              `tfsdk:"ref_id"`
+	ResourceId                *string              `tfsdk:"resource_id"`
+	Region                    *string              `tfsdk:"region"`
+	HttpEndpoint              *string              `tfsdk:"http_endpoint"`
+	HttpsEndpoint             *string              `tfsdk:"https_endpoint"`
+	Topology                  *topologyv1.Topology `tfsdk:"topology"`
+	Config                    *v1.ApmConfig        `tfsdk:"config"`
 }
-
-type Apms []Apm
 
 func ReadApm(in *models.ApmResourceInfo) (*Apm, error) {
 	var apm Apm
@@ -64,23 +63,27 @@ func ReadApm(in *models.ApmResourceInfo) (*Apm, error) {
 
 	plan := in.Info.PlanInfo.Current.Plan
 
-	topologies, err := ReadApmTopologies(plan.ClusterTopology)
+	topologies, err := v1.ReadApmTopologies(plan.ClusterTopology)
 	if err != nil {
 		return nil, err
 	}
 
-	apm.Topology = topologies
+	if len(topologies) > 0 {
+		apm.Topology = &topologies[0]
+	}
 
 	apm.ElasticsearchClusterRefId = in.ElasticsearchClusterRefID
 
 	apm.HttpEndpoint, apm.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
 
-	configs, err := ReadApmConfigs(plan.Apm)
+	configs, err := v1.ReadApmConfigs(plan.Apm)
 	if err != nil {
 		return nil, err
 	}
 
-	apm.Config = configs
+	if len(configs) > 0 {
+		apm.Config = &configs[0]
+	}
 
 	return &apm, nil
 }
@@ -100,38 +103,27 @@ func (apm ApmTF) Payload(ctx context.Context, payload models.ApmPayload) (*model
 		payload.Region = &apm.Region.Value
 	}
 
-	var cfg *ApmConfigTF
+	if !apm.Config.IsNull() && !apm.Config.IsUnknown() {
+		var cfg v1.ApmConfigTF
 
-	ds := utils.GetFirst(ctx, apm.Config, &cfg)
+		ds := tfsdk.ValueAs(ctx, apm.Config, &cfg)
 
-	diags.Append(ds...)
+		diags.Append(ds...)
 
-	if !ds.HasError() && cfg != nil {
-		diags.Append(cfg.Payload(ctx, payload.Plan.Apm)...)
+		if !ds.HasError() {
+			diags.Append(cfg.Payload(ctx, payload.Plan.Apm)...)
+		}
 	}
 
-	payload.Plan.ClusterTopology, ds = ApmTopologiesPayload(ctx, payload.Plan.ClusterTopology, apm.Topology)
+	topologyPayload, ds := v1.ApmTopologyPayload(ctx, payload.Plan.ClusterTopology, 0, apm.Topology)
 
 	diags.Append(ds...)
+
+	if !ds.HasError() && topologyPayload != nil {
+		payload.Plan.ClusterTopology = []*models.ApmTopologyElement{topologyPayload}
+	}
 
 	return &payload, diags
-}
-
-func ReadApms(in []*models.ApmResourceInfo) (Apms, error) {
-	for _, model := range in {
-		if util.IsCurrentApmPlanEmpty(model) || utils.IsApmResourceStopped(model) {
-			continue
-		}
-
-		apm, err := ReadApm(model)
-		if err != nil {
-			return nil, err
-		}
-
-		return Apms{*apm}, nil
-	}
-
-	return nil, nil
 }
 
 func ApmPayload(ctx context.Context, list types.List, template *models.DeploymentTemplateInfoV2) (*models.ApmPayload, diag.Diagnostics) {

@@ -49,13 +49,13 @@ type ElasticsearchTF struct {
 	ColdTier         types.Object `tfsdk:"cold_tier"`
 	FrozenTier       types.Object `tfsdk:"frozen_tier"`
 	MlTier           types.Object `tfsdk:"ml_tier"`
-	Config           types.List   `tfsdk:"config"`
+	Config           types.Object `tfsdk:"config"`
 	RemoteCluster    types.Set    `tfsdk:"remote_cluster"`
-	SnapshotSource   types.List   `tfsdk:"snapshot_source"`
+	SnapshotSource   types.Object `tfsdk:"snapshot_source"`
 	Extension        types.Set    `tfsdk:"extension"`
 	TrustAccount     types.Set    `tfsdk:"trust_account"`
 	TrustExternal    types.Set    `tfsdk:"trust_external"`
-	Strategy         types.List   `tfsdk:"strategy"`
+	Strategy         types.String `tfsdk:"strategy"`
 }
 
 type Elasticsearch struct {
@@ -73,13 +73,13 @@ type Elasticsearch struct {
 	ColdTier         *v1.ElasticsearchTopology       `tfsdk:"cold_tier"`
 	FrozenTier       *v1.ElasticsearchTopology       `tfsdk:"frozen_tier"`
 	MlTielr          *v1.ElasticsearchTopology       `tfsdk:"ml_tier"`
-	Config           v1.ElasticsearchConfigs         `tfsdk:"config"`
+	Config           *v1.ElasticsearchConfig         `tfsdk:"config"`
 	RemoteCluster    v1.ElasticsearchRemoteClusters  `tfsdk:"remote_cluster"`
-	SnapshotSource   v1.ElasticsearchSnapshotSources `tfsdk:"snapshot_source"`
+	SnapshotSource   *v1.ElasticsearchSnapshotSource `tfsdk:"snapshot_source"`
 	Extension        v1.ElasticsearchExtensions      `tfsdk:"extension"`
 	TrustAccount     v1.ElasticsearchTrustAccounts   `tfsdk:"trust_account"`
 	TrustExternal    v1.ElasticsearchTrustExternals  `tfsdk:"trust_external"`
-	Strategy         v1.ElasticsearchStrategiesV1    `tfsdk:"strategy"`
+	Strategy         *string                         `tfsdk:"strategy"`
 }
 
 type Elasticsearches []Elasticsearch
@@ -239,7 +239,7 @@ func (es *ElasticsearchTF) Payload(ctx context.Context, res *models.Elasticsearc
 	res.Settings, ds = v1.ElasticsearchTrustExternalPayload(ctx, es.TrustExternal, res.Settings)
 	diags.Append(ds...)
 
-	diags.Append(v1.ElasticsearchStrategyPayload(ctx, es.Strategy, res.Plan)...)
+	v1.ElasticsearchStrategyPayload(es.Strategy, res.Plan)
 
 	return res, diags
 }
