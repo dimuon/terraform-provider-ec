@@ -22,12 +22,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	apmv1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/apm/v1"
+	apmv2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/apm/v2"
 	elasticsearchv2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/elasticsearch/v2"
-	enterprisesearchv1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/enterprisesearch/v1"
-	integrationsserverv1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/integrationsserver/v1"
-	kibanav1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/kibana/v1"
-	observabilityv1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/observability/v1"
+	enterprisesearchv2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/enterprisesearch/v2"
+	integrationsserverv2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/integrationsserver/v2"
+	kibanav2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/kibana/v2"
+	observabilityv2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/observability/v2"
 )
 
 func DeploymentSchema() tfsdk.Schema {
@@ -123,11 +123,11 @@ func DeploymentSchema() tfsdk.Schema {
 				Optional: true,
 			},
 			"elasticsearch":       elasticsearchv2.ElasticsearchSchema(),
-			"kibana":              kibanav1.KibanaSchema(),
-			"apm":                 apmv1.ApmSchema(),
-			"integrations_server": integrationsserverv1.IntegrationsServerSchema(),
-			"enterprise_search":   enterprisesearchv1.EnterpriseSearchSchema(),
-			"observability":       observabilityv1.ObservabilitySchema(),
+			"kibana":              kibanav2.KibanaSchema(),
+			"apm":                 apmv2.ApmSchema(),
+			"integrations_server": integrationsserverv2.IntegrationsServerSchema(),
+			"enterprise_search":   enterprisesearchv2.EnterpriseSearchSchema(),
+			"observability":       observabilityv2.ObservabilitySchema(),
 		},
 	}
 }
