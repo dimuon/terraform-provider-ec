@@ -285,13 +285,3 @@ func (topology *ElasticsearchTopologyTF) ParseLegacyNodeType(nodeType *models.El
 
 	return nil
 }
-
-func (tops ElasticsearchTopologies) Set() map[string]ElasticsearchTopology {
-	set := make(map[string]ElasticsearchTopology, len(tops))
-
-	for _, top := range tops {
-		set[top.Id] = top
-	}
-
-	return set
-}

@@ -65,13 +65,13 @@ type Elasticsearch struct {
 	CloudID          *string                         `tfsdk:"cloud_id"`
 	HttpEndpoint     *string                         `tfsdk:"http_endpoint"`
 	HttpsEndpoint    *string                         `tfsdk:"https_endpoint"`
-	HotContentTier   *v1.ElasticsearchTopology       `tfsdk:"hot_content_tier"`
-	CoordinatingTier *v1.ElasticsearchTopology       `tfsdk:"coordinating_tier"`
-	MasterTier       *v1.ElasticsearchTopology       `tfsdk:"master_tier"`
-	WarmTier         *v1.ElasticsearchTopology       `tfsdk:"warm_tier"`
-	ColdTier         *v1.ElasticsearchTopology       `tfsdk:"cold_tier"`
-	FrozenTier       *v1.ElasticsearchTopology       `tfsdk:"frozen_tier"`
-	MlTielr          *v1.ElasticsearchTopology       `tfsdk:"ml_tier"`
+	HotContentTier   *ElasticsearchTopology          `tfsdk:"hot_content_tier"`
+	CoordinatingTier *ElasticsearchTopology          `tfsdk:"coordinating_tier"`
+	MasterTier       *ElasticsearchTopology          `tfsdk:"master_tier"`
+	WarmTier         *ElasticsearchTopology          `tfsdk:"warm_tier"`
+	ColdTier         *ElasticsearchTopology          `tfsdk:"cold_tier"`
+	FrozenTier       *ElasticsearchTopology          `tfsdk:"frozen_tier"`
+	MlTielr          *ElasticsearchTopology          `tfsdk:"ml_tier"`
 	Config           *v1.ElasticsearchConfig         `tfsdk:"config"`
 	RemoteCluster    v1.ElasticsearchRemoteClusters  `tfsdk:"remote_cluster"`
 	SnapshotSource   *v1.ElasticsearchSnapshotSource `tfsdk:"snapshot_source"`
@@ -134,7 +134,7 @@ func ReadElasticsearch(in *models.ElasticsearchResourceInfo, remotes *models.Rem
 	plan := in.Info.PlanInfo.Current.Plan
 	var err error
 
-	topologies, err := v1.ReadElasticsearchTopologies(plan)
+	topologies, err := ReadElasticsearchTopologies(plan)
 	if err != nil {
 		return nil, err
 	}
@@ -252,7 +252,7 @@ func topologyPayload(ctx context.Context, topologyObj types.Object, topologies [
 	var diags diag.Diagnostics
 
 	if !topologyObj.IsNull() && !topologyObj.IsUnknown() {
-		var topology v1.ElasticsearchTopologyTF
+		var topology ElasticsearchTopologyTF
 
 		ds := tfsdk.ValueAs(ctx, topologyObj, &topology)
 		diags.Append(ds...)
@@ -265,12 +265,13 @@ func topologyPayload(ctx context.Context, topologyObj types.Object, topologies [
 	return diags
 }
 
-func (es *Elasticsearch) setTopology(topologies v1.ElasticsearchTopologies) {
+func (es *Elasticsearch) setTopology(topologies ElasticsearchTopologies) {
 	set := topologies.Set()
 
 	for id, topology := range set {
+		topology := topology
 		switch id {
-		case "hot_tier":
+		case "hot_content":
 			es.HotContentTier = &topology
 		case "coordinating":
 			es.CoordinatingTier = &topology

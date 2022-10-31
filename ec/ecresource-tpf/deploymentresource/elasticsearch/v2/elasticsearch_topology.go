@@ -62,8 +62,6 @@ type ElasticsearchTopology struct {
 	Config                  *v1.ElasticsearchTopologyConfig      `tfsdk:"config"`
 }
 
-type ElasticsearchTopologies []ElasticsearchTopology
-
 func (topology ElasticsearchTopologyTF) Payload(ctx context.Context, planTopologies []*models.ElasticsearchClusterTopologyElement) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -108,6 +106,28 @@ func (topology ElasticsearchTopologyTF) Payload(ctx context.Context, planTopolog
 	diags = append(diags, ds...)
 
 	return diags
+}
+
+func ReadElasticsearchTopologies(in *models.ElasticsearchClusterPlan) (ElasticsearchTopologies, error) {
+	if len(in.ClusterTopology) == 0 {
+		return nil, nil
+	}
+
+	tops := make([]ElasticsearchTopology, 0, len(in.ClusterTopology))
+
+	for _, model := range in.ClusterTopology {
+		if !v1.IsPotentiallySizedTopology(model, in.AutoscalingEnabled != nil && *in.AutoscalingEnabled) {
+			continue
+		}
+
+		topology, err := ReadElasticsearchTopology(model)
+		if err != nil {
+			return nil, err
+		}
+		tops = append(tops, *topology)
+	}
+
+	return tops, nil
 }
 
 func ReadElasticsearchTopology(model *models.ElasticsearchClusterTopologyElement) (*ElasticsearchTopology, error) {
@@ -220,4 +240,16 @@ func ObjectToTopology(ctx context.Context, obj types.Object) (*ElasticsearchTopo
 	}
 
 	return topology, nil
+}
+
+type ElasticsearchTopologies []ElasticsearchTopology
+
+func (tops ElasticsearchTopologies) Set() map[string]ElasticsearchTopology {
+	set := make(map[string]ElasticsearchTopology, len(tops))
+
+	for _, top := range tops {
+		set[top.Id] = top
+	}
+
+	return set
 }
