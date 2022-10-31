@@ -22,7 +22,7 @@ import (
 	"fmt"
 
 	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi"
-	deploymentv1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/deployment/v1"
+	deploymentv "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/deployment/v2"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
@@ -32,14 +32,14 @@ func (r Resource) Create(ctx context.Context, req resource.CreateRequest, resp *
 		return
 	}
 
-	var config deploymentv1.DeploymentTF
+	var config deploymentv.DeploymentTF
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	var plan deploymentv1.DeploymentTF
+	var plan deploymentv.DeploymentTF
 	diags = req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -78,7 +78,7 @@ func (r Resource) Create(ctx context.Context, req resource.CreateRequest, resp *
 
 	tflog.Trace(ctx, "created a resource")
 
-	diags = deploymentv1.HandleRemoteClusters(ctx, r.client, plan, deploymentv1.DeploymentTF{})
+	diags = deploymentv.HandleRemoteClusters(ctx, r.client, plan, deploymentv.DeploymentTF{})
 	resp.Diagnostics.Append(diags...)
 
 	deployment, diags := r.read(ctx, *res.ID, plan, res.Resources)

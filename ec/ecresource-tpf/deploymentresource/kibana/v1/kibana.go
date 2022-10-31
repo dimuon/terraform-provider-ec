@@ -142,7 +142,7 @@ func KibanaPayload(ctx context.Context, list types.List, template *models.Deploy
 		return nil, nil
 	}
 
-	templatePlayload := kibanaResource(template)
+	templatePlayload := KibanaResource(template)
 
 	if templatePlayload == nil {
 		diags.AddError("kibana payload error", "kibana specified but deployment template is not configured for it. Use a different template if you wish to add kibana")
@@ -157,9 +157,9 @@ func KibanaPayload(ctx context.Context, list types.List, template *models.Deploy
 	return payload, nil
 }
 
-// kibanaResource returns the KibanaPayload from a deployment
+// KibanaResource returns the KibanaPayload from a deployment
 // template or an empty version of the payload.
-func kibanaResource(res *models.DeploymentTemplateInfoV2) *models.KibanaPayload {
+func KibanaResource(res *models.DeploymentTemplateInfoV2) *models.KibanaPayload {
 	if res == nil || len(res.DeploymentTemplate.Resources.Kibana) == 0 {
 		return nil
 	}

@@ -25,78 +25,22 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
-	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/utils"
+	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/observability/v1"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type ObservabilityTF struct {
-	DeploymentId types.String `tfsdk:"deployment_id"`
-	RefId        types.String `tfsdk:"ref_id"`
-	Logs         types.Bool   `tfsdk:"logs"`
-	Metrics      types.Bool   `tfsdk:"metrics"`
-}
+type ObservabilityTF = v1.ObservabilityTF
 
-type Observability struct {
-	DeploymentId *string `tfsdk:"deployment_id"`
-	RefId        *string `tfsdk:"ref_id"`
-	Logs         bool    `tfsdk:"logs"`
-	Metrics      bool    `tfsdk:"metrics"`
-}
+type Observability = v1.Observability
 
 type Observabilities []Observability
 
-func ReadObservabilities(in *models.DeploymentSettings) (Observabilities, error) {
-	obs, err := ReadObservability(in)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if obs == nil {
-		return nil, nil
-	}
-
-	return Observabilities{*obs}, nil
-}
-
-func ReadObservability(in *models.DeploymentSettings) (*Observability, error) {
-	if in == nil || in.Observability == nil {
-		return nil, nil
-	}
-
-	var obs Observability
-
-	// We are only accepting a single deployment ID and refID for both logs and metrics.
-	// If either of them is not nil the deployment ID and refID will be filled.
-	if in.Observability.Metrics != nil {
-		if in.Observability.Metrics.Destination.DeploymentID != nil {
-			obs.DeploymentId = in.Observability.Metrics.Destination.DeploymentID
-		}
-
-		obs.RefId = &in.Observability.Metrics.Destination.RefID
-		obs.Metrics = true
-	}
-
-	if in.Observability.Logging != nil {
-		if in.Observability.Logging.Destination.DeploymentID != nil {
-			obs.DeploymentId = in.Observability.Logging.Destination.DeploymentID
-		}
-		obs.RefId = &in.Observability.Logging.Destination.RefID
-		obs.Logs = true
-	}
-
-	if obs == (Observability{}) {
-		return nil, nil
-	}
-
-	return &obs, nil
-}
-
-func ObservabilityPayload(ctx context.Context, list types.List, client *api.API) (*models.DeploymentObservabilitySettings, diag.Diagnostics) {
+func ObservabilityPayload(ctx context.Context, obsObj types.Object, client *api.API) (*models.DeploymentObservabilitySettings, diag.Diagnostics) {
 	var observability *ObservabilityTF
 
-	if diags := utils.GetFirst(ctx, list, &observability); diags.HasError() {
+	if diags := tfsdk.ValueAs(ctx, obsObj, &observability); diags.HasError() {
 		return nil, nil
 	}
 
@@ -150,4 +94,8 @@ func ObservabilityPayload(ctx context.Context, list types.List, client *api.API)
 	}
 
 	return &payload, nil
+}
+
+func ReadObservability(in *models.DeploymentSettings) (*Observability, error) {
+	return v1.ReadObservability(in)
 }

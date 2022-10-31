@@ -142,7 +142,7 @@ func EnterpriseSearchesPayload(ctx context.Context, list types.List, template *m
 		return nil, nil
 	}
 
-	templatePayload := essResource(template)
+	templatePayload := EssResource(template)
 
 	if templatePayload == nil {
 		diags.AddError(
@@ -161,9 +161,9 @@ func EnterpriseSearchesPayload(ctx context.Context, list types.List, template *m
 	return payload, nil
 }
 
-// essResource returns the EnterpriseSearchPayload from a deployment
+// EssResource returns the EnterpriseSearchPayload from a deployment
 // template or an empty version of the payload.
-func essResource(template *models.DeploymentTemplateInfoV2) *models.EnterpriseSearchPayload {
+func EssResource(template *models.DeploymentTemplateInfoV2) *models.EnterpriseSearchPayload {
 	if template == nil || len(template.DeploymentTemplate.Resources.EnterpriseSearch) == 0 {
 		return nil
 	}

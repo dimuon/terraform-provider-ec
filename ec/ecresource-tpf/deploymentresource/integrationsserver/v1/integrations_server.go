@@ -144,7 +144,7 @@ func IntegrationsServerPayload(ctx context.Context, list types.List, template *m
 		return nil, nil
 	}
 
-	templatePayload := integrationsServerResource(template)
+	templatePayload := IntegrationsServerResource(template)
 
 	if templatePayload == nil {
 		diags.AddError("integrations_server payload error", "integrations_server specified but deployment template is not configured for it. Use a different template if you wish to add integrations_server")
@@ -162,7 +162,7 @@ func IntegrationsServerPayload(ctx context.Context, list types.List, template *m
 
 // IntegrationsServerResource returns the IntegrationsServerPayload from a deployment
 // template or an empty version of the payload.
-func integrationsServerResource(template *models.DeploymentTemplateInfoV2) *models.IntegrationsServerPayload {
+func IntegrationsServerResource(template *models.DeploymentTemplateInfoV2) *models.IntegrationsServerPayload {
 	if template == nil || len(template.DeploymentTemplate.Resources.IntegrationsServer) == 0 {
 		return nil
 	}

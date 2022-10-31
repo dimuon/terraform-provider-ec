@@ -23,9 +23,9 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/integrationsserver/v1"
 	topologyv1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/topology/v1"
-	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/utils"
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -117,12 +117,12 @@ func (srv IntegrationsServerTF) Payload(ctx context.Context, payload models.Inte
 	return &payload, nil
 }
 
-func IntegrationsServerPayload(ctx context.Context, list types.List, template *models.DeploymentTemplateInfoV2) (*models.IntegrationsServerPayload, diag.Diagnostics) {
+func IntegrationsServerPayload(ctx context.Context, srvObj types.Object, template *models.DeploymentTemplateInfoV2) (*models.IntegrationsServerPayload, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	var srv *IntegrationsServerTF
 
-	if diags = utils.GetFirst(ctx, list, &srv); diags.HasError() {
+	if diags = tfsdk.ValueAs(ctx, srvObj, &srv); diags.HasError() {
 		return nil, diags
 	}
 
@@ -130,7 +130,7 @@ func IntegrationsServerPayload(ctx context.Context, list types.List, template *m
 		return nil, nil
 	}
 
-	templatePayload := integrationsServerResource(template)
+	templatePayload := v1.IntegrationsServerResource(template)
 
 	if templatePayload == nil {
 		diags.AddError("integrations_server payload error", "integrations_server specified but deployment template is not configured for it. Use a different template if you wish to add integrations_server")
@@ -144,13 +144,4 @@ func IntegrationsServerPayload(ctx context.Context, list types.List, template *m
 	}
 
 	return payload, nil
-}
-
-// IntegrationsServerResource returns the IntegrationsServerPayload from a deployment
-// template or an empty version of the payload.
-func integrationsServerResource(template *models.DeploymentTemplateInfoV2) *models.IntegrationsServerPayload {
-	if template == nil || len(template.DeploymentTemplate.Resources.IntegrationsServer) == 0 {
-		return nil
-	}
-	return template.DeploymentTemplate.Resources.IntegrationsServer[0]
 }

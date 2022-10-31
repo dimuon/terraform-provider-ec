@@ -19,7 +19,6 @@ package v2
 
 import (
 	"github.com/elastic/terraform-provider-ec/ec/internal/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -76,7 +75,6 @@ func ApmConfigSchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: `Optionally define the Apm configuration options for the APM Server`,
 		Optional:    true,
-		Validators:  []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
 		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
 			// TODO
 			// DiffSuppressFunc: suppressMissingOptionalConfigurationBlock,
@@ -123,8 +121,7 @@ func ApmSchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: "Optional APM resource definition",
 		Optional:    true,
-		Validators:  []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
-		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
 			"elasticsearch_cluster_ref_id": {
 				Type:     types.StringType,
 				Optional: true,

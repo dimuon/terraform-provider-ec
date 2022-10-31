@@ -53,7 +53,6 @@ func ElasticsearchSchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: "Required Elasticsearch resource definition",
 		Required:    true,
-		Validators:  []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
 		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
 			"autoscale": {
 				Type:        types.StringType,
@@ -119,13 +118,13 @@ func ElasticsearchSchema() tfsdk.Attribute {
 			},
 
 			// "topology": ElasticsearchTopologySchema(),
-			"hot_content":  ElasticsearchTierSchema("'hot_content' optional topology element"),
-			"coordinating": ElasticsearchTierSchema("'coordinating' optional topology element"),
-			"master":       ElasticsearchTierSchema("'master' optional topology element"),
-			"warm":         ElasticsearchTierSchema("'warm' optional topology element"),
-			"cold":         ElasticsearchTierSchema("'cold' optional topology element"),
-			"frozen":       ElasticsearchTierSchema("'frozen' optional topology element"),
-			"ml":           ElasticsearchTierSchema("'ml' optional topology element"),
+			"hot_content_tier":  ElasticsearchTierSchema("'hot_content' optional topology element"),
+			"coordinating_tier": ElasticsearchTierSchema("'coordinating' optional topology element"),
+			"master_tier":       ElasticsearchTierSchema("'master' optional topology element"),
+			"warm_tier":         ElasticsearchTierSchema("'warm' optional topology element"),
+			"cold_tier":         ElasticsearchTierSchema("'cold' optional topology element"),
+			"frozen_tier":       ElasticsearchTierSchema("'frozen' optional topology element"),
+			"ml_tier":           ElasticsearchTierSchema("'ml' optional topology element"),
 
 			"trust_account": ElasticsearchTrustAccountSchema(),
 
@@ -139,7 +138,18 @@ func ElasticsearchSchema() tfsdk.Attribute {
 
 			"extension": ElasticsearchExtensionSchema(),
 
-			"strategy": ElasticsearchStrategySchema(),
+			// "strategy":  ElasticsearchStrategySchema(),
+			"strategy": {
+				Description: "Configuration strategy type " + strings.Join(strategiesList, ", "),
+				Type:        types.StringType,
+				Optional:    true,
+				Validators:  []tfsdk.AttributeValidator{validators.OneOf(strategiesList)},
+				// TODO
+				// changes on this setting do not change the plan.
+				// DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+				// 	return true
+				// },
+			},
 		}),
 	}
 }
@@ -502,26 +512,26 @@ func ElasticsearchTrustExternalSchema() tfsdk.Attribute {
 	}
 }
 
-func ElasticsearchStrategySchema() tfsdk.Attribute {
-	return tfsdk.Attribute{
-		Description: "Configuration strategy settings.",
-		Optional:    true,
-		Validators:  []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
-		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-			"type": {
-				Description: "Configuration strategy type " + strings.Join(strategiesList, ", "),
-				Type:        types.StringType,
-				Required:    true,
-				Validators:  []tfsdk.AttributeValidator{validators.OneOf(strategiesList)},
-				// TODO
-				// changes on this setting do not change the plan.
-				// DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-				// 	return true
-				// },
-			},
-		}),
-	}
-}
+// func ElasticsearchStrategySchema() tfsdk.Attribute {
+// 	return tfsdk.Attribute{
+// 		Description: "Configuration strategy settings.",
+// 		Optional:    true,
+// 		Validators:  []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
+// 		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+// 			"type": {
+// 				Description: "Configuration strategy type " + strings.Join(strategiesList, ", "),
+// 				Type:        types.StringType,
+// 				Required:    true,
+// 				Validators:  []tfsdk.AttributeValidator{validators.OneOf(strategiesList)},
+// 				// TODO
+// 				// changes on this setting do not change the plan.
+// 				// DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+// 				// 	return true
+// 				// },
+// 			},
+// 		}),
+// 	}
+// }
 
 func ElasticsearchTopologyConfigSchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
@@ -529,20 +539,20 @@ func ElasticsearchTopologyConfigSchema() tfsdk.Attribute {
 		Computed:    true,
 		PlanModifiers: tfsdk.AttributePlanModifiers{
 			resource.UseStateForUnknown(),
-			planmodifier.DefaultValue(types.List{
-				Null: true,
-				ElemType: types.ObjectType{
-					AttrTypes: map[string]attr.Type{
-						"plugins": types.SetType{
-							ElemType: types.StringType,
-						},
-						"user_settings_json":          types.StringType,
-						"user_settings_override_json": types.StringType,
-						"user_settings_yaml":          types.StringType,
-						"user_settings_override_yaml": types.StringType,
-					},
-				},
-			}),
+			// planmodifier.DefaultValue(types.List{
+			// 	Null: true,
+			// 	ElemType: types.ObjectType{
+			// 		AttrTypes: map[string]attr.Type{
+			// 			"plugins": types.SetType{
+			// 				ElemType: types.StringType,
+			// 			},
+			// 			"user_settings_json":          types.StringType,
+			// 			"user_settings_override_json": types.StringType,
+			// 			"user_settings_yaml":          types.StringType,
+			// 			"user_settings_override_yaml": types.StringType,
+			// 		},
+			// 	},
+			// }),
 		},
 		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
 			"plugins": {

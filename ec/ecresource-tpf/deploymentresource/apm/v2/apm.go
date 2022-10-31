@@ -23,7 +23,6 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/apm/v1"
 	topologyv1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/topology/v1"
-	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/utils"
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -126,12 +125,12 @@ func (apm ApmTF) Payload(ctx context.Context, payload models.ApmPayload) (*model
 	return &payload, diags
 }
 
-func ApmPayload(ctx context.Context, list types.List, template *models.DeploymentTemplateInfoV2) (*models.ApmPayload, diag.Diagnostics) {
+func ApmPayload(ctx context.Context, apmObj types.Object, template *models.DeploymentTemplateInfoV2) (*models.ApmPayload, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	var apm *ApmTF
 
-	if diags = utils.GetFirst(ctx, list, &apm); diags.HasError() {
+	if diags = tfsdk.ValueAs(ctx, apmObj, &apm); diags.HasError() {
 		return nil, diags
 	}
 
@@ -139,7 +138,7 @@ func ApmPayload(ctx context.Context, list types.List, template *models.Deploymen
 		return nil, nil
 	}
 
-	templatePayload := apmResource(template)
+	templatePayload := v1.ApmResource(template)
 
 	if templatePayload == nil {
 		diags.AddError("apm payload error", "apm specified but deployment template is not configured for it. Use a different template if you wish to add apm")
@@ -153,13 +152,4 @@ func ApmPayload(ctx context.Context, list types.List, template *models.Deploymen
 	}
 
 	return payload, nil
-}
-
-// apmResource returns the ApmPayload from a deployment
-// template or an empty version of the payload.
-func apmResource(template *models.DeploymentTemplateInfoV2) *models.ApmPayload {
-	if template == nil || len(template.DeploymentTemplate.Resources.Apm) == 0 {
-		return nil
-	}
-	return template.DeploymentTemplate.Resources.Apm[0]
 }

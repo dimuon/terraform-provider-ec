@@ -23,7 +23,6 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/kibana/v1"
 	topologyv1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/topology/v1"
-	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/utils"
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -127,12 +126,12 @@ func (kibana KibanaTF) Payload(ctx context.Context, payload models.KibanaPayload
 	return &payload, diags
 }
 
-func KibanaPayload(ctx context.Context, list types.List, template *models.DeploymentTemplateInfoV2) (*models.KibanaPayload, diag.Diagnostics) {
+func KibanaPayload(ctx context.Context, kibanaObj types.Object, template *models.DeploymentTemplateInfoV2) (*models.KibanaPayload, diag.Diagnostics) {
 	var kibanaTF *KibanaTF
 
 	var diags diag.Diagnostics
 
-	if diags = utils.GetFirst(ctx, list, &kibanaTF); diags.HasError() {
+	if diags = tfsdk.ValueAs(ctx, kibanaObj, &kibanaTF); diags.HasError() {
 		return nil, diags
 	}
 
@@ -140,7 +139,7 @@ func KibanaPayload(ctx context.Context, list types.List, template *models.Deploy
 		return nil, nil
 	}
 
-	templatePlayload := kibanaResource(template)
+	templatePlayload := v1.KibanaResource(template)
 
 	if templatePlayload == nil {
 		diags.AddError("kibana payload error", "kibana specified but deployment template is not configured for it. Use a different template if you wish to add kibana")
@@ -148,18 +147,10 @@ func KibanaPayload(ctx context.Context, list types.List, template *models.Deploy
 	}
 
 	payload, diags := kibanaTF.Payload(ctx, *templatePlayload)
+
 	if diags.HasError() {
 		return nil, diags
 	}
 
 	return payload, nil
-}
-
-// kibanaResource returns the KibanaPayload from a deployment
-// template or an empty version of the payload.
-func kibanaResource(res *models.DeploymentTemplateInfoV2) *models.KibanaPayload {
-	if res == nil || len(res.DeploymentTemplate.Resources.Kibana) == 0 {
-		return nil
-	}
-	return res.DeploymentTemplate.Resources.Kibana[0]
 }

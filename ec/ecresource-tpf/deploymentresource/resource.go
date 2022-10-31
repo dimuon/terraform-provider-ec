@@ -21,7 +21,7 @@ import (
 	"context"
 
 	"github.com/elastic/cloud-sdk-go/pkg/api"
-	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/deployment/v1"
+	v2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/deployment/v2"
 	"github.com/elastic/terraform-provider-ec/ec/internal"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -56,7 +56,7 @@ func (r *Resource) Configure(ctx context.Context, request resource.ConfigureRequ
 }
 
 func (t *Resource) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return v1.DeploymentSchema(), nil
+	return v2.DeploymentSchema(), nil
 }
 
 func (r *Resource) Metadata(ctx context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {

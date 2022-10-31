@@ -23,13 +23,13 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/api"
 	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi"
 	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi/trafficfilterapi"
-	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/deployment/v1"
+	v2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/deployment/v2"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 )
 
 func (r Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan v1.DeploymentTF
+	var plan v2.DeploymentTF
 
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
@@ -38,7 +38,7 @@ func (r Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *
 		return
 	}
 
-	var state v1.DeploymentTF
+	var state v2.DeploymentTF
 	diags = req.State.Get(ctx, &state)
 
 	if resp.Diagnostics.HasError() {
@@ -72,7 +72,7 @@ func (r Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *
 
 	resp.Diagnostics.Append(handleTrafficFilterChange(ctx, r.client, plan, state)...)
 
-	resp.Diagnostics.Append(v1.HandleRemoteClusters(ctx, r.client, plan, state)...)
+	resp.Diagnostics.Append(v2.HandleRemoteClusters(ctx, r.client, plan, state)...)
 
 	deployment, diags := r.read(ctx, plan.Id.Value, plan, res.Resources)
 	resp.Diagnostics.Append(diags...)
@@ -85,7 +85,7 @@ func (r Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *
 	resp.Diagnostics.Append(diags...)
 }
 
-func handleTrafficFilterChange(ctx context.Context, client *api.API, plan, state v1.DeploymentTF) diag.Diagnostics {
+func handleTrafficFilterChange(ctx context.Context, client *api.API, plan, state v2.DeploymentTF) diag.Diagnostics {
 	if plan.TrafficFilter.IsNull() || plan.TrafficFilter.Equal(state.TrafficFilter) {
 		return nil
 	}

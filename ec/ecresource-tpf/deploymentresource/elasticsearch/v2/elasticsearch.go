@@ -20,7 +20,6 @@ package v2
 import (
 	"context"
 	"strconv"
-	"strings"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
@@ -82,28 +81,19 @@ type Elasticsearch struct {
 	Strategy         *string                         `tfsdk:"strategy"`
 }
 
-type Elasticsearches []Elasticsearch
-
-func ReadElasticsearches(in []*models.ElasticsearchResourceInfo, remotes *models.RemoteResources) (Elasticsearches, error) {
-	for _, model := range in {
-		if util.IsCurrentEsPlanEmpty(model) || utils.IsEsResourceStopped(model) {
-			continue
-		}
-		es, err := ReadElasticsearch(model, remotes)
-		if err != nil {
-			return nil, err
-		}
-		return Elasticsearches{*es}, nil
-	}
-
-	return nil, nil
-}
-
-func ElasticsearchPayload(ctx context.Context, list types.List, template *models.DeploymentTemplateInfoV2, dtID, version string, useNodeRoles bool, skipTopologies bool) (*models.ElasticsearchPayload, diag.Diagnostics) {
+func ElasticsearchPayload(ctx context.Context, esObj types.Object, template *models.DeploymentTemplateInfoV2, dtID, version string, useNodeRoles bool, skipTopologies bool) (*models.ElasticsearchPayload, diag.Diagnostics) {
 	var es *ElasticsearchTF
 
-	if diags := utils.GetFirst(ctx, list, &es); diags.HasError() {
+	if esObj.IsNull() || esObj.IsUnknown() {
+		return nil, nil
+	}
+
+	if diags := tfsdk.ValueAs(ctx, esObj, &es); diags.HasError() {
 		return nil, diags
+	}
+
+	if es == nil {
+		return nil, nil
 	}
 
 	if es == nil {
@@ -112,7 +102,7 @@ func ElasticsearchPayload(ctx context.Context, list types.List, template *models
 		return nil, diags
 	}
 
-	templatePayload := enrichElasticsearchTemplate(esResource(template), dtID, version, useNodeRoles)
+	templatePayload := v1.EnrichElasticsearchTemplate(v1.EsResource(template), dtID, version, useNodeRoles)
 
 	payload, diags := es.Payload(ctx, templatePayload, skipTopologies)
 	if diags.HasError() {
@@ -205,7 +195,7 @@ func (es *ElasticsearchTF) Payload(ctx context.Context, res *models.Elasticsearc
 
 	// Unsetting the curation properties is since they're deprecated since
 	// >= 6.6.0 which is when ILM is introduced in Elasticsearch.
-	unsetElasticsearchCuration(res)
+	v1.UnsetElasticsearchCuration(res)
 
 	var ds diag.Diagnostics
 
@@ -215,7 +205,7 @@ func (es *ElasticsearchTF) Payload(ctx context.Context, res *models.Elasticsearc
 
 	// Fixes the node_roles field to remove the dedicated tier roles from the
 	// list when these are set as a dedicated tier as a topology element.
-	updateNodeRolesOnDedicatedTiers(res.Plan.ClusterTopology)
+	v1.UpdateNodeRolesOnDedicatedTiers(res.Plan.ClusterTopology)
 
 	res.Plan.Elasticsearch, ds = v1.ElasticsearchConfigPayload(ctx, es.Config, res.Plan.Elasticsearch)
 	diags = append(diags, ds...)
@@ -273,123 +263,6 @@ func topologyPayload(ctx context.Context, topologyObj types.Object, topologies [
 	}
 
 	return diags
-}
-
-func enrichElasticsearchTemplate(tpl *models.ElasticsearchPayload, templateId, version string, useNodeRoles bool) *models.ElasticsearchPayload {
-	if tpl.Plan.DeploymentTemplate == nil {
-		tpl.Plan.DeploymentTemplate = &models.DeploymentTemplateReference{}
-	}
-
-	if tpl.Plan.DeploymentTemplate.ID == nil || *tpl.Plan.DeploymentTemplate.ID == "" {
-		tpl.Plan.DeploymentTemplate.ID = ec.String(templateId)
-	}
-
-	if tpl.Plan.Elasticsearch.Version == "" {
-		tpl.Plan.Elasticsearch.Version = version
-	}
-
-	for _, topology := range tpl.Plan.ClusterTopology {
-		if useNodeRoles {
-			topology.NodeType = nil
-			continue
-		}
-		topology.NodeRoles = nil
-	}
-
-	return tpl
-}
-
-func esResource(res *models.DeploymentTemplateInfoV2) *models.ElasticsearchPayload {
-	if res == nil || len(res.DeploymentTemplate.Resources.Elasticsearch) == 0 {
-		return &models.ElasticsearchPayload{
-			Plan: &models.ElasticsearchClusterPlan{
-				Elasticsearch: &models.ElasticsearchConfiguration{},
-			},
-			Settings: &models.ElasticsearchClusterSettings{},
-		}
-	}
-	return res.DeploymentTemplate.Resources.Elasticsearch[0]
-}
-
-func unsetElasticsearchCuration(payload *models.ElasticsearchPayload) {
-	if payload.Plan.Elasticsearch != nil {
-		payload.Plan.Elasticsearch.Curation = nil
-	}
-
-	if payload.Settings != nil {
-		payload.Settings.Curation = nil
-	}
-}
-
-func updateNodeRolesOnDedicatedTiers(topologies []*models.ElasticsearchClusterTopologyElement) {
-	dataTier, hasMasterTier, hasIngestTier := dedicatedTopoogies(topologies)
-	// This case is not very likely since all deployments will have a data tier.
-	// It's here because the code path is technically possible and it's better
-	// than a straight panic.
-	if dataTier == nil {
-		return
-	}
-
-	if hasIngestTier {
-		dataTier.NodeRoles = removeItemFromSlice(
-			dataTier.NodeRoles, ingestDataTierRole,
-		)
-	}
-	if hasMasterTier {
-		dataTier.NodeRoles = removeItemFromSlice(
-			dataTier.NodeRoles, masterDataTierRole,
-		)
-	}
-}
-
-func removeItemFromSlice(slice []string, item string) []string {
-	var hasItem bool
-	var itemIndex int
-	for i, str := range slice {
-		if str == item {
-			hasItem = true
-			itemIndex = i
-		}
-	}
-	if hasItem {
-		copy(slice[itemIndex:], slice[itemIndex+1:])
-		return slice[:len(slice)-1]
-	}
-	return slice
-}
-
-func dedicatedTopoogies(topologies []*models.ElasticsearchClusterTopologyElement) (dataTier *models.ElasticsearchClusterTopologyElement, hasMasterTier, hasIngestTier bool) {
-	for _, topology := range topologies {
-		var hasSomeDataRole bool
-		var hasMasterRole bool
-		var hasIngestRole bool
-		for _, role := range topology.NodeRoles {
-			sizeNonZero := *topology.Size.Value > 0
-			if strings.HasPrefix(role, dataTierRolePrefix) && sizeNonZero {
-				hasSomeDataRole = true
-			}
-			if role == ingestDataTierRole && sizeNonZero {
-				hasIngestRole = true
-			}
-			if role == masterDataTierRole && sizeNonZero {
-				hasMasterRole = true
-			}
-		}
-
-		if !hasSomeDataRole && hasMasterRole {
-			hasMasterTier = true
-		}
-
-		if !hasSomeDataRole && hasIngestRole {
-			hasIngestTier = true
-		}
-
-		if hasSomeDataRole && hasMasterRole {
-			dataTier = topology
-		}
-	}
-
-	return dataTier, hasMasterTier, hasIngestTier
 }
 
 func (es *Elasticsearch) setTopology(topologies v1.ElasticsearchTopologies) {

@@ -29,8 +29,7 @@ func EnterpriseSearchSchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: "Optional Enterprise Search resource definition",
 		Optional:    true,
-		Validators:  []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
-		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
 			"elasticsearch_cluster_ref_id": {
 				Type:     types.StringType,
 				Optional: true,

@@ -29,8 +29,8 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi/esremoteclustersapi"
 	"github.com/elastic/cloud-sdk-go/pkg/client/deployments"
 	"github.com/elastic/cloud-sdk-go/pkg/models"
-	deploymentv1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/deployment/v1"
-	elasticsearchv1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/elasticsearch/v1"
+	deploymentv2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/deployment/v2"
+	elasticsearchv2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/elasticsearch/v2"
 	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/utils"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -42,7 +42,7 @@ func (r Resource) Read(ctx context.Context, request resource.ReadRequest, respon
 		return
 	}
 
-	var curState deploymentv1.DeploymentTF
+	var curState deploymentv2.DeploymentTF
 
 	diags := request.State.Get(ctx, &curState)
 	response.Diagnostics.Append(diags...)
@@ -51,7 +51,7 @@ func (r Resource) Read(ctx context.Context, request resource.ReadRequest, respon
 		return
 	}
 
-	var newState *deploymentv1.DeploymentTF
+	var newState *deploymentv2.DeploymentTF
 	var err error
 
 	if newState, diags = r.read(ctx, curState.Id.Value, curState, nil); err != nil {
@@ -69,7 +69,7 @@ func (r Resource) Read(ctx context.Context, request resource.ReadRequest, respon
 	response.Diagnostics.Append(diags...)
 }
 
-func (r Resource) read(ctx context.Context, id string, current deploymentv1.DeploymentTF, deploymentResources []*models.DeploymentResource) (*deploymentv1.DeploymentTF, diag.Diagnostics) {
+func (r Resource) read(ctx context.Context, id string, current deploymentv2.DeploymentTF, deploymentResources []*models.DeploymentResource) (*deploymentv2.DeploymentTF, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	response, err := deploymentapi.Get(deploymentapi.GetParams{
@@ -108,9 +108,9 @@ func (r Resource) read(ctx context.Context, id string, current deploymentv1.Depl
 
 	refId := ""
 
-	var elasticsearch *elasticsearchv1.ElasticsearchTF
+	var elasticsearch *elasticsearchv2.ElasticsearchTF
 
-	if diags = utils.GetFirst(ctx, current.Elasticsearch, &elasticsearch); diags.HasError() {
+	if diags = tfsdk.ValueAs(ctx, current.Elasticsearch, &elasticsearch); diags.HasError() {
 		return nil, diags
 	}
 
@@ -130,7 +130,7 @@ func (r Resource) read(ctx context.Context, id string, current deploymentv1.Depl
 		remotes = &models.RemoteResources{}
 	}
 
-	deployment, err := deploymentv1.ReadDeployment(response, remotes, deploymentResources)
+	deployment, err := deploymentv2.ReadDeployment(response, remotes, deploymentResources)
 	if err != nil {
 		diags.AddError("Deployment read error", err.Error())
 		return nil, diags
@@ -142,7 +142,7 @@ func (r Resource) read(ctx context.Context, id string, current deploymentv1.Depl
 
 	deployment.ProcessSelfInObservability()
 
-	var deploymentTF deploymentv1.DeploymentTF
+	var deploymentTF deploymentv2.DeploymentTF
 	schema, diags := r.GetSchema(ctx)
 	if diags.HasError() {
 		return nil, diags

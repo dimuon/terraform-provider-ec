@@ -84,7 +84,7 @@ type Deployment struct {
 }
 
 var (
-	dataTiersVersion = semver.MustParse("7.10.0")
+	DataTiersVersion = semver.MustParse("7.10.0")
 )
 
 func ReadDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteResources, deploymentResources []*models.DeploymentResource) (*Deployment, error) {
@@ -154,7 +154,7 @@ func ReadDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteRes
 		return nil, err
 	}
 
-	if dep.TrafficFilter, err = readTrafficFilters(res.Settings); err != nil {
+	if dep.TrafficFilter, err = ReadTrafficFilters(res.Settings); err != nil {
 		return nil, err
 	}
 
@@ -194,7 +194,7 @@ func (dep DeploymentTF) CreateRequest(ctx context.Context, client *api.API) (*mo
 		return nil, diagsnostics
 	}
 
-	useNodeRoles, err := compatibleWithNodeRoles(version)
+	useNodeRoles, err := CompatibleWithNodeRoles(version)
 	if err != nil {
 		diagsnostics.AddError("Deployment parse error", err.Error())
 		return nil, diagsnostics
@@ -250,7 +250,7 @@ func (dep DeploymentTF) CreateRequest(ctx context.Context, client *api.API) (*mo
 		result.Resources.EnterpriseSearch = []*models.EnterpriseSearchPayload{enterpriseSearchPayload}
 	}
 
-	if diags := trafficFilterToModel(ctx, dep.TrafficFilter, &result); diags.HasError() {
+	if diags := TrafficFilterToModel(ctx, dep.TrafficFilter, &result); diags.HasError() {
 		diagsnostics.Append(diags...)
 	}
 
@@ -326,7 +326,7 @@ func (dep *Deployment) SetCredentialsIfEmpty(current DeploymentTF) {
 	}
 }
 
-func readTrafficFilters(in *models.DeploymentSettings) ([]string, error) {
+func ReadTrafficFilters(in *models.DeploymentSettings) ([]string, error) {
 	if in == nil || in.TrafficFilterSettings == nil || len(in.TrafficFilterSettings.Rulesets) == 0 {
 		return nil, nil
 	}
@@ -336,18 +336,18 @@ func readTrafficFilters(in *models.DeploymentSettings) ([]string, error) {
 	return append(rules, in.TrafficFilterSettings.Rulesets...), nil
 }
 
-func compatibleWithNodeRoles(version string) (bool, error) {
+func CompatibleWithNodeRoles(version string) (bool, error) {
 	deploymentVersion, err := semver.Parse(version)
 	if err != nil {
 		return false, fmt.Errorf("failed to parse Elasticsearch version: %w", err)
 	}
 
-	return deploymentVersion.GE(dataTiersVersion), nil
+	return deploymentVersion.GE(DataTiersVersion), nil
 }
 
-// trafficFilterToModel expands the flattened "traffic_filter" settings to
+// TrafficFilterToModel expands the flattened "traffic_filter" settings to
 // a DeploymentCreateRequest.
-func trafficFilterToModel(ctx context.Context, set types.Set, req *models.DeploymentCreateRequest) diag.Diagnostics {
+func TrafficFilterToModel(ctx context.Context, set types.Set, req *models.DeploymentCreateRequest) diag.Diagnostics {
 	if len(set.Elems) == 0 || req == nil {
 		return nil
 	}
@@ -409,7 +409,7 @@ func (plan DeploymentTF) UpdateRequest(ctx context.Context, client *api.API, cur
 	// This might not be necessary going forward as we move to
 	// tiered Elasticsearch nodes.
 
-	useNodeRoles, err := compatibleWithNodeRoles(version)
+	useNodeRoles, err := CompatibleWithNodeRoles(version)
 	if err != nil {
 		diagsnostics.AddError("Deployment parse error", err.Error())
 		return nil, diagsnostics
@@ -522,7 +522,7 @@ func (plan DeploymentTF) legacyToNodeRoles(ctx context.Context, curState Deploym
 
 	// if the version change moves from non-node_roles to one
 	// that supports node roles, do not migrate on that step.
-	if oldV.LT(dataTiersVersion) && newV.GE(dataTiersVersion) {
+	if oldV.LT(DataTiersVersion) && newV.GE(DataTiersVersion) {
 		return false, nil
 	}
 

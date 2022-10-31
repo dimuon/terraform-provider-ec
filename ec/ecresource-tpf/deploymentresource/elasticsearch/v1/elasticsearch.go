@@ -98,7 +98,7 @@ func ElasticsearchPayload(ctx context.Context, list types.List, template *models
 		return nil, diags
 	}
 
-	templatePayload := enrichElasticsearchTemplate(esResource(template), dtID, version, useNodeRoles)
+	templatePayload := EnrichElasticsearchTemplate(EsResource(template), dtID, version, useNodeRoles)
 
 	payload, diags := es.Payload(ctx, templatePayload, skipTopologies)
 	if diags.HasError() {
@@ -191,7 +191,7 @@ func (es *ElasticsearchTF) Payload(ctx context.Context, res *models.Elasticsearc
 
 	// Unsetting the curation properties is since they're deprecated since
 	// >= 6.6.0 which is when ILM is introduced in Elasticsearch.
-	unsetElasticsearchCuration(res)
+	UnsetElasticsearchCuration(res)
 
 	var ds diag.Diagnostics
 
@@ -202,7 +202,7 @@ func (es *ElasticsearchTF) Payload(ctx context.Context, res *models.Elasticsearc
 
 	// Fixes the node_roles field to remove the dedicated tier roles from the
 	// list when these are set as a dedicated tier as a topology element.
-	updateNodeRolesOnDedicatedTiers(res.Plan.ClusterTopology)
+	UpdateNodeRolesOnDedicatedTiers(res.Plan.ClusterTopology)
 
 	res.Plan.Elasticsearch, ds = ElasticsearchConfigsPayload(ctx, es.Config, res.Plan.Elasticsearch)
 	diags = append(diags, ds...)
@@ -231,7 +231,7 @@ func (es *ElasticsearchTF) Payload(ctx context.Context, res *models.Elasticsearc
 	return res, diags
 }
 
-func enrichElasticsearchTemplate(tpl *models.ElasticsearchPayload, templateId, version string, useNodeRoles bool) *models.ElasticsearchPayload {
+func EnrichElasticsearchTemplate(tpl *models.ElasticsearchPayload, templateId, version string, useNodeRoles bool) *models.ElasticsearchPayload {
 	if tpl.Plan.DeploymentTemplate == nil {
 		tpl.Plan.DeploymentTemplate = &models.DeploymentTemplateReference{}
 	}
@@ -255,7 +255,7 @@ func enrichElasticsearchTemplate(tpl *models.ElasticsearchPayload, templateId, v
 	return tpl
 }
 
-func esResource(res *models.DeploymentTemplateInfoV2) *models.ElasticsearchPayload {
+func EsResource(res *models.DeploymentTemplateInfoV2) *models.ElasticsearchPayload {
 	if res == nil || len(res.DeploymentTemplate.Resources.Elasticsearch) == 0 {
 		return &models.ElasticsearchPayload{
 			Plan: &models.ElasticsearchClusterPlan{
@@ -267,7 +267,7 @@ func esResource(res *models.DeploymentTemplateInfoV2) *models.ElasticsearchPaylo
 	return res.DeploymentTemplate.Resources.Elasticsearch[0]
 }
 
-func unsetElasticsearchCuration(payload *models.ElasticsearchPayload) {
+func UnsetElasticsearchCuration(payload *models.ElasticsearchPayload) {
 	if payload.Plan.Elasticsearch != nil {
 		payload.Plan.Elasticsearch.Curation = nil
 	}
@@ -277,8 +277,8 @@ func unsetElasticsearchCuration(payload *models.ElasticsearchPayload) {
 	}
 }
 
-func updateNodeRolesOnDedicatedTiers(topologies []*models.ElasticsearchClusterTopologyElement) {
-	dataTier, hasMasterTier, hasIngestTier := dedicatedTopoogies(topologies)
+func UpdateNodeRolesOnDedicatedTiers(topologies []*models.ElasticsearchClusterTopologyElement) {
+	dataTier, hasMasterTier, hasIngestTier := DedicatedTopoogies(topologies)
 	// This case is not very likely since all deployments will have a data tier.
 	// It's here because the code path is technically possible and it's better
 	// than a straight panic.
@@ -314,7 +314,7 @@ func removeItemFromSlice(slice []string, item string) []string {
 	return slice
 }
 
-func dedicatedTopoogies(topologies []*models.ElasticsearchClusterTopologyElement) (dataTier *models.ElasticsearchClusterTopologyElement, hasMasterTier, hasIngestTier bool) {
+func DedicatedTopoogies(topologies []*models.ElasticsearchClusterTopologyElement) (dataTier *models.ElasticsearchClusterTopologyElement, hasMasterTier, hasIngestTier bool) {
 	for _, topology := range topologies {
 		var hasSomeDataRole bool
 		var hasMasterRole bool

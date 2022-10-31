@@ -143,12 +143,12 @@ func ReadEnterpriseSearches(in []*models.EnterpriseSearchResourceInfo) (Enterpri
 	return nil, nil
 }
 
-func EnterpriseSearchesPayload(ctx context.Context, list types.List, template *models.DeploymentTemplateInfoV2) (*models.EnterpriseSearchPayload, diag.Diagnostics) {
+func EnterpriseSearchesPayload(ctx context.Context, esObj types.Object, template *models.DeploymentTemplateInfoV2) (*models.EnterpriseSearchPayload, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	var es *EnterpriseSearchTF
 
-	if diags = utils.GetFirst(ctx, list, &es); diags.HasError() {
+	if diags = tfsdk.ValueAs(ctx, esObj, &es); diags.HasError() {
 		return nil, diags
 	}
 
@@ -156,7 +156,7 @@ func EnterpriseSearchesPayload(ctx context.Context, list types.List, template *m
 		return nil, nil
 	}
 
-	templatePayload := essResource(template)
+	templatePayload := v1.EssResource(template)
 
 	if templatePayload == nil {
 		diags.AddError(
@@ -173,13 +173,4 @@ func EnterpriseSearchesPayload(ctx context.Context, list types.List, template *m
 	}
 
 	return payload, nil
-}
-
-// essResource returns the EnterpriseSearchPayload from a deployment
-// template or an empty version of the payload.
-func essResource(template *models.DeploymentTemplateInfoV2) *models.EnterpriseSearchPayload {
-	if template == nil || len(template.DeploymentTemplate.Resources.EnterpriseSearch) == 0 {
-		return nil
-	}
-	return template.DeploymentTemplate.Resources.EnterpriseSearch[0]
 }

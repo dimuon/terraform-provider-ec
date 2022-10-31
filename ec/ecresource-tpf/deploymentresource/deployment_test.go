@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package v1_test
+package deploymentresource_test
 
 import (
 	"encoding/json"
@@ -46,7 +46,7 @@ func Test_createDeploymentWithEmptyFields(t *testing.T) {
 			deployment_template_id = "aws-io-optimized-v2"
 			region = "us-east-1"
 			version = "8.4.3"
-			elasticsearch = [{}]
+			elasticsearch = {}
 
 # this fails the test due to a problem with nested attributes			
 #			elasticsearch = [{
@@ -82,21 +82,21 @@ func Test_createDeploymentWithEmptyFields(t *testing.T) {
 	}	
 	`)
 
-	templateFileName := "../../testdata/aws-io-optimized-v2.json"
+	templateFileName := "testdata/aws-io-optimized-v2.json"
 
 	r.UnitTest(t, r.TestCase{
 		ProtoV6ProviderFactories: protoV6ProviderFactoriesWithMockClient(
 			api.NewMock(
 				getTemplate(t, templateFileName),
-				createDeployment(t, readFile(t, "../../testdata/aws-io-optimized-v2-empty-config-create-expected-payload.json"), createDeploymentResponseJson, requestId),
-				mock.New200Response(readTestData(t, "../../testdata/aws-io-optimized-v2-empty-config-expected-deployment1.json")),
-				mock.New200Response(readTestData(t, "../../testdata/aws-io-optimized-v2-empty-config-expected-deployment2.json")),
-				mock.New200Response(readTestData(t, "../../testdata/aws-io-optimized-v2-empty-config-expected-deployment3.json")),
-				mock.New200Response(readTestData(t, "../../testdata/aws-io-optimized-v2-empty-config-expected-deployment3.json")),
-				mock.New200Response(readTestData(t, "../../testdata/aws-io-optimized-v2-empty-config-expected-deployment3.json")),
-				mock.New200Response(readTestData(t, "../../testdata/aws-io-optimized-v2-empty-config-expected-deployment3.json")),
+				createDeployment(t, readFile(t, "testdata/aws-io-optimized-v2-empty-config-create-expected-payload.json"), createDeploymentResponseJson, requestId),
+				mock.New200Response(readTestData(t, "testdata/aws-io-optimized-v2-empty-config-expected-deployment1.json")),
+				mock.New200Response(readTestData(t, "testdata/aws-io-optimized-v2-empty-config-expected-deployment2.json")),
+				mock.New200Response(readTestData(t, "testdata/aws-io-optimized-v2-empty-config-expected-deployment3.json")),
+				mock.New200Response(readTestData(t, "testdata/aws-io-optimized-v2-empty-config-expected-deployment3.json")),
+				mock.New200Response(readTestData(t, "testdata/aws-io-optimized-v2-empty-config-expected-deployment3.json")),
+				mock.New200Response(readTestData(t, "testdata/aws-io-optimized-v2-empty-config-expected-deployment3.json")),
 				readRemoteClusters(t),
-				mock.New200Response(readTestData(t, "../../testdata/aws-io-optimized-v2-empty-config-expected-deployment3.json")),
+				mock.New200Response(readTestData(t, "testdata/aws-io-optimized-v2-empty-config-expected-deployment3.json")),
 				readRemoteClusters(t),
 			),
 		),

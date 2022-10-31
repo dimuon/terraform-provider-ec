@@ -28,6 +28,7 @@ import (
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -198,4 +199,25 @@ func (topology *ElasticsearchTopologyTF) ParseLegacyNodeType(nodeType *models.El
 	}
 
 	return nil
+}
+
+func (topology *ElasticsearchTopologyTF) HasNodeType() bool {
+	return topology.NodeTypeData.Value != "" ||
+		topology.NodeTypeIngest.Value != "" ||
+		topology.NodeTypeMaster.Value != "" ||
+		topology.NodeTypeMl.Value != ""
+}
+
+func ObjectToTopology(ctx context.Context, obj types.Object) (*ElasticsearchTopologyTF, diag.Diagnostics) {
+	if obj.IsNull() || obj.IsUnknown() {
+		return nil, nil
+	}
+
+	var topology *ElasticsearchTopologyTF
+
+	if diags := tfsdk.ValueAs(ctx, obj, &topology); diags.HasError() {
+		return nil, diags
+	}
+
+	return topology, nil
 }
