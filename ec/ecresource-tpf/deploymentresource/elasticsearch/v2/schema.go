@@ -23,7 +23,6 @@ import (
 
 	"github.com/elastic/terraform-provider-ec/ec/internal/planmodifier"
 	"github.com/elastic/terraform-provider-ec/ec/internal/validators"
-	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -158,8 +157,7 @@ func ElasticsearchConfigSchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: `Optional Elasticsearch settings which will be applied to all topologies unless overridden on the topology element`,
 		Optional:    true,
-		Validators:  []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
-		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
 			// TODO
 			// DiffSuppressFunc: suppressMissingOptionalConfigurationBlock,
 			"docker_image": {

@@ -19,7 +19,6 @@ package v2
 
 import (
 	"github.com/elastic/terraform-provider-ec/ec/internal/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -144,7 +143,6 @@ func EnterpriseSearchSchema() tfsdk.Attribute {
 			"config": {
 				Description: `Optionally define the Enterprise Search configuration options for the Enterprise Search Server`,
 				Optional:    true,
-				Validators:  []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
 				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
 					// TODO
 					// DiffSuppressFunc: suppressMissingOptionalConfigurationBlock,

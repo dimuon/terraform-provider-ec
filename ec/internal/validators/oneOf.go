@@ -41,12 +41,7 @@ func (v oneOf) MarkdownDescription(ctx context.Context) string {
 
 // Validate runs the main validation logic of the validator, reading configuration data out of `req` and updating `resp` with diagnostics.
 func (v oneOf) Validate(ctx context.Context, req tfsdk.ValidateAttributeRequest, resp *tfsdk.ValidateAttributeResponse) {
-	if req.AttributeConfig.IsUnknown() || req.AttributeConfig.IsNull() {
-		resp.Diagnostics.AddAttributeError(
-			req.AttributePath,
-			v.Description(ctx),
-			"Value must be set",
-		)
+	if req.AttributeConfig.IsNull() || req.AttributeConfig.IsUnknown() {
 		return
 	}
 
@@ -54,7 +49,7 @@ func (v oneOf) Validate(ctx context.Context, req tfsdk.ValidateAttributeRequest,
 		resp.Diagnostics.AddAttributeError(
 			req.AttributePath,
 			v.Description(ctx),
-			fmt.Sprintf("invalid extension type %s: accepted values are %v", value, v.values),
+			fmt.Sprintf("%v - invalid extension type %s: accepted values are %v", req.AttributePath, value, v.values),
 		)
 		return
 	}
