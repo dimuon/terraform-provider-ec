@@ -37,7 +37,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 )
 
-func (r Resource) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
+func (r *Resource) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
 	if !r.ready(&response.Diagnostics) {
 		return
 	}
@@ -69,7 +69,7 @@ func (r Resource) Read(ctx context.Context, request resource.ReadRequest, respon
 	response.Diagnostics.Append(diags...)
 }
 
-func (r Resource) read(ctx context.Context, id string, current deploymentv2.DeploymentTF, deploymentResources []*models.DeploymentResource) (*deploymentv2.DeploymentTF, diag.Diagnostics) {
+func (r *Resource) read(ctx context.Context, id string, current deploymentv2.DeploymentTF, deploymentResources []*models.DeploymentResource) (*deploymentv2.DeploymentTF, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	response, err := deploymentapi.Get(deploymentapi.GetParams{

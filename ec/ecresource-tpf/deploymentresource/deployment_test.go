@@ -46,7 +46,7 @@ func Test_createDeploymentWithEmptyFields(t *testing.T) {
 			deployment_template_id = "aws-io-optimized-v2"
 			region = "us-east-1"
 			version = "8.4.3"
-			elasticsearch = {}
+#			elasticsearch = {}
 
 # this fails the test due to a problem with nested attributes			
 #			elasticsearch = [{
@@ -56,6 +56,12 @@ func Test_createDeploymentWithEmptyFields(t *testing.T) {
 #				}]
 #			}]
 
+			elasticsearch = {
+				hot_content_tier = {
+					id = "hot_content"
+					size = "8g"
+				}
+			}
 		}`,
 		requestId,
 	)
@@ -175,8 +181,6 @@ func readRemoteClusters(t *testing.T) mock.Response {
 
 func protoV6ProviderFactoriesWithMockClient(client *api.API) map[string]func() (tfprotov6.ProviderServer, error) {
 	return map[string]func() (tfprotov6.ProviderServer, error){
-		"ec": func() (tfprotov6.ProviderServer, error) {
-			return providerserver.NewProtocol6(provider.ProviderWithClient(client, "unit-tests"))(), nil
-		},
+		"ec": providerserver.NewProtocol6WithError(provider.ProviderWithClient(client, "unit-tests")),
 	}
 }
