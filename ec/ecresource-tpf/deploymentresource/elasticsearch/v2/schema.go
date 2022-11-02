@@ -76,17 +76,11 @@ func ElasticsearchSchema() tfsdk.Attribute {
 				Type:        types.StringType,
 				Description: "The Elasticsearch resource unique identifier",
 				Computed:    true,
-				// PlanModifiers: tfsdk.AttributePlanModifiers{
-				// 	resource.UseStateForUnknown(),
-				// },
 			},
 			"region": {
 				Type:        types.StringType,
 				Description: "The Elasticsearch resource region",
 				Computed:    true,
-				// PlanModifiers: tfsdk.AttributePlanModifiers{
-				// 	resource.UseStateForUnknown(),
-				// },
 			},
 			"cloud_id": {
 				Type:        types.StringType,
@@ -103,20 +97,13 @@ func ElasticsearchSchema() tfsdk.Attribute {
 				Type:        types.StringType,
 				Description: "The Elasticsearch resource HTTP endpoint",
 				Computed:    true,
-				// PlanModifiers: tfsdk.AttributePlanModifiers{
-				// 	resource.UseStateForUnknown(),
-				// },
 			},
 			"https_endpoint": {
 				Type:        types.StringType,
 				Description: "The Elasticsearch resource HTTPs endpoint",
 				Computed:    true,
-				// PlanModifiers: tfsdk.AttributePlanModifiers{
-				// 	resource.UseStateForUnknown(),
-				// },
 			},
 
-			// "topology": ElasticsearchTopologySchema(),
 			"hot_content_tier":  ElasticsearchTierSchema("'hot_content' optional topology element"),
 			"coordinating_tier": ElasticsearchTierSchema("'coordinating' optional topology element"),
 			"master_tier":       ElasticsearchTierSchema("'master' optional topology element"),
@@ -137,7 +124,6 @@ func ElasticsearchSchema() tfsdk.Attribute {
 
 			"extension": ElasticsearchExtensionSchema(),
 
-			// "strategy":  ElasticsearchStrategySchema(),
 			"strategy": {
 				Description: "Configuration strategy type " + strings.Join(strategiesList, ", "),
 				Type:        types.StringType,
@@ -390,27 +376,6 @@ func ElasticsearchTrustExternalSchema() tfsdk.Attribute {
 	}
 }
 
-// func ElasticsearchStrategySchema() tfsdk.Attribute {
-// 	return tfsdk.Attribute{
-// 		Description: "Configuration strategy settings.",
-// 		Optional:    true,
-// 		Validators:  []tfsdk.AttributeValidator{listvalidator.SizeAtMost(1)},
-// 		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-// 			"type": {
-// 				Description: "Configuration strategy type " + strings.Join(strategiesList, ", "),
-// 				Type:        types.StringType,
-// 				Required:    true,
-// 				Validators:  []tfsdk.AttributeValidator{validators.OneOf(strategiesList)},
-// 				// TODO
-// 				// changes on this setting do not change the plan.
-// 				// DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-// 				// 	return true
-// 				// },
-// 			},
-// 		}),
-// 	}
-// }
-
 func ElasticsearchTopologyConfigSchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: `Computed read-only configuration to avoid unsetting plan settings from 'topology.elasticsearch'`,
@@ -448,27 +413,12 @@ func ElasticsearchTopologyConfigSchema() tfsdk.Attribute {
 }
 
 func ElasticsearchTierSchema(description string) tfsdk.Attribute {
-	// return tfsdk.Attribute{
-	// 	Optional:    true,
-	// 	Computed:    true,
-	// 	Description: description,
-	// 	Type:        ElasticsearchTierNestedAttribute(description).Attributes.Type(),
-	// }
-
-	return ElasticsearchTierNestedAttribute(description)
-}
-
-func ElasticsearchTierNestedAttribute(description string) tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Optional: true,
+		// it should be Computed but Computed triggers TF weird behaviour that leads to unempty plan for zero change config
 		// Computed:    true,
 		Description: description,
 		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
-			"id": {
-				Type:        types.StringType,
-				Description: `Required topology ID from the deployment template`,
-				Required:    true,
-			},
 			"instance_configuration_id": {
 				Type:        types.StringType,
 				Description: `Computed Instance Configuration ID of the topology element`,

@@ -48,18 +48,9 @@ func Test_createDeploymentWithEmptyFields(t *testing.T) {
 			version = "8.4.3"
 #			elasticsearch = {}
 
-# this fails the test due to a problem with nested attributes			
-#			elasticsearch = [{
-#				topology = [{
-#					id = "hot_content"
-#					size = "8g"
-#				}]
-#			}]
-
 			elasticsearch = {
 				hot_content_tier = {
-					id = "hot_content"
-					size = "8g"
+#					size = "8g"
 				}
 			}
 		}`,

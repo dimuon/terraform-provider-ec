@@ -33,7 +33,6 @@ import (
 )
 
 type ElasticsearchTopologyTF struct {
-	Id                      types.String `tfsdk:"id"`
 	InstanceConfigurationId types.String `tfsdk:"instance_configuration_id"`
 	Size                    types.String `tfsdk:"size"`
 	SizeResource            types.String `tfsdk:"size_resource"`
@@ -48,7 +47,7 @@ type ElasticsearchTopologyTF struct {
 }
 
 type ElasticsearchTopology struct {
-	Id                      string                               `tfsdk:"id"`
+	id                      string
 	InstanceConfigurationId *string                              `tfsdk:"instance_configuration_id"`
 	Size                    *string                              `tfsdk:"size"`
 	SizeResource            *string                              `tfsdk:"size_resource"`
@@ -62,10 +61,10 @@ type ElasticsearchTopology struct {
 	Config                  *v1.ElasticsearchTopologyConfig      `tfsdk:"config"`
 }
 
-func (topology ElasticsearchTopologyTF) Payload(ctx context.Context, planTopologies []*models.ElasticsearchClusterTopologyElement) diag.Diagnostics {
+func (topology ElasticsearchTopologyTF) Payload(ctx context.Context, id string, planTopologies []*models.ElasticsearchClusterTopologyElement) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	topologyID := topology.Id.Value
+	topologyID := id
 
 	topologyElem, err := v1.MatchEsTopologyID(topologyID, planTopologies)
 	if err != nil {
@@ -133,7 +132,7 @@ func ReadElasticsearchTopologies(in *models.ElasticsearchClusterPlan) (Elasticse
 func ReadElasticsearchTopology(model *models.ElasticsearchClusterTopologyElement) (*ElasticsearchTopology, error) {
 	var topology ElasticsearchTopology
 
-	topology.Id = model.ID
+	topology.id = model.ID
 
 	if model.InstanceConfigurationID != "" {
 		topology.InstanceConfigurationId = &model.InstanceConfigurationID
@@ -248,7 +247,7 @@ func (tops ElasticsearchTopologies) Set() map[string]ElasticsearchTopology {
 	set := make(map[string]ElasticsearchTopology, len(tops))
 
 	for _, top := range tops {
-		set[top.Id] = top
+		set[top.id] = top
 	}
 
 	return set
