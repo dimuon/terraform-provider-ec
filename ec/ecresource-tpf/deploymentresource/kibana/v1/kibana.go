@@ -54,6 +54,10 @@ type Kibana struct {
 type Kibanas []Kibana
 
 func ReadKibana(in *models.KibanaResourceInfo) (*Kibana, error) {
+	if util.IsCurrentKibanaPlanEmpty(in) || utils.IsKibanaResourceStopped(in) {
+		return nil, nil
+	}
+
 	var kibana Kibana
 
 	kibana.RefId = in.RefID

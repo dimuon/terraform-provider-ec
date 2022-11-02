@@ -23,7 +23,9 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/integrationsserver/v1"
 	topologyv1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/topology/v1"
+	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/utils"
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
+	"github.com/elastic/terraform-provider-ec/ec/internal/util"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -52,6 +54,10 @@ type IntegrationsServer struct {
 }
 
 func ReadIntegrationsServer(in *models.IntegrationsServerResourceInfo) (*IntegrationsServer, error) {
+	if util.IsCurrentIntegrationsServerPlanEmpty(in) || utils.IsIntegrationsServerResourceStopped(in) {
+		return nil, nil
+	}
+
 	var srv IntegrationsServer
 
 	srv.RefId = in.RefID

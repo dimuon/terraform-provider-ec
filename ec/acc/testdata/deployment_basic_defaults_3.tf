@@ -18,12 +18,5 @@ resource "ec_deployment" "defaults" {
   kibana = {
     topology = {}
   }
-
-  apm = {
-    topology = {}
-  }
-
-  enterprise_search = {
-    topology = {}
-  }
+  
 }

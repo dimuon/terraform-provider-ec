@@ -55,6 +55,10 @@ type EnterpriseSearch struct {
 type EnterpriseSearches []EnterpriseSearch
 
 func ReadEnterpriseSearch(in *models.EnterpriseSearchResourceInfo) (*EnterpriseSearch, error) {
+	if util.IsCurrentEssPlanEmpty(in) || utils.IsEssResourceStopped(in) {
+		return nil, nil
+	}
+
 	var ess EnterpriseSearch
 
 	ess.RefId = in.RefID

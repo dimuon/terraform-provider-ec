@@ -109,7 +109,6 @@ func TestAccDeployment_basic_defaults_first(t *testing.T) {
 					// with a previous value is the same as an empty block, so previous computed
 					// values are used.
 					resource.TestCheckResourceAttr(resName, "kibana.topology.size", "2g"),
-
 					resource.TestCheckResourceAttr(resName, "kibana.topology.zone_count", "1"),
 					resource.TestCheckNoResourceAttr(resName, "apm"),
 					resource.TestCheckNoResourceAttr(resName, "enterprise_search"),

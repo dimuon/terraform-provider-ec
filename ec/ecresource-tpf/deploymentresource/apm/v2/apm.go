@@ -23,7 +23,9 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/apm/v1"
 	topologyv1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/topology/v1"
+	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/utils"
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
+	"github.com/elastic/terraform-provider-ec/ec/internal/util"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -52,6 +54,10 @@ type Apm struct {
 }
 
 func ReadApm(in *models.ApmResourceInfo) (*Apm, error) {
+	if util.IsCurrentApmPlanEmpty(in) || utils.IsApmResourceStopped(in) {
+		return nil, nil
+	}
+
 	var apm Apm
 
 	apm.RefId = in.RefID
