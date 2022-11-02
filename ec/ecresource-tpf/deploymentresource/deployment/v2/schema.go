@@ -41,9 +41,9 @@ func DeploymentSchema() tfsdk.Schema {
 				Type:                types.StringType,
 				Computed:            true,
 				MarkdownDescription: "Unique identifier of this resource.",
-				// PlanModifiers: tfsdk.AttributePlanModifiers{
-				// 	resource.UseStateForUnknown(),
-				// },
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
 			},
 			"alias": {
 				Type:     types.StringType,

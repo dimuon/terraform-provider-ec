@@ -31,21 +31,22 @@ import (
 func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan v2.DeploymentTF
 
-	diags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	var state v2.DeploymentTF
-	diags = req.State.Get(ctx, &state)
+
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	updateReq, diags := plan.UpdateRequest(ctx, r.client, state)
+
 	if diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return
@@ -61,12 +62,12 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		},
 	})
 	if err != nil {
-		diags.AddError("failed updating deployment", err.Error())
+		resp.Diagnostics.AddError("failed updating deployment", err.Error())
 		return
 	}
 
 	if err := WaitForPlanCompletion(r.client, plan.Id.Value); err != nil {
-		diags.AddError("failed tracking update progress", err.Error())
+		resp.Diagnostics.AddError("failed tracking update progress", err.Error())
 		return
 	}
 
@@ -81,8 +82,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		return
 	}
 
-	diags = resp.State.Set(ctx, deployment)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, deployment)...)
 }
 
 func handleTrafficFilterChange(ctx context.Context, client *api.API, plan, state v2.DeploymentTF) diag.Diagnostics {
