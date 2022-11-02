@@ -46,11 +46,10 @@ func Test_createDeploymentWithEmptyFields(t *testing.T) {
 			deployment_template_id = "aws-io-optimized-v2"
 			region = "us-east-1"
 			version = "8.4.3"
-#			elasticsearch = {}
 
 			elasticsearch = {
 				hot_content_tier = {
-#					size = "8g"
+					size = "8g"
 				}
 			}
 		}`,
