@@ -142,8 +142,14 @@ func (r *Resource) read(ctx context.Context, id string, current deploymentv2.Dep
 
 	deployment.ProcessSelfInObservability()
 
+	if diags := deployment.UsePlanESTopologiesIfEmpty(ctx, current.Elasticsearch); diags.HasError() {
+		return nil, diags
+	}
+
 	var deploymentTF deploymentv2.DeploymentTF
+
 	schema, diags := r.GetSchema(ctx)
+
 	if diags.HasError() {
 		return nil, diags
 	}

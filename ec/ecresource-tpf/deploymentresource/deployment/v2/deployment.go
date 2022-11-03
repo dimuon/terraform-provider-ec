@@ -33,6 +33,7 @@ import (
 	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/deployment/v1"
 	elasticsearchv1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/elasticsearch/v1"
 	elasticsearchv2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/elasticsearch/v2"
+	v2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/elasticsearch/v2"
 	enterprisesearchv2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/enterprisesearch/v2"
 	integrationsserverv2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/integrationsserver/v2"
 	kibanav2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/kibana/v2"
@@ -84,6 +85,56 @@ type Deployment struct {
 	IntegrationsServer    *integrationsserverv2.IntegrationsServer `tfsdk:"integrations_server"`
 	EnterpriseSearch      *enterprisesearchv2.EnterpriseSearch     `tfsdk:"enterprise_search"`
 	Observability         *observabilityv2.Observability           `tfsdk:"observability"`
+}
+
+func (dep *Deployment) UsePlanESTopologiesIfEmpty(ctx context.Context, esPlanObj types.Object) diag.Diagnostics {
+	if esPlanObj.IsNull() || esPlanObj.IsUnknown() {
+		return nil
+	}
+
+	var esPlan *v2.ElasticsearchTF
+
+	if diags := tfsdk.ValueAs(ctx, esPlanObj, &esPlan); diags.HasError() {
+		return diags
+	}
+
+	if esPlan == nil {
+		return nil
+	}
+
+	if dep.Elasticsearch == nil {
+		return nil
+	}
+
+	if esPlan.HotContentTier.IsNull() && dep.Elasticsearch.HotTier != nil {
+		dep.Elasticsearch.HotTier = nil
+	}
+
+	if esPlan.WarmTier.IsNull() && dep.Elasticsearch.WarmTier != nil {
+		dep.Elasticsearch.WarmTier = nil
+	}
+
+	if esPlan.ColdTier.IsNull() && dep.Elasticsearch.ColdTier != nil {
+		dep.Elasticsearch.ColdTier = nil
+	}
+
+	if esPlan.FrozenTier.IsNull() && dep.Elasticsearch.FrozenTier != nil {
+		dep.Elasticsearch.FrozenTier = nil
+	}
+
+	if esPlan.MlTier.IsNull() && dep.Elasticsearch.MlTier != nil {
+		dep.Elasticsearch.MlTier = nil
+	}
+
+	if esPlan.MasterTier.IsNull() && dep.Elasticsearch.MasterTier != nil {
+		dep.Elasticsearch.MasterTier = nil
+	}
+
+	if esPlan.CoordinatingTier.IsNull() && dep.Elasticsearch.CoordinatingTier != nil {
+		dep.Elasticsearch.CoordinatingTier = nil
+	}
+
+	return nil
 }
 
 func ReadDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteResources, deploymentResources []*models.DeploymentResource) (*Deployment, error) {

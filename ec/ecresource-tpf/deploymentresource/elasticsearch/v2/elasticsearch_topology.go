@@ -113,9 +113,9 @@ func ReadElasticsearchTopologies(in *models.ElasticsearchClusterPlan) (Elasticse
 	tops := make([]ElasticsearchTopology, 0, len(in.ClusterTopology))
 
 	for _, model := range in.ClusterTopology {
-		if !v1.IsPotentiallySizedTopology(model, in.AutoscalingEnabled != nil && *in.AutoscalingEnabled) {
-			continue
-		}
+		// if !v1.IsPotentiallySizedTopology(model, in.AutoscalingEnabled != nil && *in.AutoscalingEnabled) {
+		// 	continue
+		// }
 
 		topology, err := ReadElasticsearchTopology(model)
 		if err != nil {
