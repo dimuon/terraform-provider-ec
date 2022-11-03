@@ -61,10 +61,8 @@ type ElasticsearchTopology struct {
 	Config                  *v1.ElasticsearchTopologyConfig      `tfsdk:"config"`
 }
 
-func (topology ElasticsearchTopologyTF) Payload(ctx context.Context, id string, planTopologies []*models.ElasticsearchClusterTopologyElement) diag.Diagnostics {
+func (topology ElasticsearchTopologyTF) Payload(ctx context.Context, topologyID string, planTopologies []*models.ElasticsearchClusterTopologyElement) diag.Diagnostics {
 	var diags diag.Diagnostics
-
-	topologyID := id
 
 	topologyElem, err := v1.MatchEsTopologyID(topologyID, planTopologies)
 	if err != nil {

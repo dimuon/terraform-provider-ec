@@ -82,34 +82,42 @@ func ElasticsearchTopologyAutoscalingPayload(ctx context.Context, autoObj attr.V
 	// it should be only one element if any
 	var autoscale ElasticsearchTopologyAutoscalingTF
 
-	tfsdk.ValueAs(ctx, autoObj, &autoscale)
-
-	if payload.AutoscalingMax == nil {
-		payload.AutoscalingMax = new(models.TopologySize)
+	if diags := tfsdk.ValueAs(ctx, autoObj, &autoscale); diags.HasError() {
+		return diags
 	}
 
-	if payload.AutoscalingMin == nil {
-		payload.AutoscalingMin = new(models.TopologySize)
-	}
-
-	err := autoscale.ExpandAutoscalingDimension(payload.AutoscalingMax, autoscale.MaxSize, autoscale.MaxSizeResource)
-	if err != nil {
-		diag.AddError("fail to parse autoscale max size", err.Error())
-		return diag
-	}
-
-	err = autoscale.ExpandAutoscalingDimension(payload.AutoscalingMin, autoscale.MinSize, autoscale.MinSizeResource)
-	if err != nil {
-		diag.AddError("fail to parse autoscale min size", err.Error())
-		return diag
+	if autoscale == (ElasticsearchTopologyAutoscalingTF{}) {
+		return nil
 	}
 
 	// Ensure that if the Min and Max are empty, they're nil.
-	if reflect.DeepEqual(payload.AutoscalingMin, new(models.TopologySize)) {
+
+	if autoscale.MinSize.IsNull() || autoscale.MinSize.IsUnknown() {
 		payload.AutoscalingMin = nil
+	} else {
+		if payload.AutoscalingMin == nil {
+			payload.AutoscalingMin = new(models.TopologySize)
+		}
+
+		err := autoscale.ExpandAutoscalingDimension(payload.AutoscalingMin, autoscale.MinSize, autoscale.MinSizeResource)
+		if err != nil {
+			diag.AddError("fail to parse autoscale min size", err.Error())
+			return diag
+		}
 	}
-	if reflect.DeepEqual(payload.AutoscalingMax, new(models.TopologySize)) {
+
+	if autoscale.MaxSize.IsNull() || autoscale.MaxSize.IsUnknown() {
 		payload.AutoscalingMax = nil
+	} else {
+		if payload.AutoscalingMax == nil {
+			payload.AutoscalingMax = new(models.TopologySize)
+		}
+
+		err := autoscale.ExpandAutoscalingDimension(payload.AutoscalingMax, autoscale.MaxSize, autoscale.MaxSizeResource)
+		if err != nil {
+			diag.AddError("fail to parse autoscale max size", err.Error())
+			return diag
+		}
 	}
 
 	if autoscale.PolicyOverrideJson.Value != "" {

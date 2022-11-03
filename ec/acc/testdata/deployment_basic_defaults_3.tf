@@ -12,11 +12,12 @@ resource "ec_deployment" "defaults" {
   elasticsearch = {
     hot_content_tier = {
       size = "1g"
+      autoscaling = {}
     }
   }
 
   kibana = {
     topology = {}
   }
-  
+
 }

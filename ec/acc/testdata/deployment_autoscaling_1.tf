@@ -12,17 +12,19 @@ resource "ec_deployment" "autoscaling" {
   elasticsearch = {
     autoscale = "true"
 
-    cold_tier = {
+    cold = {
       size       = "0g"
       zone_count = 1
+      autoscaling = {}
     }
 
-    frozen_tier = {
+    frozen = {
       size       = "0g"
       zone_count = 1
+      autoscaling = {}
     }
 
-    hot_content_tier = {
+    hot = {
       size       = "1g"
       zone_count = 1
       autoscaling = {
@@ -30,7 +32,7 @@ resource "ec_deployment" "autoscaling" {
       }
     }
 
-    ml_tier = {
+    ml = {
       size       = "1g"
       zone_count = 1
       autoscaling = {
@@ -39,7 +41,7 @@ resource "ec_deployment" "autoscaling" {
       }
     }
 
-    warm_tier = {
+    warm = {
       size       = "2g"
       zone_count = 1
       autoscaling = {

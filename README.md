@@ -73,7 +73,9 @@ resource "ec_deployment" "example_minimal" {
 
   # Use the deployment template defaults
   elasticsearch = {
-    hot_content_tier = {}
+    hot = {
+      autoscaling = {}
+    }
   }
 
   kibana = {

@@ -94,13 +94,13 @@ func ElasticsearchSchema() tfsdk.Attribute {
 				Computed:    true,
 			},
 
-			"hot_content_tier":  ElasticsearchTierSchema("'hot_content' optional topology element"),
-			"coordinating_tier": ElasticsearchTierSchema("'coordinating' optional topology element"),
-			"master_tier":       ElasticsearchTierSchema("'master' optional topology element"),
-			"warm_tier":         ElasticsearchTierSchema("'warm' optional topology element"),
-			"cold_tier":         ElasticsearchTierSchema("'cold' optional topology element"),
-			"frozen_tier":       ElasticsearchTierSchema("'frozen' optional topology element"),
-			"ml_tier":           ElasticsearchTierSchema("'ml' optional topology element"),
+			"hot":          ElasticsearchTierSchema("'hot_content' optional topology element"),
+			"coordinating": ElasticsearchTierSchema("'coordinating' optional topology element"),
+			"master":       ElasticsearchTierSchema("'master' optional topology element"),
+			"warm":         ElasticsearchTierSchema("'warm' optional topology element"),
+			"cold":         ElasticsearchTierSchema("'cold' optional topology element"),
+			"frozen":       ElasticsearchTierSchema("'frozen' optional topology element"),
+			"ml":           ElasticsearchTierSchema("'ml' optional topology element"),
 
 			"trust_account": ElasticsearchTrustAccountSchema(),
 
@@ -176,36 +176,51 @@ func ElasticsearchTopologyAutoscalingSchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: "Optional Elasticsearch autoscaling settings, such a maximum and minimum size and resources.",
 		Optional:    true,
-		Computed:    true,
+		// Computed:    true,
 		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
 			"max_size_resource": {
 				Description: "Maximum resource type for the maximum autoscaling setting.",
 				Type:        types.StringType,
 				Optional:    true,
 				Computed:    true,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					resource.UseStateForUnknown(),
+				},
 			},
 			"max_size": {
 				Description: "Maximum size value for the maximum autoscaling setting.",
 				Type:        types.StringType,
 				Optional:    true,
 				Computed:    true,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					resource.UseStateForUnknown(),
+				},
 			},
 			"min_size_resource": {
 				Description: "Minimum resource type for the minimum autoscaling setting.",
 				Type:        types.StringType,
 				Optional:    true,
 				Computed:    true,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					resource.UseStateForUnknown(),
+				},
 			},
 			"min_size": {
 				Description: "Minimum size value for the minimum autoscaling setting.",
 				Type:        types.StringType,
 				Optional:    true,
 				Computed:    true,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					resource.UseStateForUnknown(),
+				},
 			},
 			"policy_override_json": {
 				Type:        types.StringType,
 				Description: "Computed policy overrides set directly via the API or other clients.",
 				Computed:    true,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					resource.UseStateForUnknown(),
+				},
 			},
 		}),
 	}

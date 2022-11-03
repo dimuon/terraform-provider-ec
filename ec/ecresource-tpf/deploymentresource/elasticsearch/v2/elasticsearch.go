@@ -41,13 +41,13 @@ type ElasticsearchTF struct {
 	CloudID          types.String `tfsdk:"cloud_id"`
 	HttpEndpoint     types.String `tfsdk:"http_endpoint"`
 	HttpsEndpoint    types.String `tfsdk:"https_endpoint"`
-	HotContentTier   types.Object `tfsdk:"hot_content_tier"`
-	CoordinatingTier types.Object `tfsdk:"coordinating_tier"`
-	MasterTier       types.Object `tfsdk:"master_tier"`
-	WarmTier         types.Object `tfsdk:"warm_tier"`
-	ColdTier         types.Object `tfsdk:"cold_tier"`
-	FrozenTier       types.Object `tfsdk:"frozen_tier"`
-	MlTier           types.Object `tfsdk:"ml_tier"`
+	HotContentTier   types.Object `tfsdk:"hot"`
+	CoordinatingTier types.Object `tfsdk:"coordinating"`
+	MasterTier       types.Object `tfsdk:"master"`
+	WarmTier         types.Object `tfsdk:"warm"`
+	ColdTier         types.Object `tfsdk:"cold"`
+	FrozenTier       types.Object `tfsdk:"frozen"`
+	MlTier           types.Object `tfsdk:"ml"`
 	Config           types.Object `tfsdk:"config"`
 	RemoteCluster    types.Set    `tfsdk:"remote_cluster"`
 	SnapshotSource   types.Object `tfsdk:"snapshot_source"`
@@ -65,13 +65,13 @@ type Elasticsearch struct {
 	CloudID          *string                         `tfsdk:"cloud_id"`
 	HttpEndpoint     *string                         `tfsdk:"http_endpoint"`
 	HttpsEndpoint    *string                         `tfsdk:"https_endpoint"`
-	HotContentTier   *ElasticsearchTopology          `tfsdk:"hot_content_tier"`
-	CoordinatingTier *ElasticsearchTopology          `tfsdk:"coordinating_tier"`
-	MasterTier       *ElasticsearchTopology          `tfsdk:"master_tier"`
-	WarmTier         *ElasticsearchTopology          `tfsdk:"warm_tier"`
-	ColdTier         *ElasticsearchTopology          `tfsdk:"cold_tier"`
-	FrozenTier       *ElasticsearchTopology          `tfsdk:"frozen_tier"`
-	MlTielr          *ElasticsearchTopology          `tfsdk:"ml_tier"`
+	HotContentTier   *ElasticsearchTopology          `tfsdk:"hot"`
+	CoordinatingTier *ElasticsearchTopology          `tfsdk:"coordinating"`
+	MasterTier       *ElasticsearchTopology          `tfsdk:"master"`
+	WarmTier         *ElasticsearchTopology          `tfsdk:"warm"`
+	ColdTier         *ElasticsearchTopology          `tfsdk:"cold"`
+	FrozenTier       *ElasticsearchTopology          `tfsdk:"frozen"`
+	MlTielr          *ElasticsearchTopology          `tfsdk:"ml"`
 	Config           *v1.ElasticsearchConfig         `tfsdk:"config"`
 	RemoteCluster    v1.ElasticsearchRemoteClusters  `tfsdk:"remote_cluster"`
 	SnapshotSource   *v1.ElasticsearchSnapshotSource `tfsdk:"snapshot_source"`
