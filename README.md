@@ -121,7 +121,7 @@ After doing so, you can navigate to any of our examples in `./examples` and try 
 
 ### Moving to TF Framework and schema change for `ec_deployment` resource.
 
-Major consequences of the migration to TF Framework and intoducing version 2 for `ec_deployment` resource:
+v6.0.0 contains migration to TF Framework and intoducing version 2 for `ec_deployment` resource:
 
 - switching to attributes syntx instead of blocks for almost all definitions that used to be blocks. It means that, for example, a definition like `config {}` has to be changed to `config = {}`, e.g.
 
@@ -151,6 +151,7 @@ resource "ec_deployment" "defaults" {
 ```
 
 - `topology` attribute of `elasticsearch` is replaced with a number of dedicated attributes, one per tier, e.g. 
+
 ```
   elasticsearch {
     topology {
@@ -167,7 +168,8 @@ resource "ec_deployment" "defaults" {
         max_size = "15g"
       }
     }
-  }```
+  }
+```
 
 is converted to 
 
