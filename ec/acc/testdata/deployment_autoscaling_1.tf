@@ -47,7 +47,6 @@ resource "ec_deployment" "autoscaling" {
       autoscaling = {
         max_size = "15g"
       }
-    }
-    
+    }    
   }
 }

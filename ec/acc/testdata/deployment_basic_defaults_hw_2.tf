@@ -10,8 +10,12 @@ resource "ec_deployment" "defaults" {
   deployment_template_id = "%s"
 
   elasticsearch = {
-    hot_content_tier = {}
-    warm_tier = {}
+    hot = {
+      autoscaling = {}
+    }
+    warm = {
+      autoscaling = {}
+    }
   }
 
   kibana = {

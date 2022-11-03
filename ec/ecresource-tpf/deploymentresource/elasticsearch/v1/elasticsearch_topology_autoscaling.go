@@ -90,11 +90,7 @@ func ElasticsearchTopologyAutoscalingPayload(ctx context.Context, autoObj attr.V
 		return nil
 	}
 
-	// Ensure that if the Min and Max are empty, they're nil.
-
-	if autoscale.MinSize.IsNull() || autoscale.MinSize.IsUnknown() {
-		payload.AutoscalingMin = nil
-	} else {
+	if !autoscale.MinSize.IsNull() && !autoscale.MinSize.IsUnknown() {
 		if payload.AutoscalingMin == nil {
 			payload.AutoscalingMin = new(models.TopologySize)
 		}
@@ -104,11 +100,13 @@ func ElasticsearchTopologyAutoscalingPayload(ctx context.Context, autoObj attr.V
 			diag.AddError("fail to parse autoscale min size", err.Error())
 			return diag
 		}
+
+		if reflect.DeepEqual(payload.AutoscalingMin, new(models.TopologySize)) {
+			payload.AutoscalingMin = nil
+		}
 	}
 
-	if autoscale.MaxSize.IsNull() || autoscale.MaxSize.IsUnknown() {
-		payload.AutoscalingMax = nil
-	} else {
+	if !autoscale.MaxSize.IsNull() && !autoscale.MaxSize.IsUnknown() {
 		if payload.AutoscalingMax == nil {
 			payload.AutoscalingMax = new(models.TopologySize)
 		}
@@ -117,6 +115,10 @@ func ElasticsearchTopologyAutoscalingPayload(ctx context.Context, autoObj attr.V
 		if err != nil {
 			diag.AddError("fail to parse autoscale max size", err.Error())
 			return diag
+		}
+
+		if reflect.DeepEqual(payload.AutoscalingMax, new(models.TopologySize)) {
+			payload.AutoscalingMax = nil
 		}
 	}
 

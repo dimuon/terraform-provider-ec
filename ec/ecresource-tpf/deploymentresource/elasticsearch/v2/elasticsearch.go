@@ -208,7 +208,7 @@ func (es *ElasticsearchTF) Payload(ctx context.Context, res *models.Elasticsearc
 	v1.UpdateNodeRolesOnDedicatedTiers(res.Plan.ClusterTopology)
 
 	res.Plan.Elasticsearch, ds = v1.ElasticsearchConfigPayload(ctx, es.Config, res.Plan.Elasticsearch)
-	diags = append(diags, ds...)
+	diags.Append(ds...)
 
 	diags.Append(v1.ElasticsearchSnapshotSourcePayload(ctx, es.SnapshotSource, res.Plan)...)
 
