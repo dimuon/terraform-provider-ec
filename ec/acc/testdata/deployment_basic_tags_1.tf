@@ -9,12 +9,12 @@ resource "ec_deployment" "tags" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "%s"
 
-  elasticsearch = [{
-    topology = [{
-      id   = "hot_content"
+  elasticsearch = {
+    hot = {
       size = "2g"
-    }]
-  }]
+      autoscaling = {}
+    }
+  }
 
   tags = {
     owner       = "elastic"
