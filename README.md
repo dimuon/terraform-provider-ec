@@ -123,7 +123,7 @@ After doing so, you can navigate to any of our examples in `./examples` and try 
 
 v6.0.0 contains migration to [the TF Plugin Framework](https://developer.hashicorp.com/terraform/plugin/framework) and intoducing version 2 for `ec_deployment` resource:
 
-- switching to attributes syntx instead of blocks for almost all definitions that used to be blocks. It means that, for example, a definition like `config {}` has to be changed to `config = {}`, e.g.
+- switching to attributes syntax instead of blocks for almost all definitions that used to be blocks. It means that, for example, a definition like `config {}` has to be changed to `config = {}`, e.g.
 
 ```hcl
 resource "ec_deployment" "defaults" {
