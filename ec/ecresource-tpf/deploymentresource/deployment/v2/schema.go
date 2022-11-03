@@ -86,26 +86,25 @@ func DeploymentSchema() tfsdk.Schema {
 				Type:        types.StringType,
 				Description: "Computed username obtained upon creating the Elasticsearch resource",
 				Computed:    true,
-				// PlanModifiers: tfsdk.AttributePlanModifiers{
-				// 	resource.UseStateForUnknown(),
-				// },
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
 			},
 			"elasticsearch_password": {
 				Type:        types.StringType,
 				Description: "Computed password obtained upon creating the Elasticsearch resource",
 				Computed:    true,
 				Sensitive:   true,
-				// PlanModifiers: tfsdk.AttributePlanModifiers{
-				// 	resource.UseStateForUnknown(),
-				// },
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
 			},
 			"apm_secret_token": {
 				Type:      types.StringType,
 				Computed:  true,
 				Sensitive: true,
 				// PlanModifiers: tfsdk.AttributePlanModifiers{
-				// 	// resource.UseStateForUnknown(),
-				// 	planmodifier.UseStateForNoChange(),
+				// 	resource.UseStateForUnknown(),
 				// },
 			},
 			"traffic_filter": {

@@ -65,13 +65,13 @@ type Elasticsearch struct {
 	CloudID          *string                         `tfsdk:"cloud_id"`
 	HttpEndpoint     *string                         `tfsdk:"http_endpoint"`
 	HttpsEndpoint    *string                         `tfsdk:"https_endpoint"`
-	HotContentTier   *ElasticsearchTopology          `tfsdk:"hot"`
+	HotTier          *ElasticsearchTopology          `tfsdk:"hot"`
 	CoordinatingTier *ElasticsearchTopology          `tfsdk:"coordinating"`
 	MasterTier       *ElasticsearchTopology          `tfsdk:"master"`
 	WarmTier         *ElasticsearchTopology          `tfsdk:"warm"`
 	ColdTier         *ElasticsearchTopology          `tfsdk:"cold"`
 	FrozenTier       *ElasticsearchTopology          `tfsdk:"frozen"`
-	MlTielr          *ElasticsearchTopology          `tfsdk:"ml"`
+	MlTier           *ElasticsearchTopology          `tfsdk:"ml"`
 	Config           *v1.ElasticsearchConfig         `tfsdk:"config"`
 	RemoteCluster    v1.ElasticsearchRemoteClusters  `tfsdk:"remote_cluster"`
 	SnapshotSource   *v1.ElasticsearchSnapshotSource `tfsdk:"snapshot_source"`
@@ -272,7 +272,7 @@ func (es *Elasticsearch) setTopology(topologies ElasticsearchTopologies) {
 		topology := topology
 		switch id {
 		case "hot_content":
-			es.HotContentTier = &topology
+			es.HotTier = &topology
 		case "coordinating":
 			es.CoordinatingTier = &topology
 		case "master":
@@ -284,7 +284,49 @@ func (es *Elasticsearch) setTopology(topologies ElasticsearchTopologies) {
 		case "frozen":
 			es.FrozenTier = &topology
 		case "ml":
-			es.MlTielr = &topology
+			es.MlTier = &topology
 		}
 	}
+}
+
+func (es *Elasticsearch) UsePlanESTopologiesIfEmpty(ctx context.Context, plan types.Object) diag.Diagnostics {
+	var esPlan *Elasticsearch
+
+	if diags := tfsdk.ValueAs(ctx, plan, &esPlan); diags.HasError() {
+		return diags
+	}
+
+	if esPlan == nil {
+		return nil
+	}
+
+	if es.HotTier == nil {
+		es.HotTier = esPlan.HotTier
+	}
+
+	if es.WarmTier == nil {
+		es.WarmTier = esPlan.WarmTier
+	}
+
+	if es.ColdTier == nil {
+		es.ColdTier = esPlan.ColdTier
+	}
+
+	if es.FrozenTier == nil {
+		es.FrozenTier = esPlan.FrozenTier
+	}
+
+	if es.MasterTier == nil {
+		es.MasterTier = esPlan.MasterTier
+	}
+
+	if es.CoordinatingTier == nil {
+		es.CoordinatingTier = esPlan.CoordinatingTier
+	}
+
+	if es.MlTier == nil {
+		es.MlTier = esPlan.MlTier
+	}
+
+	return nil
 }
