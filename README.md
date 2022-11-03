@@ -72,9 +72,13 @@ resource "ec_deployment" "example_minimal" {
   deployment_template_id = "aws-io-optimized-v2"
 
   # Use the deployment template defaults
-  elasticsearch {}
+  elasticsearch = {
+    hot_content_tier = {}
+  }
 
-  kibana {}
+  kibana = {
+    topology = {}
+  }
 }
 ```
 
@@ -114,3 +118,98 @@ $ export EC_API_KEY="<apikey value>"
 ```
 
 After doing so, you can navigate to any of our examples in `./examples` and try one.
+
+### Moving to TF Framework and schema change for `ec_deployment` resource.
+
+Major changes of v5.0.0 is migration to TF Framework and intoducing version 2 for `ec_deployment` resource:
+
+- switching to attributes syntx instead of blocks for almost all definitions that used to be blocks. It means that, for example, a definition like `config {}` has to be changed to `config = {}`, e.g.
+
+```hcl
+resource "ec_deployment" "defaults" {
+  name                   = "example"
+  region                 = "us-east-1"
+  version                = data.ec_stack.latest.version
+  deployment_template_id = "aws-io-optimized-v2"
+
+  elasticsearch = {
+    hot = {
+      autoscaling = {}
+    }
+  }
+
+  kibana = {
+    topology = {}
+  }
+
+  enterprise_search = {
+    topology = {
+      zone_count = 1
+    }
+  }
+}
+```
+
+- `topology` attribute of `elasticsearch` is replaced with a number of dedicated attributes, one per tier, e.g. 
+```
+  elasticsearch {
+    topology {
+      id         = "hot_content"
+      size       = "1g"
+      autoscaling {
+        max_size = "8g"
+      }
+    }
+    topology {
+      id         = "warm"
+      size       = "2g"
+      autoscaling {
+        max_size = "15g"
+      }
+    }
+  }```
+
+is converted to 
+
+```
+  elasticsearch = {
+    hot = {
+      size = "1g"
+      autoscaling = {
+        max_size = "8g"
+      }
+    }
+    warm = {
+      size = "2g"
+      autoscaling = {
+        max_size = "15g"
+      }
+    }
+  }
+
+```
+
+- due to some existing limitations of TF, nested attributes that are nested inside other nested attributes cannot be `Computed`. It means that all such attributes have to be mentioned in configurations. E.g. a definition of `elasticsearch` has to include all topology elements (tiers) that have non-zero size or can be scaled up (if autoscaling is enabled) in the corresponding template. For example, the simplest definition of `elasticsearch` for `aws-io-optimized-v2` template is 
+
+```hcl
+resource "ec_deployment" "defaults" {
+  name                   = "example"
+  region                 = "us-east-1"
+  version                = data.ec_stack.latest.version
+  deployment_template_id = "aws-io-optimized-v2"
+
+  elasticsearch = {
+    hot = {
+      autoscaling = {}
+    }
+  }
+}
+```
+
+Please note that the configuration explicitly mentions `hot` tier and the tier has `autoscaling` attribute even despite the fact that they are empty. If they were omitted, TF (at least up to version 1.3.3) could complain about something like `Error: Provider produced inconsistent result after apply`.
+
+- a lot of attributes that used to be collections (e.g. lists and sets) are converted to sigletons, e.g. `elasticsearch`, `apm`, `kibana`, `enterpris_esearch`, `observability`, `topology`, `config`, `autoscaling`, etc. Please note that, generally, users are not expected to make any change to their existing configuration to address this particular change (besides moving from block to attribute syntax). All these components used to exist in only single instances, so the change is mostly syntactical, taking into account the switch to attributes instead of blocks (otherwise if we kept list for configs,  `config {}` had to be rewritten in `config = [{}]` once we move to attribute syntax). However this change is a breaking one from the schema perspective and requires state upgrade that is performed by TF (by calling the provider's API).
+
+- (`strategy` attribute)[https://registry.terraform.io/providers/elastic/ec/latest/docs/resources/ec_deployment#strategy] is converted to string with the same set of values that was used for its (`type` attribute)[https://registry.terraform.io/providers/elastic/ec/latest/docs/resources/ec_deployment#type] previously;
+
+- switching to TF protocol 6. From user perspective it should not require any change in their configurations.
