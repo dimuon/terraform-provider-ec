@@ -588,24 +588,21 @@ func ensurePartialSnapshotStrategy(es *models.ElasticsearchPayload) {
 	transient.RestoreSnapshot.Strategy = "partial"
 }
 
-func HandleRemoteClusters(ctx context.Context, client *api.API, plan, state DeploymentTF) diag.Diagnostics {
-	if plan.Elasticsearch.Equal(state.Elasticsearch) {
+// func HandleRemoteClusters(ctx context.Context, client *api.API, newState, oldState DeploymentTF) diag.Diagnostics {
+func HandleRemoteClusters(ctx context.Context, client *api.API, deploymentId string, esObj types.Object) diag.Diagnostics {
+	if esObj.IsNull() || esObj.IsUnknown() {
 		return nil
 	}
 
-	var es *elasticsearchv2.ElasticsearchTF
+	var es *v2.ElasticsearchTF
 
-	var diags diag.Diagnostics
+	diags := tfsdk.ValueAs(ctx, esObj, &es)
 
-	if diags = tfsdk.ValueAs(ctx, plan.Elasticsearch, &es); diags.HasError() {
+	if diags.HasError() {
 		return diags
 	}
 
-	if es == nil {
-		return nil
-	}
-
-	if len(es.RemoteCluster.Elems) == 0 {
+	if es.RemoteCluster.IsNull() || es.RemoteCluster.IsUnknown() || len(es.RemoteCluster.Elems) == 0 {
 		return nil
 	}
 
@@ -616,7 +613,7 @@ func HandleRemoteClusters(ctx context.Context, client *api.API, plan, state Depl
 
 	if err := esremoteclustersapi.Update(esremoteclustersapi.UpdateParams{
 		API:             client,
-		DeploymentID:    plan.Id.Value,
+		DeploymentID:    deploymentId,
 		RefID:           es.RefId.Value,
 		RemoteResources: remoteRes,
 	}); err != nil {

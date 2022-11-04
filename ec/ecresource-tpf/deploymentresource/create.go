@@ -78,8 +78,7 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 
 	tflog.Trace(ctx, "created a resource")
 
-	diags = deploymentv.HandleRemoteClusters(ctx, r.client, plan, deploymentv.DeploymentTF{})
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(deploymentv.HandleRemoteClusters(ctx, r.client, *res.ID, plan.Elasticsearch)...)
 
 	deployment, diags := r.read(ctx, *res.ID, nil, plan, res.Resources)
 
@@ -89,6 +88,7 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 
 	if deployment == nil {
 		resp.State.RemoveResource(ctx)
+		resp.Diagnostics.AddError("cannot read just created resource", "")
 		return
 	}
 
