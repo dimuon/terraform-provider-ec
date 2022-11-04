@@ -91,6 +91,10 @@ func (r *Resource) read(ctx context.Context, id string, state *deploymentv2.Depl
 		return nil, diags
 	}
 
+	if !utils.HasRunningResources(response) {
+		return nil, nil
+	}
+
 	if response.Resources == nil || len(response.Resources.Elasticsearch) == 0 {
 		diags.AddError("Get resource error", "cannot find Elasticsearch in response resources")
 		return nil, diags
@@ -101,10 +105,6 @@ func (r *Resource) read(ctx context.Context, id string, state *deploymentv2.Depl
 			diags.AddError("Get resource error", err.Error())
 			return nil, diags
 		}
-	}
-
-	if !utils.HasRunningResources(response) {
-		return nil, nil
 	}
 
 	refId := ""
