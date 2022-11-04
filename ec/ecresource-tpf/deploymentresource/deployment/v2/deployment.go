@@ -87,7 +87,9 @@ type Deployment struct {
 	Observability         *observabilityv2.Observability           `tfsdk:"observability"`
 }
 
-func (dep *Deployment) UsePlanESTopologiesIfEmpty(ctx context.Context, esPlanObj types.Object) diag.Diagnostics {
+// Nullify Elasticsearch topologies that are not specified in plan
+// TODO: do it only for topologies that have zero size in response
+func (dep *Deployment) NullifyNotUsedEsTopologies(ctx context.Context, esPlanObj types.Object) diag.Diagnostics {
 	if esPlanObj.IsNull() || esPlanObj.IsUnknown() {
 		return nil
 	}
@@ -106,31 +108,31 @@ func (dep *Deployment) UsePlanESTopologiesIfEmpty(ctx context.Context, esPlanObj
 		return nil
 	}
 
-	if esPlan.HotContentTier.IsNull() && dep.Elasticsearch.HotTier != nil {
+	if esPlan.HotContentTier.IsNull() {
 		dep.Elasticsearch.HotTier = nil
 	}
 
-	if esPlan.WarmTier.IsNull() && dep.Elasticsearch.WarmTier != nil {
+	if esPlan.WarmTier.IsNull() {
 		dep.Elasticsearch.WarmTier = nil
 	}
 
-	if esPlan.ColdTier.IsNull() && dep.Elasticsearch.ColdTier != nil {
+	if esPlan.ColdTier.IsNull() {
 		dep.Elasticsearch.ColdTier = nil
 	}
 
-	if esPlan.FrozenTier.IsNull() && dep.Elasticsearch.FrozenTier != nil {
+	if esPlan.FrozenTier.IsNull() {
 		dep.Elasticsearch.FrozenTier = nil
 	}
 
-	if esPlan.MlTier.IsNull() && dep.Elasticsearch.MlTier != nil {
+	if esPlan.MlTier.IsNull() {
 		dep.Elasticsearch.MlTier = nil
 	}
 
-	if esPlan.MasterTier.IsNull() && dep.Elasticsearch.MasterTier != nil {
+	if esPlan.MasterTier.IsNull() {
 		dep.Elasticsearch.MasterTier = nil
 	}
 
-	if esPlan.CoordinatingTier.IsNull() && dep.Elasticsearch.CoordinatingTier != nil {
+	if esPlan.CoordinatingTier.IsNull() {
 		dep.Elasticsearch.CoordinatingTier = nil
 	}
 
@@ -371,18 +373,21 @@ func (dep *Deployment) ProcessSelfInObservability() {
 	}
 }
 
-func (dep *Deployment) SetCredentialsIfEmpty(current DeploymentTF) {
-
-	if dep.ElasticsearchPassword == "" && current.ElasticsearchPassword.Value != "" {
-		dep.ElasticsearchPassword = current.ElasticsearchPassword.Value
+func (dep *Deployment) SetCredentialsIfEmpty(state *DeploymentTF) {
+	if state == nil {
+		return
 	}
 
-	if dep.ElasticsearchUsername == "" && current.ElasticsearchUsername.Value != "" {
-		dep.ElasticsearchUsername = current.ElasticsearchUsername.Value
+	if dep.ElasticsearchPassword == "" && state.ElasticsearchPassword.Value != "" {
+		dep.ElasticsearchPassword = state.ElasticsearchPassword.Value
 	}
 
-	if (dep.ApmSecretToken == nil || *dep.ApmSecretToken == "") && current.ApmSecretToken.Value != "" {
-		dep.ApmSecretToken = &current.ApmSecretToken.Value
+	if dep.ElasticsearchUsername == "" && state.ElasticsearchUsername.Value != "" {
+		dep.ElasticsearchUsername = state.ElasticsearchUsername.Value
+	}
+
+	if (dep.ApmSecretToken == nil || *dep.ApmSecretToken == "") && state.ApmSecretToken.Value != "" {
+		dep.ApmSecretToken = &state.ApmSecretToken.Value
 	}
 }
 

@@ -9,7 +9,11 @@ resource "ec_deployment" "ccs" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "%s"
 
-  elasticsearch = [{
+  elasticsearch = {
+    hot = {
+      autoscaling = {}
+    }
+    
     "remote_cluster" = [for source_css in ec_deployment.source_ccs :
       {
         deployment_id = source_css.id
@@ -23,7 +27,7 @@ resource "ec_deployment" "ccs" {
     #     alias         = remote_cluster.value.name
     #   }
     # }
-  }]
+  }
 }
 
 resource "ec_deployment" "source_ccs" {
@@ -33,11 +37,11 @@ resource "ec_deployment" "source_ccs" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "%s"
 
-  elasticsearch = [{
-    topology = [{
-      id         = "hot_content"
+  elasticsearch = {
+    hot = {
       zone_count = 1
       size       = "1g"
-    }]
-  }]
+      autoscaling = {}
+    }
+  }
 }

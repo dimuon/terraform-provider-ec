@@ -54,7 +54,8 @@ func (r *Resource) Read(ctx context.Context, request resource.ReadRequest, respo
 	var newState *deploymentv2.DeploymentTF
 	var err error
 
-	if newState, diags = r.read(ctx, curState.Id.Value, curState, nil); err != nil {
+	// use state for the plan - otherwise we can get unempty plan output
+	if newState, diags = r.read(ctx, curState.Id.Value, &curState, curState, nil); err != nil {
 		response.Diagnostics.Append(diags...)
 	}
 
@@ -69,7 +70,7 @@ func (r *Resource) Read(ctx context.Context, request resource.ReadRequest, respo
 	response.Diagnostics.Append(diags...)
 }
 
-func (r *Resource) read(ctx context.Context, id string, current deploymentv2.DeploymentTF, deploymentResources []*models.DeploymentResource) (*deploymentv2.DeploymentTF, diag.Diagnostics) {
+func (r *Resource) read(ctx context.Context, id string, state *deploymentv2.DeploymentTF, plan deploymentv2.DeploymentTF, deploymentResources []*models.DeploymentResource) (*deploymentv2.DeploymentTF, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	response, err := deploymentapi.Get(deploymentapi.GetParams{
@@ -108,14 +109,14 @@ func (r *Resource) read(ctx context.Context, id string, current deploymentv2.Dep
 
 	refId := ""
 
-	var elasticsearch *elasticsearchv2.ElasticsearchTF
+	var elasticsearchPlan *elasticsearchv2.ElasticsearchTF
 
-	if diags = tfsdk.ValueAs(ctx, current.Elasticsearch, &elasticsearch); diags.HasError() {
+	if diags = tfsdk.ValueAs(ctx, plan.Elasticsearch, &elasticsearchPlan); diags.HasError() {
 		return nil, diags
 	}
 
-	if elasticsearch != nil {
-		refId = elasticsearch.RefId.Value
+	if elasticsearchPlan != nil {
+		refId = elasticsearchPlan.RefId.Value
 	}
 
 	remotes, err := esremoteclustersapi.Get(esremoteclustersapi.GetParams{
@@ -136,13 +137,13 @@ func (r *Resource) read(ctx context.Context, id string, current deploymentv2.Dep
 		return nil, diags
 	}
 
-	deployment.RequestId = current.RequestId.Value
+	deployment.RequestId = plan.RequestId.Value
 
-	deployment.SetCredentialsIfEmpty(current)
+	deployment.SetCredentialsIfEmpty(state)
 
 	deployment.ProcessSelfInObservability()
 
-	if diags := deployment.UsePlanESTopologiesIfEmpty(ctx, current.Elasticsearch); diags.HasError() {
+	if diags := deployment.NullifyNotUsedEsTopologies(ctx, plan.Elasticsearch); diags.HasError() {
 		return nil, diags
 	}
 

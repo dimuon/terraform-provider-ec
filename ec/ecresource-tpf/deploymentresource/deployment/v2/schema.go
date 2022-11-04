@@ -104,7 +104,7 @@ func DeploymentSchema() tfsdk.Schema {
 				Computed:  true,
 				Sensitive: true,
 				// PlanModifiers: tfsdk.AttributePlanModifiers{
-				// 	resource.UseStateForUnknown(),
+				// 	ApmSecretTokenPlanModifier(),
 				// },
 			},
 			"traffic_filter": {

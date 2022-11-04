@@ -81,7 +81,7 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	diags = deploymentv.HandleRemoteClusters(ctx, r.client, plan, deploymentv.DeploymentTF{})
 	resp.Diagnostics.Append(diags...)
 
-	deployment, diags := r.read(ctx, *res.ID, plan, res.Resources)
+	deployment, diags := r.read(ctx, *res.ID, nil, plan, res.Resources)
 
 	if diags.HasError() {
 		resp.Diagnostics.Append(diags...)

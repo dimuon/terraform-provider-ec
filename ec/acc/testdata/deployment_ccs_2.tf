@@ -9,12 +9,12 @@ resource "ec_deployment" "ccs" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "%s"
 
-  elasticsearch = [{
-    topology = [{
-      id   = "hot_content"
+  elasticsearch = {
+    hot = {
       size = "2g"
-    }]
-  }]
+      autoscaling = {}
+    }
+  }
 
-  kibana = [{}]
+  kibana = {topology = {}}
 }

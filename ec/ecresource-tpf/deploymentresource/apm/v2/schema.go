@@ -129,7 +129,7 @@ func ApmSchema() tfsdk.Attribute {
 				PlanModifiers: []tfsdk.AttributePlanModifier{
 					planmodifier.DefaultValue(types.String{Value: "main-elasticsearch"}),
 					// resource.UseStateForUnknown(),
-					planmodifier.UseStateForNoChange(),
+					// planmodifier.UseStateForNoChange(),
 				},
 			},
 			"ref_id": {
@@ -139,7 +139,7 @@ func ApmSchema() tfsdk.Attribute {
 				PlanModifiers: []tfsdk.AttributePlanModifier{
 					planmodifier.DefaultValue(types.String{Value: "main-apm"}),
 					// resource.UseStateForUnknown(),
-					planmodifier.UseStateForNoChange(),
+					// planmodifier.UseStateForNoChange(),
 				},
 			},
 			"resource_id": {
@@ -147,7 +147,7 @@ func ApmSchema() tfsdk.Attribute {
 				Computed: true,
 				PlanModifiers: []tfsdk.AttributePlanModifier{
 					// resource.UseStateForUnknown(),
-					planmodifier.UseStateForNoChange(),
+					// planmodifier.UseStateForNoChange(),
 				},
 			},
 			"region": {
@@ -155,7 +155,7 @@ func ApmSchema() tfsdk.Attribute {
 				Computed: true,
 				PlanModifiers: []tfsdk.AttributePlanModifier{
 					// resource.UseStateForUnknown(),
-					planmodifier.UseStateForNoChange(),
+					// planmodifier.UseStateForNoChange(),
 				},
 			},
 			"http_endpoint": {
@@ -163,7 +163,7 @@ func ApmSchema() tfsdk.Attribute {
 				Computed: true,
 				PlanModifiers: []tfsdk.AttributePlanModifier{
 					// resource.UseStateForUnknown(),
-					planmodifier.UseStateForNoChange(),
+					// planmodifier.UseStateForNoChange(),
 				},
 			},
 			"https_endpoint": {
@@ -171,7 +171,7 @@ func ApmSchema() tfsdk.Attribute {
 				Computed: true,
 				PlanModifiers: []tfsdk.AttributePlanModifier{
 					// resource.UseStateForUnknown(),
-					planmodifier.UseStateForNoChange(),
+					// planmodifier.UseStateForNoChange(),
 				},
 			},
 			"topology": ApmTopologySchema(),
