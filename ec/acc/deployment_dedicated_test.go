@@ -39,7 +39,6 @@ func TestAccDeployment_dedicated_coordinating(t *testing.T) {
 				// Create a deployment with dedicated coordinating.
 				Config: cfg,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resName, "elasticsearch.#", "1"),
 					resource.TestCheckResourceAttr(resName, "elasticsearch.0.topology.#", "3"),
 					resource.TestCheckResourceAttrSet(resName, "elasticsearch.0.topology.0.instance_configuration_id"),
 					resource.TestCheckResourceAttrSet(resName, "elasticsearch.0.topology.1.instance_configuration_id"),

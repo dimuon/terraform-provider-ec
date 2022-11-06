@@ -261,6 +261,7 @@ func ElasticsearchRemoteClusterSchema() tfsdk.Attribute {
 				PlanModifiers: []tfsdk.AttributePlanModifier{
 					planmodifier.DefaultValue(types.Bool{Value: false}),
 				},
+				Computed: true,
 				Optional: true,
 			},
 		}),

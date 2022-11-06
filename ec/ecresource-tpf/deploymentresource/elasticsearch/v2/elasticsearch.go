@@ -73,7 +73,7 @@ type Elasticsearch struct {
 	FrozenTier       *ElasticsearchTopology          `tfsdk:"frozen"`
 	MlTier           *ElasticsearchTopology          `tfsdk:"ml"`
 	Config           *v1.ElasticsearchConfig         `tfsdk:"config"`
-	RemoteCluster    v1.ElasticsearchRemoteClusters  `tfsdk:"remote_cluster"`
+	RemoteCluster    ElasticsearchRemoteClusters     `tfsdk:"remote_cluster"`
 	SnapshotSource   *v1.ElasticsearchSnapshotSource `tfsdk:"snapshot_source"`
 	Extension        v1.ElasticsearchExtensions      `tfsdk:"extension"`
 	TrustAccount     v1.ElasticsearchTrustAccounts   `tfsdk:"trust_account"`
@@ -155,7 +155,7 @@ func ReadElasticsearch(in *models.ElasticsearchResourceInfo, remotes *models.Rem
 		return nil, err
 	}
 
-	clusters, err := v1.ReadElasticsearchRemoteClusters(remotes.Resources)
+	clusters, err := ReadElasticsearchRemoteClusters(remotes.Resources)
 	if err != nil {
 		return nil, err
 	}

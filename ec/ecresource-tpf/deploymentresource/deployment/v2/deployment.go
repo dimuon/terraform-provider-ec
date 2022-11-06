@@ -31,7 +31,6 @@ import (
 
 	apmv2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/apm/v2"
 	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/deployment/v1"
-	elasticsearchv1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/elasticsearch/v1"
 	elasticsearchv2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/elasticsearch/v2"
 	v2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/elasticsearch/v2"
 	enterprisesearchv2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/enterprisesearch/v2"
@@ -590,23 +589,8 @@ func ensurePartialSnapshotStrategy(es *models.ElasticsearchPayload) {
 
 // func HandleRemoteClusters(ctx context.Context, client *api.API, newState, oldState DeploymentTF) diag.Diagnostics {
 func HandleRemoteClusters(ctx context.Context, client *api.API, deploymentId string, esObj types.Object) diag.Diagnostics {
-	if esObj.IsNull() || esObj.IsUnknown() {
-		return nil
-	}
+	remoteClusters, refId, diags := ElasticsearchRemoteClustersPayload(ctx, client, deploymentId, esObj)
 
-	var es *v2.ElasticsearchTF
-
-	diags := tfsdk.ValueAs(ctx, esObj, &es)
-
-	if diags.HasError() {
-		return diags
-	}
-
-	if es.RemoteCluster.IsNull() || es.RemoteCluster.IsUnknown() || len(es.RemoteCluster.Elems) == 0 {
-		return nil
-	}
-
-	remoteRes, diags := elasticsearchv1.ElasticsearchRemoteClustersPayload(ctx, es.RemoteCluster)
 	if diags.HasError() {
 		return diags
 	}
@@ -614,12 +598,29 @@ func HandleRemoteClusters(ctx context.Context, client *api.API, deploymentId str
 	if err := esremoteclustersapi.Update(esremoteclustersapi.UpdateParams{
 		API:             client,
 		DeploymentID:    deploymentId,
-		RefID:           es.RefId.Value,
-		RemoteResources: remoteRes,
+		RefID:           refId,
+		RemoteResources: remoteClusters,
 	}); err != nil {
 		diags.AddError("cannot update remote clusters", err.Error())
 		return diags
 	}
 
 	return nil
+}
+
+func ElasticsearchRemoteClustersPayload(ctx context.Context, client *api.API, deploymentId string, esObj types.Object) (*models.RemoteResources, string, diag.Diagnostics) {
+	var es *v2.ElasticsearchTF
+
+	diags := tfsdk.ValueAs(ctx, esObj, &es)
+
+	if diags.HasError() {
+		return nil, "", diags
+	}
+
+	remoteRes, diags := elasticsearchv2.ElasticsearchRemoteClustersPayload(ctx, es.RemoteCluster)
+	if diags.HasError() {
+		return nil, "", diags
+	}
+
+	return remoteRes, es.RefId.Value, nil
 }
