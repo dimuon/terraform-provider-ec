@@ -9,13 +9,13 @@ resource "ec_deployment" "basic" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "%s"
 
-  elasticsearch = [{
-    topology = [{
-      id         = "hot_content"
+  elasticsearch = {
+    hot = {
       size       = "1g"
       zone_count = 1
-    }]
-  }]
+      autoscaling = {}
+    }
+  }
 }
 
 resource "ec_deployment" "observability" {
@@ -24,16 +24,16 @@ resource "ec_deployment" "observability" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "%s"
 
-  elasticsearch = [{
-    topology = [{
-      id         = "hot_content"
+  elasticsearch = {
+    hot = {
       size       = "1g"
       zone_count = 1
-    }]
-  }]
+      autoscaling = {}
+    }
+  }
 
-  observability = [{
+  observability = {
     deployment_id = ec_deployment.basic.id
     metrics       = false
-  }]
+  }
 }

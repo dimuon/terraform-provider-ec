@@ -13,5 +13,9 @@ resource "ec_deployment" "hotwarm" {
     hot = {
       autoscaling = {}
     }
+
+    warm = {
+      autoscaling = {}
+    }
   }
 }

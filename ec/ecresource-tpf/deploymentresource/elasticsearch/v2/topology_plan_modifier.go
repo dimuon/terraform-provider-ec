@@ -48,6 +48,10 @@ func (r useStateForUnknownIfTemplateSame) Modify(ctx context.Context, req tfsdk.
 		return
 	}
 
+	if req.AttributeState.IsNull() {
+		return
+	}
+
 	templateChanged, diags := isAttributeChanged(ctx, path.Root("deployment_template_id"), req)
 
 	resp.Diagnostics = append(resp.Diagnostics, diags...)

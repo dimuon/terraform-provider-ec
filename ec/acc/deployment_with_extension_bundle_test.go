@@ -68,8 +68,8 @@ func TestAccDeployment_withExtension(t *testing.T) {
 					resource.TestCheckResourceAttr(extResName, "description", "desc"),
 					resource.TestCheckResourceAttr(extResName, "extension_type", "bundle"),
 					resource.TestCheckResourceAttr(extResName, "file_path", filePath),
-					resource.TestCheckResourceAttr(resName, "elasticsearch.0.extension.#", "1"),
-					resource.TestCheckTypeSetElemNestedAttrs(resName, "elasticsearch.0.extension.*", map[string]string{
+					resource.TestCheckResourceAttr(resName, "elasticsearch.extension.#", "1"),
+					resource.TestCheckTypeSetElemNestedAttrs(resName, "elasticsearch.extension.*", map[string]string{
 						"type": "bundle",
 						"name": randomName,
 					}),

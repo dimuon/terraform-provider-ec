@@ -94,7 +94,7 @@ func ElasticsearchSchema() tfsdk.Attribute {
 				Computed:    true,
 			},
 
-			"hot":          ElasticsearchTierSchema("'hot_content' optional topology element"),
+			"hot":          ElasticsearchTierSchema("'hot' optional topology element"),
 			"coordinating": ElasticsearchTierSchema("'coordinating' optional topology element"),
 			"master":       ElasticsearchTierSchema("'master' optional topology element"),
 			"warm":         ElasticsearchTierSchema("'warm' optional topology element"),

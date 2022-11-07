@@ -14,12 +14,12 @@ resource "ec_deployment" "snapshot_source" {
   version                = data.ec_stack.latest.version
   deployment_template_id = local.deployment_template
 
-  elasticsearch = [{
-    topology = [{
-      id   = "hot_content"
+  elasticsearch = {
+    hot = {
       size = "1g"
-    }]
-  }]
+      autoscaling = {}
+    }
+  }
 }
 
 resource "ec_deployment" "snapshot_target" {
@@ -28,14 +28,15 @@ resource "ec_deployment" "snapshot_target" {
   version                = data.ec_stack.latest.version
   deployment_template_id = local.deployment_template
 
-  elasticsearch = [{
+  elasticsearch = {
+
     snapshot_source = [{
       source_elasticsearch_cluster_id = ec_deployment.snapshot_source.elasticsearch.0.resource_id
     }]
 
-    topology = [{
-      id   = "hot_content"
+    hot = {
       size = "1g"
-    }]
-  }]
+      autoscaling = {}
+    }
+  }
 }

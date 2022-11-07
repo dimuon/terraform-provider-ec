@@ -73,10 +73,9 @@ func TestAccDeployment_ccs(t *testing.T) {
 					resource.TestCheckNoResourceAttr(ccsResName, "elasticsearch.hot.node_type_ml"),
 					resource.TestCheckResourceAttrSet(ccsResName, "elasticsearch.hot.node_roles.#"),
 					resource.TestCheckResourceAttr(ccsResName, "elasticsearch.hot.zone_count", "1"),
-					resource.TestCheckResourceAttr(sourceResName, "kibana.%", "0"),
-					resource.TestCheckResourceAttr(sourceResName, "apm.%", "0"),
-					resource.TestCheckResourceAttr(sourceResName, "enterprise_search.%", "0"),
-
+					resource.TestCheckNoResourceAttr(sourceResName, "kibana"),
+					resource.TestCheckNoResourceAttr(sourceResName, "apm"),
+					resource.TestCheckNoResourceAttr(sourceResName, "enterprise_search"),
 					// Source Checks
 
 					resource.TestCheckResourceAttrSet(sourceResName, "elasticsearch.hot.instance_configuration_id"),
@@ -88,9 +87,9 @@ func TestAccDeployment_ccs(t *testing.T) {
 					resource.TestCheckNoResourceAttr(ccsResName, "elasticsearch.hot.node_type_ml"),
 					resource.TestCheckResourceAttrSet(sourceResName, "elasticsearch.hot.node_roles.#"),
 					resource.TestCheckResourceAttr(sourceResName, "elasticsearch.hot.zone_count", "1"),
-					resource.TestCheckResourceAttr(sourceResName, "kibana.%", "0"),
-					resource.TestCheckResourceAttr(sourceResName, "apm.%", "0"),
-					resource.TestCheckResourceAttr(sourceResName, "enterprise_search.%", "0"),
+					resource.TestCheckNoResourceAttr(sourceResName, "kibana"),
+					resource.TestCheckNoResourceAttr(sourceResName, "apm"),
+					resource.TestCheckNoResourceAttr(sourceResName, "enterprise_search"),
 				),
 			},
 			{
@@ -102,7 +101,7 @@ func TestAccDeployment_ccs(t *testing.T) {
 					resource.TestCheckResourceAttr(ccsResName, "elasticsearch.hot.size", "2g"),
 					resource.TestCheckResourceAttr(ccsResName, "elasticsearch.hot.size_resource", "memory"),
 
-					resource.TestCheckResourceAttr(ccsResName, "elasticsearch.0.remote_cluster.#", "0"),
+					resource.TestCheckResourceAttr(ccsResName, "elasticsearch.remote_cluster.#", "0"),
 
 					resource.TestCheckNoResourceAttr(ccsResName, "elasticsearch.hot.node_type_data"),
 					resource.TestCheckNoResourceAttr(ccsResName, "elasticsearch.hot.node_type_ingest"),
