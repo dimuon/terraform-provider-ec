@@ -60,7 +60,7 @@ func TestAccDeployment_basic_tags(t *testing.T) {
 					resource.TestCheckNoResourceAttr(resName, "enterprise_search"),
 
 					// Tags
-					resource.TestCheckResourceAttr(resName, "tags.#", "2"),
+					resource.TestCheckResourceAttr(resName, "tags.%", "2"),
 					resource.TestCheckResourceAttr(resName, "tags.owner", "elastic"),
 					resource.TestCheckResourceAttr(resName, "tags.cost-center", "rnd"),
 				),
@@ -79,7 +79,7 @@ func TestAccDeployment_basic_tags(t *testing.T) {
 					resource.TestCheckNoResourceAttr(resName, "enterprise_search"),
 
 					// Tags
-					resource.TestCheckResourceAttr(resName, "tags.#", "1"),
+					resource.TestCheckResourceAttr(resName, "tags.%", "1"),
 					resource.TestCheckResourceAttr(resName, "tags.owner", "elastic"),
 				),
 			},
@@ -97,7 +97,7 @@ func TestAccDeployment_basic_tags(t *testing.T) {
 					resource.TestCheckNoResourceAttr(resName, "enterprise_search"),
 
 					// Tags
-					resource.TestCheckResourceAttr(resName, "tags.#", "0"),
+					resource.TestCheckResourceAttr(resName, "tags.%", "0"),
 				),
 			},
 			{
@@ -114,7 +114,7 @@ func TestAccDeployment_basic_tags(t *testing.T) {
 					resource.TestCheckNoResourceAttr(resName, "enterprise_search"),
 
 					// Tags
-					resource.TestCheckResourceAttr(resName, "tags.#", "1"),
+					resource.TestCheckResourceAttr(resName, "tags.%", "1"),
 					resource.TestCheckResourceAttr(resName, "tags.new", "tag"),
 				),
 			},

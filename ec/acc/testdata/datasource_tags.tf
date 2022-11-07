@@ -14,13 +14,13 @@ resource "ec_deployment" "tags" {
     "test_id" = "%s"
   }
 
-  elasticsearch = [{
-    topology = [{
-      id         = "hot_content"
+  elasticsearch = {
+    hot = {
       size       = "1g"
       zone_count = 1
-    }]
-  }]
+      autoscaling = {}
+    }
+  }
 }
 
 data "ec_deployment" "tagdata" {
