@@ -43,8 +43,7 @@ func TestAccDeployment_emptyconfig(t *testing.T) {
 			{
 				Config: cfgF(startCfg),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resName, "elasticsearch.#", "1"),
-					resource.TestCheckResourceAttr(resName, "elasticsearch.0.config.#", "0"),
+					resource.TestCheckNoResourceAttr(resName, "elasticsearch.config"),
 				),
 				// Since the configuration specifies a `config {}` block but
 				// the setting itself is `null`, the config {} block will be

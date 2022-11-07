@@ -238,7 +238,7 @@ func (es *ElasticsearchTF) topologiesPayload(ctx context.Context, topologies []*
 	var diags diag.Diagnostics
 
 	diags.Append(topologyPayload(ctx, es.HotContentTier, "hot_content", topologies)...)
-	diags.Append(topologyPayload(ctx, es.CoordinatingTier, "coordinator", topologies)...)
+	diags.Append(topologyPayload(ctx, es.CoordinatingTier, "coordinating", topologies)...)
 	diags.Append(topologyPayload(ctx, es.MasterTier, "master", topologies)...)
 	diags.Append(topologyPayload(ctx, es.WarmTier, "warm", topologies)...)
 	diags.Append(topologyPayload(ctx, es.ColdTier, "cold", topologies)...)

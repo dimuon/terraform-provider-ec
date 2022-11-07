@@ -228,9 +228,7 @@ func MatchEsTopologyID(id string, topologies []*models.ElasticsearchClusterTopol
 		topIDs[i] = "\"" + id + "\""
 	}
 
-	return nil, fmt.Errorf(`invalid id: valid topology IDs are %s`,
-		strings.Join(topIDs, ", "),
-	)
+	return nil, fmt.Errorf(`invalid id ('%s'): valid topology IDs are %s`, id, strings.Join(topIDs, ", "))
 }
 
 func TopologyIDs(topologies []*models.ElasticsearchClusterTopologyElement) []string {
