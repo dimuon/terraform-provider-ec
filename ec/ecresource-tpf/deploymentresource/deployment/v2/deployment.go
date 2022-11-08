@@ -107,35 +107,37 @@ func (dep *Deployment) NullifyNotUsedEsTopologies(ctx context.Context, esPlanObj
 		return nil
 	}
 
-	if esPlan.HotContentTier.IsNull() {
-		dep.Elasticsearch.HotTier = nil
-	}
+	dep.Elasticsearch.HotTier = nullifyNutUsedZeroSizedTier(esPlan.HotContentTier, dep.Elasticsearch.HotTier)
 
-	if esPlan.WarmTier.IsNull() {
-		dep.Elasticsearch.WarmTier = nil
-	}
+	dep.Elasticsearch.WarmTier = nullifyNutUsedZeroSizedTier(esPlan.WarmTier, dep.Elasticsearch.WarmTier)
 
-	if esPlan.ColdTier.IsNull() {
-		dep.Elasticsearch.ColdTier = nil
-	}
+	dep.Elasticsearch.ColdTier = nullifyNutUsedZeroSizedTier(esPlan.ColdTier, dep.Elasticsearch.ColdTier)
 
-	if esPlan.FrozenTier.IsNull() {
-		dep.Elasticsearch.FrozenTier = nil
-	}
+	dep.Elasticsearch.FrozenTier = nullifyNutUsedZeroSizedTier(esPlan.FrozenTier, dep.Elasticsearch.FrozenTier)
 
-	if esPlan.MlTier.IsNull() {
-		dep.Elasticsearch.MlTier = nil
-	}
+	dep.Elasticsearch.MlTier = nullifyNutUsedZeroSizedTier(esPlan.MlTier, dep.Elasticsearch.MlTier)
 
-	if esPlan.MasterTier.IsNull() {
-		dep.Elasticsearch.MasterTier = nil
-	}
+	dep.Elasticsearch.MasterTier = nullifyNutUsedZeroSizedTier(esPlan.MasterTier, dep.Elasticsearch.MasterTier)
 
-	if esPlan.CoordinatingTier.IsNull() {
-		dep.Elasticsearch.CoordinatingTier = nil
-	}
+	dep.Elasticsearch.CoordinatingTier = nullifyNutUsedZeroSizedTier(esPlan.CoordinatingTier, dep.Elasticsearch.CoordinatingTier)
 
 	return nil
+}
+
+func nullifyNutUsedZeroSizedTier(tierPlan types.Object, tier *v2.ElasticsearchTopology) *v2.ElasticsearchTopology {
+
+	if tierPlan.IsNull() && tier != nil {
+
+		size, err := converters.ParseTopologySize(tier.Size, tier.SizeResource)
+
+		// we can ignore returning an error here - it's handled in readers
+		// just be safe
+		if err == nil && size != nil && size.Value != nil && *size.Value == 0 {
+			tier = nil
+		}
+	}
+
+	return tier
 }
 
 func ReadDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteResources, deploymentResources []*models.DeploymentResource) (*Deployment, error) {

@@ -23,7 +23,9 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/kibana/v1"
 	topologyv1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/topology/v1"
+	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/utils"
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
+	"github.com/elastic/terraform-provider-ec/ec/internal/util"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -52,6 +54,10 @@ type Kibana struct {
 }
 
 func ReadKibana(in *models.KibanaResourceInfo) (*Kibana, error) {
+	if util.IsCurrentKibanaPlanEmpty(in) || utils.IsKibanaResourceStopped(in) {
+		return nil, nil
+	}
+
 	var kibana Kibana
 
 	kibana.RefId = in.RefID

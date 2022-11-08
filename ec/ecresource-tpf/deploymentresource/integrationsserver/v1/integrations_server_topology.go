@@ -138,7 +138,7 @@ func IntegrationsServerTopologyPayload(ctx context.Context, planModels []*models
 
 	var diags diag.Diagnostics
 
-	size, err := converters.ParseTopologySize(top.Size, top.SizeResource)
+	size, err := converters.ParseTopologySizeTF(top.Size, top.SizeResource)
 	if err != nil {
 		diags.AddError("parse topology error", err.Error())
 		return nil, diags

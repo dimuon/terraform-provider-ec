@@ -122,7 +122,7 @@ func KibanaTopologyPayload(ctx context.Context, planModels []*models.KibanaClust
 		icID = planModels[index].InstanceConfigurationID
 	}
 
-	size, err := converters.ParseTopologySize(topology.Size, topology.SizeResource)
+	size, err := converters.ParseTopologySizeTF(topology.Size, topology.SizeResource)
 
 	var diags diag.Diagnostics
 	if err != nil {

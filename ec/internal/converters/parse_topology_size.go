@@ -24,22 +24,24 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// parseTopologySize parses a flattened topology into its model.
-func ParseTopologySize(size, sizeResource types.String) (*models.TopologySize, error) {
-	const defaultSizeResource = "memory"
+func ParseTopologySizeTF(size, sizeResource types.String) (*models.TopologySize, error) {
+	return ParseTopologySize(&size.Value, &sizeResource.Value)
+}
 
-	if size.Value == "" {
+func ParseTopologySize(size, sizeResource *string) (*models.TopologySize, error) {
+	if size == nil || *size == "" {
 		return nil, nil
 	}
 
-	val, err := deploymentsize.ParseGb(size.Value)
+	val, err := deploymentsize.ParseGb(*size)
 	if err != nil {
 		return nil, err
 	}
 
-	resource := defaultSizeResource
-	if !sizeResource.IsNull() {
-		resource = sizeResource.Value
+	resource := "memory"
+
+	if sizeResource != nil && *sizeResource != "" {
+		resource = *sizeResource
 	}
 
 	return &models.TopologySize{
