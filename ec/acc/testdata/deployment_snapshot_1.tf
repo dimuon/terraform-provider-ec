@@ -16,7 +16,7 @@ resource "ec_deployment" "snapshot_source" {
 
   elasticsearch = {
     hot = {
-      size = "1g"
+      size        = "1g"
       autoscaling = {}
     }
   }

@@ -15,7 +15,7 @@ resource "ec_deployment" "basic" {
     }
   }
 
-  kibana = {topology = {}}
+  kibana = { topology = {} }
 
   integrations_server = {
     topology = {

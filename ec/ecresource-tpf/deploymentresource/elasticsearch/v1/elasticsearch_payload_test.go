@@ -331,7 +331,7 @@ func Test_writeElasticsearch(t *testing.T) {
 			},
 			diags: func() diag.Diagnostics {
 				var diags diag.Diagnostics
-				diags.AddError("topology matching error", `invalid id: valid topology IDs are "coordinating", "hot_content", "warm", "cold", "master", "ml"`)
+				diags.AddError("topology matching error", `invalid id ('invalid'): valid topology IDs are "coordinating", "hot_content", "warm", "cold", "master", "ml"`)
 				return diags
 			}(),
 		},

@@ -11,10 +11,10 @@ resource "ec_deployment" "ccs" {
 
   elasticsearch = {
     hot = {
-      size = "2g"
+      size        = "2g"
       autoscaling = {}
     }
   }
 
-  kibana = {topology = {}}
+  kibana = { topology = {} }
 }

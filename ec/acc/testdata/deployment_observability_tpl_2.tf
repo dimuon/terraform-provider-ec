@@ -11,12 +11,12 @@ resource "ec_deployment" "observability_tpl" {
 
   elasticsearch = {
     hot = {
-      size = "2g"
+      size        = "2g"
       autoscaling = {}
     }
   }
 
-  kibana = {topology = {}}
+  kibana = { topology = {} }
 
-  apm = {topology = {}}
+  apm = { topology = {} }
 }

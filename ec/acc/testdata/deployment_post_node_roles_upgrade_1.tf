@@ -11,8 +11,8 @@ resource "ec_deployment" "post_nr_upgrade" {
 
   elasticsearch = {
     hot = {
-      size       = "1g"
-      zone_count = 1
+      size        = "1g"
+      zone_count  = 1
       autoscaling = {}
     }
   }

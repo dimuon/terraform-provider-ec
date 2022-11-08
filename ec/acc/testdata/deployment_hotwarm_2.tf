@@ -11,14 +11,14 @@ resource "ec_deployment" "hotwarm" {
 
   elasticsearch = {
     hot = {
-      zone_count = 1
-      size       = "1g"
+      zone_count  = 1
+      size        = "1g"
       autoscaling = {}
     }
 
     warm = {
-      zone_count = 1
-      size       = "2g"
+      zone_count  = 1
+      size        = "2g"
       autoscaling = {}
     }
 

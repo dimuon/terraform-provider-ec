@@ -11,12 +11,12 @@ resource "ec_deployment" "tf_assoc" {
 
   elasticsearch = {
     hot = {
-      size = "1g"
+      size        = "1g"
       autoscaling = {}
     }
   }
 
-  kibana = {topology = {}}
+  kibana = { topology = {} }
 }
 
 resource "ec_deployment_traffic_filter" "tf_assoc" {

@@ -13,14 +13,14 @@ resource "ec_deployment" "autoscaling" {
     autoscale = "false"
 
     cold = {
-      size       = "0g"
-      zone_count = 1
+      size        = "0g"
+      zone_count  = 1
       autoscaling = {}
     },
 
     frozen = {
-      size       = "0g"
-      zone_count = 1
+      size        = "0g"
+      zone_count  = 1
       autoscaling = {}
     },
 

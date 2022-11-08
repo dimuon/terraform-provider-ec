@@ -17,8 +17,8 @@ resource "ec_deployment" "observability" {
     autoscale = "false"
 
     hot = {
-      size       = "1g"
-      zone_count = 1
+      size        = "1g"
+      zone_count  = 1
       autoscaling = {}
     }
   }

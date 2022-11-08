@@ -143,32 +143,32 @@ func ApmSchema() tfsdk.Attribute {
 				},
 			},
 			"resource_id": {
-				Type:     types.StringType,
-				Computed: true,
+				Type:          types.StringType,
+				Computed:      true,
 				PlanModifiers: []tfsdk.AttributePlanModifier{
 					// resource.UseStateForUnknown(),
 					// planmodifier.UseStateForNoChange(),
 				},
 			},
 			"region": {
-				Type:     types.StringType,
-				Computed: true,
+				Type:          types.StringType,
+				Computed:      true,
 				PlanModifiers: []tfsdk.AttributePlanModifier{
 					// resource.UseStateForUnknown(),
 					// planmodifier.UseStateForNoChange(),
 				},
 			},
 			"http_endpoint": {
-				Type:     types.StringType,
-				Computed: true,
+				Type:          types.StringType,
+				Computed:      true,
 				PlanModifiers: []tfsdk.AttributePlanModifier{
 					// resource.UseStateForUnknown(),
 					// planmodifier.UseStateForNoChange(),
 				},
 			},
 			"https_endpoint": {
-				Type:     types.StringType,
-				Computed: true,
+				Type:          types.StringType,
+				Computed:      true,
 				PlanModifiers: []tfsdk.AttributePlanModifier{
 					// resource.UseStateForUnknown(),
 					// planmodifier.UseStateForNoChange(),

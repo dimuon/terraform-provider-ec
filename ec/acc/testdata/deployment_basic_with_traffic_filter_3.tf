@@ -11,16 +11,16 @@ resource "ec_deployment" "basic" {
 
   elasticsearch = {
     hot = {
-      size = "1g"
+      size        = "1g"
       autoscaling = {}
     }
   }
 
-  kibana = {topology = {}}
+  kibana = { topology = {} }
 
-  apm = {topology = {}}
+  apm = { topology = {} }
 
-  enterprise_search = {topology = {}}
+  enterprise_search = { topology = {} }
 
   traffic_filter = [
     ec_deployment_traffic_filter.second.id,

@@ -6,7 +6,7 @@ terraform {
   required_providers {
     ec = {
       source  = "elastic/ec"
-      version = "0.5.0"
+      version = "0.6.0"
     }
   }
 }
@@ -28,23 +28,27 @@ resource "ec_deployment" "example_minimal" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "aws-io-optimized-v2"
 
-  elasticsearch = [{
-    config = [{
+  elasticsearch = {
+
+    hot = {
+      autoscaling = {}
+    }
+    config = {
       user_settings_yaml = file("./es_settings.yaml")
-    }]
-  }]
+    }
+  }
 
-  kibana = [{}]
+  kibana = { topology = {} }
 
-  enterprise_search = [{
-    topology = [{
+  enterprise_search = {
+    topology = {
       zone_count = 1
-    }]
-  }]
+    }
+  }
 
-  apm = [{
-    topology = [{
+  apm = {
+    topology = {
       size = "0.5g"
-    }]
-  }]
+    }
+  }
 }

@@ -11,16 +11,16 @@ resource "ec_deployment" "pre_nr" {
 
   elasticsearch = {
     hot = {
-      size       = "1g"
-      zone_count = 1
+      size        = "1g"
+      zone_count  = 1
       autoscaling = {}
     }
 
     warm = {
-      size       = "2g"
-      zone_count = 1
+      size        = "2g"
+      zone_count  = 1
       autoscaling = {}
     }
-    
+
   }
 }

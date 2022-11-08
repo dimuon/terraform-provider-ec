@@ -35,13 +35,17 @@ resource "ec_deployment" "example_minimal" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "aws-io-optimized-v2"
 
-  elasticsearch = [{}]
+  elasticsearch = {
+    hot = {
+      autoscaling = {}
+    }
+  }
 
-  kibana = [{}]
+  kibana = { topology = {} }
 
-  integrations_server = [{}]
+  integrations_server = { topology = {} }
 
-  enterprise_search = [{}]
+  enterprise_search = { topology = {} }
 }
 ```
 
@@ -58,57 +62,54 @@ resource "ec_deployment" "example_minimal" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "aws-io-optimized-v2"
 
-  elasticsearch = [{
+  elasticsearch = {
 
     autoscale = "true"
 
     # If `autoscale` is set, all topology elements that
     # - either set `size` in the plan or
     # - have non-zero default `max_size` (that is read from the deployment templates's `autoscaling_max` value)
-    # have to be listed in alphabetical order of their `id` fields,
-    # even if their blocks don't specify other fields beside `id`
-    topology = [
-      {
-        id = "cold"
-      },
+    # have to be listed even if their blocks don't specify other fields beside `id`
 
-      {
-        id = "frozen"
-      },
+    cold = {
+      autoscaling = {}
+    }
 
-      {
-        id   = "hot_content"
-        size = "8g"
+    frozen = {
+      autoscaling = {}
+    }
 
-        autoscaling = [{
-          max_size          = "128g"
-          max_size_resource = "memory"
-        }]
-      },
+    hot = {
+      size = "8g"
 
-      {
-        id = "ml"
-      },
+      autoscaling = {
+        max_size          = "128g"
+        max_size_resource = "memory"
+      }
+    }
 
-      {
-        id = "warm"
-      }]
-      
-  }]
+    ml = {
+      autoscaling = {}
+    }
+
+    warm = {
+      autoscaling = {}
+    }
+  }
 
   # Initial size for `hot_content` tier is set to 8g
   # so `hot_content`'s size has to be added to the `ignore_changes` meta-argument to ignore future modifications that can be made by the autoscaler
   lifecycle {
     ignore_changes = [
-      elasticsearch[0].topology[2].size
+      elasticsearch.hot.size
     ]
   }
 
-  kibana = [{}]
+  kibana = { topology = {} }
 
-  integrations_server = [{}]
+  integrations_server = { topology = {} }
 
-  enterprise_search = [{}]
+  enterprise_search = { topology = {} }
 }
 ```
 
@@ -129,22 +130,26 @@ resource "ec_deployment" "example_observability" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "aws-io-optimized-v2"
 
-  elasticsearch = [{}]
+  elasticsearch = {
+    hot = {
+      autoscaling = {}
+    }
+  }
 
-  kibana = [{}]
+  kibana = { topology = {} }
 
   # Optional observability settings
-  observability = [{
+  observability = {
     deployment_id = ec_deployment.example_minimal.id
-  }]
+  }
 }
 ```
 
 It is possible to enable observability without using a second deployment, by storing the observability data in the current deployment. To enable this, set `deployment_id` to `self`.
 ```hcl
-observability = [{
+observability = {
   deployment_id = "self"
-}]
+}
 ```
 
 ### With Cross Cluster Search settings
@@ -162,12 +167,12 @@ resource "ec_deployment" "source_deployment" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "aws-io-optimized-v2"
 
-  elasticsearch = [{
-    topology = [{
-      id   = "hot_content"
-      size = "1g"
-    }]
-  }]
+  elasticsearch = {
+    hot = {
+      size        = "1g"
+      autoscaling = {}
+    }
+  }
 }
 
 resource "ec_deployment" "ccs" {
@@ -177,15 +182,18 @@ resource "ec_deployment" "ccs" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "aws-cross-cluster-search-v2"
 
-  elasticsearch = [{
+  elasticsearch = {
+    hot = {
+      autoscalign = {}
+    }
     remote_cluster = [{
       deployment_id = ec_deployment.source_deployment.id
       alias         = ec_deployment.source_deployment.name
       ref_id        = ec_deployment.source_deployment.elasticsearch.0.ref_id
     }]
-  }]
+  }
 
-  kibana = [{}]
+  kibana = { topology = {} }
 }
 ```
 
@@ -206,7 +214,11 @@ resource "ec_deployment" "with_tags" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "aws-io-optimized-v2"
 
-  elasticsearch = [{}]
+  elasticsearch = {
+    hot = {
+      autoscaling = {}
+    }
+  }
 
   tags = {
     owner     = "elastic cloud"
@@ -232,11 +244,14 @@ resource "ec_deployment" "with_tags" {
   version                = data.ec_stack.latest.version
   deployment_template_id = "aws-io-optimized-v2"
 
-  elasticsearch = [{
+  elasticsearch = {
+    hot = {
+      autoscaling = {}
+    }
     strategy = [{
       type = "rolling_all"
     }]
-  }]
+  }
 
   tags = {
     owner     = "elastic cloud"

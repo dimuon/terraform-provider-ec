@@ -14,8 +14,8 @@ resource "ec_deployment" "emptyconfig" {
       user_settings_yaml = null
     }
     hot = {
-      size       = "1g"
-      zone_count = 1
+      size        = "1g"
+      zone_count  = 1
       autoscaling = {}
     }
   }

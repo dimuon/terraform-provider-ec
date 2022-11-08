@@ -11,8 +11,8 @@ resource "ec_deployment" "basic_observability" {
 
   elasticsearch = {
     hot = {
-      size       = "1g"
-      zone_count = 1
+      size        = "1g"
+      zone_count  = 1
       autoscaling = {}
     }
   }
@@ -27,17 +27,17 @@ resource "ec_deployment" "basic_datasource" {
 
   elasticsearch = {
     hot = {
-      size       = "1g"
-      zone_count = 1
+      size        = "1g"
+      zone_count  = 1
       autoscaling = {}
     }
   }
 
-  kibana = {topology = {}}
+  kibana = { topology = {} }
 
-  apm = {topology = {}}
+  apm = { topology = {} }
 
-  enterprise_search = {topology = {}}
+  enterprise_search = { topology = {} }
 
   observability = {
     deployment_id = ec_deployment.basic_observability.id

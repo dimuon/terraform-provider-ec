@@ -11,8 +11,8 @@ resource "ec_deployment" "basic" {
 
   elasticsearch = {
     hot = {
-      size       = "1g"
-      zone_count = 1
+      size        = "1g"
+      zone_count  = 1
       autoscaling = {}
     }
   }
@@ -26,8 +26,8 @@ resource "ec_deployment" "observability" {
 
   elasticsearch = {
     hot = {
-      size       = "1g"
-      zone_count = 1
+      size        = "1g"
+      zone_count  = 1
       autoscaling = {}
     }
   }

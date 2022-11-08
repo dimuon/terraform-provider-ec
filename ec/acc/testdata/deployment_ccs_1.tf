@@ -13,7 +13,7 @@ resource "ec_deployment" "ccs" {
     hot = {
       autoscaling = {}
     }
-    
+
     "remote_cluster" = [for source_css in ec_deployment.source_ccs :
       {
         deployment_id = source_css.id
@@ -39,8 +39,8 @@ resource "ec_deployment" "source_ccs" {
 
   elasticsearch = {
     hot = {
-      zone_count = 1
-      size       = "1g"
+      zone_count  = 1
+      size        = "1g"
       autoscaling = {}
     }
   }

@@ -11,8 +11,8 @@ resource "ec_deployment" "keystore" {
 
   elasticsearch = {
     hot = {
-      size       = "1g"
-      zone_count = 1
+      size        = "1g"
+      zone_count  = 1
       autoscaling = {}
     }
   }

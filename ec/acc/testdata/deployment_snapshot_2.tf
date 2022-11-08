@@ -16,7 +16,7 @@ resource "ec_deployment" "snapshot_source" {
 
   elasticsearch = {
     hot = {
-      size = "1g"
+      size        = "1g"
       autoscaling = {}
     }
   }
@@ -35,7 +35,7 @@ resource "ec_deployment" "snapshot_target" {
     }]
 
     hot = {
-      size = "1g"
+      size        = "1g"
       autoscaling = {}
     }
   }

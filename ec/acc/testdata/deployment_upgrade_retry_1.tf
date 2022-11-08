@@ -16,12 +16,12 @@ resource "ec_deployment" "upgrade_retry" {
 
   elasticsearch = {
     topology = {
-      id         = "hot_content"
-      size       = "1g"
-      zone_count = 1
+      id          = "hot_content"
+      size        = "1g"
+      zone_count  = 1
       autoscaling = {}
     }
   }
 
-  kibana = {topology = {}}
+  kibana = { topology = {} }
 }

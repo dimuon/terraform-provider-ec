@@ -21,8 +21,8 @@ resource "ec_deployment" "docker_image" {
     }
 
     hot = {
-      size       = "1g"
-      zone_count = 1
+      size        = "1g"
+      zone_count  = 1
       autoscaling = {}
     }
   }

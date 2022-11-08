@@ -11,12 +11,12 @@ resource "ec_deployment" "enterprise_search" {
 
   elasticsearch = {
     hot = {
-      size = "2g"
+      size        = "2g"
       autoscaling = {}
     }
   }
 
-  kibana = {topology = {}}
+  kibana = { topology = {} }
 
-  enterprise_search = {topology = {}}
+  enterprise_search = { topology = {} }
 }

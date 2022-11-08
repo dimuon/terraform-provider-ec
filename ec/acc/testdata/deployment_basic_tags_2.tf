@@ -11,7 +11,7 @@ resource "ec_deployment" "tags" {
 
   elasticsearch = {
     hot = {
-      size = "2g"
+      size        = "2g"
       autoscaling = {}
     }
   }
