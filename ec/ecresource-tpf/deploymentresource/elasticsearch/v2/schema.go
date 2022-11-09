@@ -94,13 +94,13 @@ func ElasticsearchSchema() tfsdk.Attribute {
 				Computed:    true,
 			},
 
-			"hot":          ElasticsearchTierSchema("'hot' optional topology element"),
-			"coordinating": ElasticsearchTierSchema("'coordinating' optional topology element"),
-			"master":       ElasticsearchTierSchema("'master' optional topology element"),
-			"warm":         ElasticsearchTierSchema("'warm' optional topology element"),
-			"cold":         ElasticsearchTierSchema("'cold' optional topology element"),
-			"frozen":       ElasticsearchTierSchema("'frozen' optional topology element"),
-			"ml":           ElasticsearchTierSchema("'ml' optional topology element"),
+			"hot":          ElasticsearchTierSchema("'hot' optional topology element", true),
+			"coordinating": ElasticsearchTierSchema("'coordinating' optional topology element", false),
+			"master":       ElasticsearchTierSchema("'master' optional topology element", false),
+			"warm":         ElasticsearchTierSchema("'warm' optional topology element", false),
+			"cold":         ElasticsearchTierSchema("'cold' optional topology element", false),
+			"frozen":       ElasticsearchTierSchema("'frozen' optional topology element", false),
+			"ml":           ElasticsearchTierSchema("'ml' optional topology element", false),
 
 			"trust_account": ElasticsearchTrustAccountSchema(),
 
@@ -119,11 +119,6 @@ func ElasticsearchSchema() tfsdk.Attribute {
 				Type:        types.StringType,
 				Optional:    true,
 				Validators:  []tfsdk.AttributeValidator{validators.OneOf(strategiesList)},
-				// TODO
-				// changes on this setting do not change the plan.
-				// DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-				// 	return true
-				// },
 			},
 		}),
 	}
@@ -175,8 +170,9 @@ func ElasticsearchConfigSchema() tfsdk.Attribute {
 func ElasticsearchTopologyAutoscalingSchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: "Optional Elasticsearch autoscaling settings, such a maximum and minimum size and resources.",
-		Optional:    true,
+		// Optional:    true,
 		// Computed:    true,
+		Required: true,
 		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
 			"max_size_resource": {
 				Description: "Maximum resource type for the maximum autoscaling setting.",
@@ -421,11 +417,12 @@ func ElasticsearchTopologyConfigSchema() tfsdk.Attribute {
 	}
 }
 
-func ElasticsearchTierSchema(description string) tfsdk.Attribute {
+func ElasticsearchTierSchema(description string, required bool) tfsdk.Attribute {
 	return tfsdk.Attribute{
-		Optional: true,
+		Optional: !required,
 		// it should be Computed but Computed triggers TF weird behaviour that leads to unempty plan for zero change config
 		// Computed:    true,
+		Required:    required,
 		Description: description,
 		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
 			"instance_configuration_id": {

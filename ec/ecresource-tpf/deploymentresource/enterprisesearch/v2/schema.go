@@ -77,8 +77,9 @@ func EnterpriseSearchSchema() tfsdk.Attribute {
 			},
 			"topology": {
 				Description: "Optional topology attribute",
-				Optional:    true,
+				// Optional:    true,
 				// Computed:    true,
+				Required: true,
 				PlanModifiers: []tfsdk.AttributePlanModifier{
 					resource.UseStateForUnknown(),
 				},
