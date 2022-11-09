@@ -49,8 +49,9 @@ func Test_createDeploymentWithEmptyFields(t *testing.T) {
 			version = "8.4.3"
 
 			elasticsearch = {
-				hot_content_tier = {
+				hot = {
 					size = "8g"
+					autoscaling = {}
 				}
 			}
 		}`,
