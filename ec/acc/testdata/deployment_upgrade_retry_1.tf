@@ -16,8 +16,8 @@ resource "ec_deployment" "upgrade_retry" {
 
   elasticsearch = {
     config = {}
-    topology = {
-      id          = "hot_content"
+
+    hot = {
       size        = "1g"
       zone_count  = 1
       autoscaling = {}
