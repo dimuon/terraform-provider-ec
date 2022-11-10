@@ -26,6 +26,7 @@ resource "ec_deployment" "observability" {
   deployment_template_id = "%s"
 
   elasticsearch = {
+    config = {}
     hot = {
       size        = "1g"
       zone_count  = 1

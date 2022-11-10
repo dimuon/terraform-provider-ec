@@ -26,7 +26,7 @@ golangci-lint: deps
 .PHONY: terrafmt
 terrafmt:
 	@ echo "-> Checking that the terraform docs codeblocks are formatted..."
-	@ find ./docs -type f -name "*.md" -exec $(GOBIN)/terrafmt diff -c -q {} \;
+	@ find ./docs -type f -name "*.md" -exec $(GOBIN)/terrafmt diff {} \;
 
 ## Validates all the terraform example files found in examples/
 validate-examples:
