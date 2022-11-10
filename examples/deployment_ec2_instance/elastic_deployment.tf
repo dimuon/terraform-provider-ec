@@ -17,6 +17,7 @@ resource "ec_deployment" "deployment" {
 
   # Note the deployment will contain Elasticsearch and Kibana resources with default configurations.
   elasticsearch = {
+    config = {}
     hot = {
       autoscaling = {}
     }
