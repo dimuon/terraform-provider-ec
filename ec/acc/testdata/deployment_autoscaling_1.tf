@@ -10,6 +10,8 @@ resource "ec_deployment" "autoscaling" {
   deployment_template_id = "%s"
 
   elasticsearch = {
+    config = {}
+    
     autoscale = "true"
 
     cold = {

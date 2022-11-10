@@ -31,8 +31,8 @@ import (
 
 	apmv2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/apm/v2"
 	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/deployment/v1"
+	elasticsearchv1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/elasticsearch/v1"
 	elasticsearchv2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/elasticsearch/v2"
-	v2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/elasticsearch/v2"
 	enterprisesearchv2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/enterprisesearch/v2"
 	integrationsserverv2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/integrationsserver/v2"
 	kibanav2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/kibana/v2"
@@ -93,17 +93,17 @@ func (dep *Deployment) NullifyNotUsedEsTopologies(ctx context.Context, esPlanObj
 		return nil
 	}
 
-	var esPlan *v2.ElasticsearchTF
+	if dep.Elasticsearch == nil {
+		return nil
+	}
+
+	var esPlan *elasticsearchv2.ElasticsearchTF
 
 	if diags := tfsdk.ValueAs(ctx, esPlanObj, &esPlan); diags.HasError() {
 		return diags
 	}
 
 	if esPlan == nil {
-		return nil
-	}
-
-	if dep.Elasticsearch == nil {
 		return nil
 	}
 
@@ -124,7 +124,7 @@ func (dep *Deployment) NullifyNotUsedEsTopologies(ctx context.Context, esPlanObj
 	return nil
 }
 
-func nullifyNutUsedZeroSizedTier(tierPlan types.Object, tier *v2.ElasticsearchTopology) *v2.ElasticsearchTopology {
+func nullifyNutUsedZeroSizedTier(tierPlan types.Object, tier *elasticsearchv2.ElasticsearchTopology) *elasticsearchv2.ElasticsearchTopology {
 
 	if tierPlan.IsNull() && tier != nil {
 
@@ -138,6 +138,42 @@ func nullifyNutUsedZeroSizedTier(tierPlan types.Object, tier *v2.ElasticsearchTo
 	}
 
 	return tier
+}
+
+// Nullify Elasticsearch topologies that are not specified in plan
+// TODO: do it only for topologies that have zero size in response
+func (dep *Deployment) UsePlanForEmptyESConfig(ctx context.Context, esPlanObj types.Object) diag.Diagnostics {
+	if esPlanObj.IsNull() || esPlanObj.IsUnknown() {
+		return nil
+	}
+
+	if dep.Elasticsearch == nil {
+		return nil
+	}
+
+	var esPlan *elasticsearchv2.ElasticsearchTF
+
+	if diags := tfsdk.ValueAs(ctx, esPlanObj, &esPlan); diags.HasError() {
+		return diags
+	}
+
+	if esPlan == nil {
+		return nil
+	}
+
+	if !esPlan.Config.IsNull() && dep.Elasticsearch.Config == nil {
+		var cfg *elasticsearchv1.ElasticsearchConfig
+
+		if diags := tfsdk.ValueAs(ctx, esPlan.Config, &cfg); diags.HasError() {
+			return diags
+		}
+
+		// Config doesn't have computed attributes so we can reuse config value from plan
+		// Otherwise it's not possible - state cannot have unknown values (that can be a case for a computed attribute)
+		dep.Elasticsearch.Config = cfg
+	}
+
+	return nil
 }
 
 func ReadDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteResources, deploymentResources []*models.DeploymentResource) (*Deployment, error) {
@@ -615,7 +651,7 @@ func HandleRemoteClusters(ctx context.Context, client *api.API, deploymentId str
 }
 
 func ElasticsearchRemoteClustersPayload(ctx context.Context, client *api.API, deploymentId string, esObj types.Object) (*models.RemoteResources, string, diag.Diagnostics) {
-	var es *v2.ElasticsearchTF
+	var es *elasticsearchv2.ElasticsearchTF
 
 	diags := tfsdk.ValueAs(ctx, esObj, &es)
 

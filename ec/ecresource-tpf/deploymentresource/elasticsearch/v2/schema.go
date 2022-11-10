@@ -127,7 +127,7 @@ func ElasticsearchSchema() tfsdk.Attribute {
 func ElasticsearchConfigSchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: `Optional Elasticsearch settings which will be applied to all topologies unless overridden on the topology element`,
-		Optional:    true,
+		Required:    true,
 		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
 			// TODO
 			// DiffSuppressFunc: suppressMissingOptionalConfigurationBlock,

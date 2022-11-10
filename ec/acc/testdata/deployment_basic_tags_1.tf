@@ -10,6 +10,7 @@ resource "ec_deployment" "tags" {
   deployment_template_id = "%s"
 
   elasticsearch = {
+    config = {}
     hot = {
       size        = "2g"
       autoscaling = {}

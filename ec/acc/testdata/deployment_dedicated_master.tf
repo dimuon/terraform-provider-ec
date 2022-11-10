@@ -10,6 +10,7 @@ resource "ec_deployment" "dedicated_master" {
   deployment_template_id = "%s"
 
   elasticsearch = {
+    config = {}
     cold = {
       zone_count  = 1
       size        = "2g"

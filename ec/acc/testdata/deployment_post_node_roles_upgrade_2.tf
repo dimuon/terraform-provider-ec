@@ -10,6 +10,7 @@ resource "ec_deployment" "post_nr_upgrade" {
   deployment_template_id = "%s"
 
   elasticsearch = {
+    config = {}
     hot = {
       size        = "1g"
       zone_count  = 1

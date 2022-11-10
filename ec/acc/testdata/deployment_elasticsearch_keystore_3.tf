@@ -10,6 +10,7 @@ resource "ec_deployment" "keystore" {
   deployment_template_id = "%s"
 
   elasticsearch = {
+    config = {}
     hot = {
       size        = "1g"
       zone_count  = 1

@@ -14,6 +14,8 @@ resource "ec_deployment" "observability" {
   }
 
   elasticsearch = {
+    config = {}
+    
     autoscale = "false"
 
     hot = {

@@ -15,6 +15,7 @@ resource "ec_deployment" "upgrade_retry" {
   deployment_template_id = local.deployment_template
 
   elasticsearch = {
+    config = {}
     topology = {
       id          = "hot_content"
       size        = "1g"

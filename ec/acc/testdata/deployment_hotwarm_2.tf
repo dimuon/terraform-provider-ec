@@ -10,6 +10,7 @@ resource "ec_deployment" "hotwarm" {
   deployment_template_id = "%s"
 
   elasticsearch = {
+    config = {}
     hot = {
       zone_count  = 1
       size        = "1g"

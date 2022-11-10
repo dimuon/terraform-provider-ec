@@ -10,6 +10,7 @@ resource "ec_deployment" "compute_optimized" {
   deployment_template_id = "%s"
 
   elasticsearch = {
+    config = {}
     hot = {
       autoscaling = {}
     }
