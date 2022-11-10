@@ -12,7 +12,7 @@ resource "ec_deployment" "basic" {
   elasticsearch = {
 
     config = {}
-    
+
     hot = {
       size        = "1g"
       autoscaling = {}

@@ -11,7 +11,7 @@ resource "ec_deployment" "autoscaling" {
 
   elasticsearch = {
     config = {}
-    
+
     autoscale = "false"
 
     cold = {
