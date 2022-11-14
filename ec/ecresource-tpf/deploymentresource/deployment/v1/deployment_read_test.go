@@ -517,6 +517,7 @@ func Test_readDeployment(t *testing.T) {
 						CloudID:       ec.String("up2d:somecloudID"),
 						HttpEndpoint:  ec.String("http://1238f19957874af69306787dca662154.eastus2.azure.elastic-cloud.com:9200"),
 						HttpsEndpoint: ec.String("https://1238f19957874af69306787dca662154.eastus2.azure.elastic-cloud.com:9243"),
+						Config:        elasticsearchv1.ElasticsearchConfigs{{}},
 						Topology: elasticsearchv1.ElasticsearchTopologies{
 							{
 								Id:                      "hot_content",
@@ -589,6 +590,7 @@ func Test_readDeployment(t *testing.T) {
 						CloudID:       ec.String("up2d:someCloudID"),
 						HttpEndpoint:  ec.String("http://1239f7ee7196439ba2d105319ac5eba7.eu-central-1.aws.cloud.es.io:9200"),
 						HttpsEndpoint: ec.String("https://1239f7ee7196439ba2d105319ac5eba7.eu-central-1.aws.cloud.es.io:9243"),
+						Config:        elasticsearchv1.ElasticsearchConfigs{{}},
 						Topology: elasticsearchv1.ElasticsearchTopologies{
 							{
 								Id:                      "hot_content",
@@ -663,6 +665,7 @@ func Test_readDeployment(t *testing.T) {
 						CloudID:       ec.String("up2d:someCloudID"),
 						HttpEndpoint:  ec.String("http://1239f7ee7196439ba2d105319ac5eba7.eu-central-1.aws.cloud.es.io:9200"),
 						HttpsEndpoint: ec.String("https://1239f7ee7196439ba2d105319ac5eba7.eu-central-1.aws.cloud.es.io:9243"),
+						Config:        elasticsearchv1.ElasticsearchConfigs{{}},
 						Topology: elasticsearchv1.ElasticsearchTopologies{
 							{
 								Id:                      "hot_content",
@@ -820,6 +823,7 @@ func Test_readDeployment(t *testing.T) {
 					{
 						RefId:  ec.String("main-elasticsearch"),
 						Region: ec.String("aws-eu-central-1"),
+						Config: elasticsearchv1.ElasticsearchConfigs{{}},
 						Topology: elasticsearchv1.ElasticsearchTopologies{
 							{
 								Id:           "hot_content",
@@ -905,6 +909,7 @@ func Test_readDeployment(t *testing.T) {
 					{
 						RefId:  ec.String("main-elasticsearch"),
 						Region: ec.String("aws-eu-central-1"),
+						Config: elasticsearchv1.ElasticsearchConfigs{{}},
 						Topology: elasticsearchv1.ElasticsearchTopologies{
 							{
 								Id:           "hot_content",
@@ -1165,6 +1170,7 @@ func Test_readDeployment(t *testing.T) {
 						CloudID:       ec.String("up2d:someCloudID"),
 						HttpEndpoint:  ec.String("http://1239f7ee7196439ba2d105319ac5eba7.eu-central-1.aws.cloud.es.io:9200"),
 						HttpsEndpoint: ec.String("https://1239f7ee7196439ba2d105319ac5eba7.eu-central-1.aws.cloud.es.io:9243"),
+						Config:        elasticsearchv1.ElasticsearchConfigs{{}},
 						Topology: elasticsearchv1.ElasticsearchTopologies{
 							{
 								Id:                      "hot_content",
@@ -1237,6 +1243,7 @@ func Test_readDeployment(t *testing.T) {
 						CloudID:       ec.String("up2d:someCloudID"),
 						HttpEndpoint:  ec.String("http://123695e76d914005bf90b717e668ad4b.asia-east1.gcp.elastic-cloud.com:9200"),
 						HttpsEndpoint: ec.String("https://123695e76d914005bf90b717e668ad4b.asia-east1.gcp.elastic-cloud.com:9243"),
+						Config:        elasticsearchv1.ElasticsearchConfigs{{}},
 						Topology: elasticsearchv1.ElasticsearchTopologies{
 							{
 								Id:                      "hot_content",
@@ -1309,6 +1316,7 @@ func Test_readDeployment(t *testing.T) {
 						CloudID:       ec.String("up2d:someCloudID"),
 						HttpEndpoint:  ec.String("http://123695e76d914005bf90b717e668ad4b.asia-east1.gcp.elastic-cloud.com:9200"),
 						HttpsEndpoint: ec.String("https://123695e76d914005bf90b717e668ad4b.asia-east1.gcp.elastic-cloud.com:9243"),
+						Config:        elasticsearchv1.ElasticsearchConfigs{{}},
 						Topology: elasticsearchv1.ElasticsearchTopologies{
 							{
 								Id:                      "hot_content",
@@ -1406,6 +1414,7 @@ func Test_readDeployment(t *testing.T) {
 						CloudID:       ec.String("up2d-hot-warm:someCloudID"),
 						HttpEndpoint:  ec.String("http://123e837db6ee4391bb74887be35a7a91.us-central1.gcp.cloud.es.io:9200"),
 						HttpsEndpoint: ec.String("https://123e837db6ee4391bb74887be35a7a91.us-central1.gcp.cloud.es.io:9243"),
+						Config:        elasticsearchv1.ElasticsearchConfigs{{}},
 						Topology: elasticsearchv1.ElasticsearchTopologies{
 							{
 								Id:                      "hot_content",
@@ -1488,6 +1497,7 @@ func Test_readDeployment(t *testing.T) {
 						CloudID:       ec.String("up2d-hot-warm:someCloudID"),
 						HttpEndpoint:  ec.String("http://123e837db6ee4391bb74887be35a7a91.us-central1.gcp.cloud.es.io:9200"),
 						HttpsEndpoint: ec.String("https://123e837db6ee4391bb74887be35a7a91.us-central1.gcp.cloud.es.io:9243"),
+						Config:        elasticsearchv1.ElasticsearchConfigs{{}},
 						Topology: elasticsearchv1.ElasticsearchTopologies{
 							{
 								Id:                      "hot_content",
@@ -1588,6 +1598,7 @@ func Test_readDeployment(t *testing.T) {
 						CloudID:       ec.String("ccs:someCloudID"),
 						HttpEndpoint:  ec.String("http://1230b3ae633b4f51a432d50971f7f1c1.eu-west-1.aws.found.io:9200"),
 						HttpsEndpoint: ec.String("https://1230b3ae633b4f51a432d50971f7f1c1.eu-west-1.aws.found.io:9243"),
+						Config:        elasticsearchv1.ElasticsearchConfigs{{}},
 						RemoteCluster: elasticsearchv1.ElasticsearchRemoteClusters{
 							{
 								Alias:           ec.String("alias"),
