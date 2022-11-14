@@ -147,10 +147,6 @@ func (r *Resource) read(ctx context.Context, id string, state *deploymentv2.Depl
 		return nil, diags
 	}
 
-	if diags := deployment.UsePlanForEmptyESConfig(ctx, plan.Elasticsearch); diags.HasError() {
-		return nil, diags
-	}
-
 	var deploymentTF deploymentv2.DeploymentTF
 
 	schema, diags := r.GetSchema(ctx)
