@@ -135,6 +135,8 @@ resource "ec_deployment" "defaults" {
   deployment_template_id = "aws-io-optimized-v2"
 
   elasticsearch = {
+    config = {}
+
     hot = {
       autoscaling = {}
     }
@@ -177,12 +179,15 @@ has to be converted to
 
 ```
   elasticsearch = {
+    config = {}
+
     hot = {
       size = "1g"
       autoscaling = {
         max_size = "8g"
       }
     }
+
     warm = {
       size = "2g"
       autoscaling = {
@@ -203,6 +208,8 @@ resource "ec_deployment" "defaults" {
   deployment_template_id = "aws-io-optimized-v2"
 
   elasticsearch = {
+    config = {}
+
     hot = {
       autoscaling = {}
     }
@@ -210,10 +217,10 @@ resource "ec_deployment" "defaults" {
 }
 ```
 
-Please note that the configuration explicitly mentions `hot` tier and the tier has `autoscaling` attribute even despite the fact that they are empty. If they were omitted, TF (at least up to version 1.3.3) could complain about something like `Error: Provider produced inconsistent result after apply`.
+Please note that the configuration explicitly mentions `hot` tier and the tier has `autoscaling` and `config` attributes even despite the fact that they are empty. If they were omitted, TF (at least up to version 1.3.3) could complain `Error: Provider produced inconsistent result after apply`.
 
 - a lot of attributes that used to be collections (e.g. lists and sets) are converted to sigletons, e.g. `elasticsearch`, `apm`, `kibana`, `enterpris_esearch`, `observability`, `topology`, `config`, `autoscaling`, etc. Please note that, generally, users are not expected to make any change to their existing configuration to address this particular change (besides moving from block to attribute syntax). All these components used to exist in single instances, so the change is mostly syntactical, taking into account the switch to attributes instead of blocks (otherwise if we kept list for configs,  `config {}` had to be rewritten in `config = [{}]` with the move to the attribute syntax). However this change is a breaking one from the schema perspective and requires state upgrade for existing resources that is performed by TF (by calling the provider's API).
 
 - [`strategy` attribute](https://registry.terraform.io/providers/elastic/ec/latest/docs/resources/ec_deployment#strategy) is converted to string with the same set of values that was used for its `type` attribute previously;
 
-- switching to TF protocol 6. From user perspective it should not require any change in their configurations.
+- switching to TF protocol 6. From user perspective it should not require any change in their existing configurations.
