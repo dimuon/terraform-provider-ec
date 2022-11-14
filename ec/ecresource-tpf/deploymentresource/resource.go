@@ -20,18 +20,20 @@ package deploymentresource
 import (
 	"context"
 
-	"github.com/elastic/cloud-sdk-go/pkg/api"
-	v2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/deployment/v2"
-	"github.com/elastic/terraform-provider-ec/ec/internal"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+
+	"github.com/elastic/cloud-sdk-go/pkg/api"
+	v2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/deployment/v2"
+	"github.com/elastic/terraform-provider-ec/ec/internal"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
 // var _ tpfprovider.ResourceType = DeploymentResourceType{}
 var _ resource.ResourceWithImportState = &Resource{}
+var _ resource.ResourceWithUpgradeState = &Resource{}
 
 type Resource struct {
 	client *api.API
