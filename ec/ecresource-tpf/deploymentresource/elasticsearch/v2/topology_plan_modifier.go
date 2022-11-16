@@ -24,17 +24,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// Use `self` as value of `observability`'s `deployment_id` attribute
-func UseStateForUnknownIfTemplateSame() tfsdk.AttributePlanModifier {
-	return useStateForUnknownIfTemplateSame{}
+func UseTierStateForUnknown(tier string) tfsdk.AttributePlanModifier {
+	return useTierState{tier: tier}
 }
 
-type useStateForUnknownIfTemplateSame struct{}
+type useTierState struct {
+	tier string
+}
 
-func (r useStateForUnknownIfTemplateSame) Modify(ctx context.Context, req tfsdk.ModifyAttributePlanRequest, resp *tfsdk.ModifyAttributePlanResponse) {
+func (m useTierState) Modify(ctx context.Context, req tfsdk.ModifyAttributePlanRequest, resp *tfsdk.ModifyAttributePlanResponse) {
 	if req.AttributeState == nil || resp.AttributePlan == nil || req.AttributeConfig == nil {
 		return
 	}
@@ -48,13 +48,23 @@ func (r useStateForUnknownIfTemplateSame) Modify(ctx context.Context, req tfsdk.
 		return
 	}
 
-	if req.AttributeState.IsNull() {
+	// we check tier's state instead of tier attribute's state because nil can be a valid state
+	// e.g. `aws-io-optimized-v2` template doesn't specify `autoscaling_min` for `hot_content` so `min_size` state is nil
+	tierStateDefined, diags := attributeStateDefined(ctx, path.Root("elasticsearch").AtName(m.tier), req)
+
+	resp.Diagnostics.Append(diags...)
+
+	if diags.HasError() {
 		return
 	}
 
-	templateChanged, diags := isAttributeChanged(ctx, path.Root("deployment_template_id"), req)
+	if !tierStateDefined {
+		return
+	}
 
-	resp.Diagnostics = append(resp.Diagnostics, diags...)
+	templateChanged, diags := attributeChanged(ctx, path.Root("deployment_template_id"), req)
+
+	resp.Diagnostics.Append(diags...)
 
 	if diags.HasError() {
 		return
@@ -67,24 +77,22 @@ func (r useStateForUnknownIfTemplateSame) Modify(ctx context.Context, req tfsdk.
 	resp.AttributePlan = req.AttributeState
 }
 
-// Description returns a human-readable description of the plan modifier.
-func (r useStateForUnknownIfTemplateSame) Description(ctx context.Context) string {
-	return "Calculate node type value based on current state and `node_roles`'s value."
+func (r useTierState) Description(ctx context.Context) string {
+	return "Use tier's state if it's defined and template is the same."
 }
 
-// MarkdownDescription returns a markdown description of the plan modifier.
-func (r useStateForUnknownIfTemplateSame) MarkdownDescription(ctx context.Context) string {
-	return "Calculate node type value based on current state and `node_roles`'s value."
+func (r useTierState) MarkdownDescription(ctx context.Context) string {
+	return "Use tier's state if it's defined and template is the same."
 }
 
-func isAttributeChanged[V terraformValue](ctx context.Context, p path.Path, req tfsdk.ModifyAttributePlanRequest) (bool, diag.Diagnostics) {
-	var planValue V
+func attributeChanged(ctx context.Context, p path.Path, req tfsdk.ModifyAttributePlanRequest) (bool, diag.Diagnostics) {
+	var planValue attr.Value
 
 	if diags := req.Plan.GetAttribute(ctx, p, &planValue); diags.HasError() {
 		return false, diags
 	}
 
-	var stateValue V
+	var stateValue attr.Value
 
 	if diags := req.State.GetAttribute(ctx, p, &stateValue); diags.HasError() {
 		return false, diags
@@ -93,7 +101,12 @@ func isAttributeChanged[V terraformValue](ctx context.Context, p path.Path, req 
 	return !planValue.Equal(stateValue), nil
 }
 
-type terraformValue interface {
-	types.String
-	attr.Value
+func attributeStateDefined(ctx context.Context, p path.Path, req tfsdk.ModifyAttributePlanRequest) (bool, diag.Diagnostics) {
+	var val attr.Value
+
+	if diags := req.State.GetAttribute(ctx, p, &val); diags.HasError() {
+		return false, diags
+	}
+
+	return !val.IsNull() && !val.IsUnknown(), nil
 }
