@@ -440,7 +440,7 @@ func ElasticsearchTierSchema(description string, required bool, tierName string)
 				Computed:    true,
 				Optional:    true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					UseTierStateForUnknown(tierName),
+					resource.UseStateForUnknown(),
 				},
 			},
 			"size_resource": {
