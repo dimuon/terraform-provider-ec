@@ -43,7 +43,7 @@ resource "ec_deployment" "example_minimal" {
 
   kibana = { topology = {} }
 
-  integrations_server = { topology = {} }
+  integrations_server = {}
 
   enterprise_search = {}
 }
@@ -107,7 +107,7 @@ resource "ec_deployment" "example_minimal" {
 
   kibana = { topology = {} }
 
-  integrations_server = { topology = {} }
+  integrations_server = {}
 
   enterprise_search = {}
 }

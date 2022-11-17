@@ -18,8 +18,6 @@ resource "ec_deployment" "basic" {
   kibana = { topology = {} }
 
   integrations_server = {
-    topology = {
-      zone_count = 2
-    }
+    zone_count = 2
   }
 }

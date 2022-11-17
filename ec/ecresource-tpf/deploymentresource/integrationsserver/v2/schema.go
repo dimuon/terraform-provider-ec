@@ -75,50 +75,39 @@ func IntegrationsServerSchema() tfsdk.Attribute {
 					resource.UseStateForUnknown(),
 				},
 			},
-			"topology": {
-				Description: "Optional topology attribute",
-				// Optional:    true,
-				// Computed:    true,
-				Required: true,
-				PlanModifiers: []tfsdk.AttributePlanModifier{
+			"instance_configuration_id": {
+				Type:     types.StringType,
+				Optional: true,
+				Computed: true,
+				PlanModifiers: tfsdk.AttributePlanModifiers{
 					resource.UseStateForUnknown(),
 				},
-				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
-					"instance_configuration_id": {
-						Type:     types.StringType,
-						Optional: true,
-						Computed: true,
-						PlanModifiers: tfsdk.AttributePlanModifiers{
-							resource.UseStateForUnknown(),
-						},
-					},
-					"size": {
-						Type:     types.StringType,
-						Computed: true,
-						Optional: true,
-						PlanModifiers: tfsdk.AttributePlanModifiers{
-							resource.UseStateForUnknown(),
-						},
-					},
-					"size_resource": {
-						Type:        types.StringType,
-						Description: `Optional size type, defaults to "memory".`,
-						Optional:    true,
-						Computed:    true,
-						PlanModifiers: []tfsdk.AttributePlanModifier{
-							planmodifier.DefaultValue(types.String{Value: "memory"}),
-							resource.UseStateForUnknown(),
-						},
-					},
-					"zone_count": {
-						Type:     types.Int64Type,
-						Computed: true,
-						Optional: true,
-						PlanModifiers: tfsdk.AttributePlanModifiers{
-							resource.UseStateForUnknown(),
-						},
-					},
-				}),
+			},
+			"size": {
+				Type:     types.StringType,
+				Computed: true,
+				Optional: true,
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
+			},
+			"size_resource": {
+				Type:        types.StringType,
+				Description: `Optional size type, defaults to "memory".`,
+				Optional:    true,
+				Computed:    true,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					planmodifier.DefaultValue(types.String{Value: "memory"}),
+					resource.UseStateForUnknown(),
+				},
+			},
+			"zone_count": {
+				Type:     types.Int64Type,
+				Computed: true,
+				Optional: true,
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
 			},
 			"config": {
 				Description: `Optionally define the IntegrationsServer configuration options for the IntegrationsServer Server`,

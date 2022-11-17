@@ -44,6 +44,7 @@ type Topology struct {
 type Topologies []Topology
 
 func (topology TopologyTF) ApmTopologyPayload(ctx context.Context, planModels []*models.ApmTopologyElement, index int) (*models.ApmTopologyElement, diag.Diagnostics) {
+
 	icID := topology.InstanceConfigurationId.Value
 
 	// When a topology element is set but no instance_configuration_id
@@ -86,6 +87,54 @@ func matchApmTopology(id string, topologies []*models.ApmTopologyElement) (*mode
 	}
 	return nil, fmt.Errorf(
 		`apm topology: invalid instance_configuration_id: "%s" doesn't match any of the deployment template instance configurations`,
+		id,
+	)
+}
+
+func (topology TopologyTF) IntegrationsServerTopologyPayload(ctx context.Context, planModels []*models.IntegrationsServerTopologyElement, index int) (*models.IntegrationsServerTopologyElement, diag.Diagnostics) {
+
+	icID := topology.InstanceConfigurationId.Value
+
+	// When a topology element is set but no instance_configuration_id
+	// is set, then obtain the instance_configuration_id from the topology
+	// element.
+	if icID == "" && index < len(planModels) {
+		icID = planModels[index].InstanceConfigurationID
+	}
+
+	var diags diag.Diagnostics
+
+	size, err := converters.ParseTopologySizeTF(topology.Size, topology.SizeResource)
+	if err != nil {
+		diags.AddError("parse topology error", err.Error())
+		return nil, diags
+	}
+
+	elem, err := matchIntegrationsServerTopology(icID, planModels)
+	if err != nil {
+		diags.AddError("integrations_server topology payload error", err.Error())
+		return nil, diags
+	}
+
+	if size != nil {
+		elem.Size = size
+	}
+
+	if topology.ZoneCount.Value > 0 {
+		elem.ZoneCount = int32(topology.ZoneCount.Value)
+	}
+
+	return elem, nil
+}
+
+func matchIntegrationsServerTopology(id string, topologies []*models.IntegrationsServerTopologyElement) (*models.IntegrationsServerTopologyElement, error) {
+	for _, t := range topologies {
+		if t.InstanceConfigurationID == id {
+			return t, nil
+		}
+	}
+	return nil, fmt.Errorf(
+		`invalid instance_configuration_id: "%s" doesn't match any of the deployment template instance configurations`,
 		id,
 	)
 }
