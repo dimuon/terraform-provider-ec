@@ -161,7 +161,7 @@ func ApmSchema() tfsdk.Attribute {
 					resource.UseStateForUnknown(),
 				},
 			},
-			"config":   ApmConfigSchema(),
+			"config": ApmConfigSchema(),
 		}),
 	}
 }

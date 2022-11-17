@@ -33,7 +33,7 @@ resource "ec_deployment" "basic" {
       debug_enabled      = true
       user_settings_json = jsonencode({ "apm-server.rum.enabled" = true })
     }
-    
+
     instance_configuration_id = "%s"
   }
 
