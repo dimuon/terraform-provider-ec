@@ -45,7 +45,7 @@ resource "ec_deployment" "example_minimal" {
 
   integrations_server = { topology = {} }
 
-  enterprise_search = { topology = {} }
+  enterprise_search = {}
 }
 ```
 
@@ -109,7 +109,7 @@ resource "ec_deployment" "example_minimal" {
 
   integrations_server = { topology = {} }
 
-  enterprise_search = { topology = {} }
+  enterprise_search = {}
 }
 ```
 

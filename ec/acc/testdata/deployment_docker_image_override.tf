@@ -44,8 +44,7 @@ resource "ec_deployment" "docker_image" {
     config = {
       docker_image = "docker.elastic.co/cloud-ci/enterprise-search:7.15.0-SNAPSHOT"
     }
-    topology = {
-      zone_count = 1
-    }
+
+    zone_count = 1
   }
 }

@@ -41,8 +41,7 @@ resource "ec_deployment" "basic" {
     config = {
       user_settings_yaml = "# comment"
     }
-    topology = {
-      instance_configuration_id = "%s"
-    }
+
+    instance_configuration_id = "%s"
   }
 }

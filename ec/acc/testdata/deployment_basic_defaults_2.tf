@@ -26,8 +26,6 @@ resource "ec_deployment" "defaults" {
   }
 
   enterprise_search = {
-    topology = {
-      zone_count = 1
-    }
+    zone_count = 1
   }
 }

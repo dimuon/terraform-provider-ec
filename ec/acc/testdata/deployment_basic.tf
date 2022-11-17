@@ -28,8 +28,6 @@ resource "ec_deployment" "basic" {
   }
 
   enterprise_search = {
-    topology = {
-      instance_configuration_id = "%s"
-    }
+    instance_configuration_id = "%s"
   }
 }

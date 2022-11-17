@@ -17,5 +17,5 @@ resource "ec_deployment" "enterprise_search" {
 
   kibana = { topology = {} }
 
-  enterprise_search = { topology = {} }
+  enterprise_search = {}
 }
