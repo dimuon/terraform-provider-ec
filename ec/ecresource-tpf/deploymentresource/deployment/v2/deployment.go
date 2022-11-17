@@ -558,27 +558,6 @@ func (plan DeploymentTF) legacyToNodeRoles(ctx context.Context, curState Deploym
 		return false, diags
 	}
 
-	// When any topology elements in the state have the node_type_*
-	// properties set, the node_role field cannot be used, since
-	// we'd be changing the version AND migrating over `node_role`s
-	// which is not permitted by the API.
-
-	for _, obj := range []types.Object{es.HotContentTier, es.CoordinatingTier, es.MasterTier, es.WarmTier, es.ColdTier, es.FrozenTier, es.MlTier} {
-		if obj.IsNull() || obj.IsUnknown() {
-			continue
-		}
-
-		topology, diags := elasticsearchv2.ObjectToTopology(ctx, obj)
-
-		if diags.HasError() {
-			return false, diags
-		}
-
-		if topology.HasNodeType() {
-			return false, nil
-		}
-	}
-
 	return true, nil
 }
 
