@@ -382,42 +382,6 @@ func ElasticsearchTrustExternalSchema() tfsdk.Attribute {
 	}
 }
 
-func ElasticsearchTopologyConfigSchema() tfsdk.Attribute {
-	return tfsdk.Attribute{
-		Description: `Computed read-only configuration to avoid unsetting plan settings from 'topology.elasticsearch'`,
-		Computed:    true,
-		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
-			"plugins": {
-				Type: types.SetType{
-					ElemType: types.StringType,
-				},
-				Description: "List of Elasticsearch supported plugins, which vary from version to version. Check the Stack Pack version to see which plugins are supported for each version. This is currently only available from the UI and [ecctl](https://www.elastic.co/guide/en/ecctl/master/ecctl_stack_list.html)",
-				Computed:    true,
-			},
-			"user_settings_json": {
-				Type:        types.StringType,
-				Description: `JSON-formatted user level "elasticsearch.yml" setting overrides`,
-				Computed:    true,
-			},
-			"user_settings_override_json": {
-				Type:        types.StringType,
-				Description: `JSON-formatted admin (ECE) level "elasticsearch.yml" setting overrides`,
-				Computed:    true,
-			},
-			"user_settings_yaml": {
-				Type:        types.StringType,
-				Description: `YAML-formatted user level "elasticsearch.yml" setting overrides`,
-				Computed:    true,
-			},
-			"user_settings_override_yaml": {
-				Type:        types.StringType,
-				Description: `YAML-formatted admin (ECE) level "elasticsearch.yml" setting overrides`,
-				Computed:    true,
-			},
-		}),
-	}
-}
-
 func ElasticsearchTierSchema(description string, required bool, tierName string) tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Optional: !required,
@@ -509,7 +473,6 @@ func ElasticsearchTierSchema(description string, required bool, tierName string)
 				// },
 			},
 			"autoscaling": ElasticsearchTopologyAutoscalingSchema(tierName),
-			"config":      ElasticsearchTopologyConfigSchema(),
 		}),
 	}
 }

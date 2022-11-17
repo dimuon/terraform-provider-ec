@@ -10,8 +10,6 @@ resource "ec_deployment" "basic" {
   deployment_template_id = "%s"
 
   elasticsearch = {
-
-    config = {}
     hot = {
       size        = "1g"
       autoscaling = {}

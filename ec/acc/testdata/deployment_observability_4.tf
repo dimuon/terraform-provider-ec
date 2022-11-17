@@ -10,8 +10,6 @@ resource "ec_deployment" "basic" {
   deployment_template_id = "%s"
 
   elasticsearch = {
-    config = {}
-
     hot = {
       size        = "1g"
       zone_count  = 1
@@ -27,8 +25,6 @@ resource "ec_deployment" "observability" {
   deployment_template_id = "%s"
 
   elasticsearch = {
-    config = {}
-
     hot = {
       size        = "1g"
       zone_count  = 1

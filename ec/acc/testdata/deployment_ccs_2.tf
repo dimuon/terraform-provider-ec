@@ -10,7 +10,6 @@ resource "ec_deployment" "ccs" {
   deployment_template_id = "%s"
 
   elasticsearch = {
-    config = {}
     hot = {
       size        = "2g"
       autoscaling = {}

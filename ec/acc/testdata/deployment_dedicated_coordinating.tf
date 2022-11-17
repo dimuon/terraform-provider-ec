@@ -10,7 +10,6 @@ resource "ec_deployment" "dedicated_coordinating" {
   deployment_template_id = "%s"
 
   elasticsearch = {
-    config = {}
     coordinating = {
       zone_count  = 2
       size        = "1g"

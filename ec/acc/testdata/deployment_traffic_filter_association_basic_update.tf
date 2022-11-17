@@ -10,7 +10,6 @@ resource "ec_deployment" "tf_assoc" {
   deployment_template_id = "%s"
 
   elasticsearch = {
-    config = {}
     hot = {
       size        = "1g"
       autoscaling = {}

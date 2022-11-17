@@ -15,7 +15,6 @@ resource "ec_deployment" "tags" {
   }
 
   elasticsearch = {
-    config = {}
     hot = {
       size        = "1g"
       zone_count  = 1

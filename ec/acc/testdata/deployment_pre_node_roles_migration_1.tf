@@ -10,7 +10,6 @@ resource "ec_deployment" "pre_nr" {
   deployment_template_id = "%s"
 
   elasticsearch = {
-    config = {}
     hot = {
       size        = "1g"
       zone_count  = 1

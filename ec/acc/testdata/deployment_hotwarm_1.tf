@@ -10,7 +10,6 @@ resource "ec_deployment" "hotwarm" {
   deployment_template_id = "%s"
 
   elasticsearch = {
-    config = {}
     hot = {
       autoscaling = {}
     }
