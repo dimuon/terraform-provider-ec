@@ -47,8 +47,6 @@ resource "ec_deployment" "example_minimal" {
   }
 
   apm = {
-    topology = {
-      size = "0.5g"
-    }
+    size = "0.5g"
   }
 }

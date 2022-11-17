@@ -18,5 +18,5 @@ resource "ec_deployment" "security" {
 
   kibana = { topology = {} }
 
-  apm = { topology = {} }
+  apm = {}
 }

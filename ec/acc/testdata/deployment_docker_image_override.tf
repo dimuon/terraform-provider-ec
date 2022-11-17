@@ -38,7 +38,6 @@ resource "ec_deployment" "docker_image" {
     config = {
       docker_image = "docker.elastic.co/cloud-ci/apm:7.15.0-SNAPSHOT"
     }
-    topology = {}
   }
 
   enterprise_search = {

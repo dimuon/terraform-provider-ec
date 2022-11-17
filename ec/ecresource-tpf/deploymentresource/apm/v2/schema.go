@@ -24,54 +24,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func ApmTopologySchema() tfsdk.Attribute {
-	return tfsdk.Attribute{
-		Description: "Optional topology attribute",
-		// Optional:    true,
-		// Computed:    true,
-		Required: true,
-		PlanModifiers: []tfsdk.AttributePlanModifier{
-			resource.UseStateForUnknown(),
-		},
-		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
-			"instance_configuration_id": {
-				Type:     types.StringType,
-				Optional: true,
-				Computed: true,
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					resource.UseStateForUnknown(),
-				},
-			},
-			"size": {
-				Type:     types.StringType,
-				Computed: true,
-				Optional: true,
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					resource.UseStateForUnknown(),
-				},
-			},
-			"size_resource": {
-				Type:        types.StringType,
-				Description: `Optional size type, defaults to "memory".`,
-				Optional:    true,
-				Computed:    true,
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					planmodifier.DefaultValue(types.String{Value: "memory"}),
-					resource.UseStateForUnknown(),
-				},
-			},
-			"zone_count": {
-				Type:     types.Int64Type,
-				Computed: true,
-				Optional: true,
-				PlanModifiers: []tfsdk.AttributePlanModifier{
-					resource.UseStateForUnknown(),
-				},
-			},
-		}),
-	}
-}
-
 func ApmConfigSchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		Description: `Optionally define the Apm configuration options for the APM Server`,
@@ -175,7 +127,40 @@ func ApmSchema() tfsdk.Attribute {
 					// planmodifier.UseStateForNoChange(),
 				},
 			},
-			"topology": ApmTopologySchema(),
+			"instance_configuration_id": {
+				Type:     types.StringType,
+				Optional: true,
+				Computed: true,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					resource.UseStateForUnknown(),
+				},
+			},
+			"size": {
+				Type:     types.StringType,
+				Computed: true,
+				Optional: true,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					resource.UseStateForUnknown(),
+				},
+			},
+			"size_resource": {
+				Type:        types.StringType,
+				Description: `Optional size type, defaults to "memory".`,
+				Optional:    true,
+				Computed:    true,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					planmodifier.DefaultValue(types.String{Value: "memory"}),
+					resource.UseStateForUnknown(),
+				},
+			},
+			"zone_count": {
+				Type:     types.Int64Type,
+				Computed: true,
+				Optional: true,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					resource.UseStateForUnknown(),
+				},
+			},
 			"config":   ApmConfigSchema(),
 		}),
 	}

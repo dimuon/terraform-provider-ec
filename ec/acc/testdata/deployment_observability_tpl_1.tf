@@ -17,5 +17,5 @@ resource "ec_deployment" "observability_tpl" {
 
   kibana = { topology = {} }
 
-  apm = { topology = {} }
+  apm = {}
 }

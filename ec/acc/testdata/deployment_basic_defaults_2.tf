@@ -22,9 +22,7 @@ resource "ec_deployment" "defaults" {
   }
 
   apm = {
-    topology = {
-      size = "1g"
-    }
+    size = "1g"
   }
 
   enterprise_search = {

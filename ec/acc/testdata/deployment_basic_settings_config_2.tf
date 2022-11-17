@@ -33,9 +33,8 @@ resource "ec_deployment" "basic" {
       debug_enabled      = true
       user_settings_json = jsonencode({ "apm-server.rum.enabled" = true })
     }
-    topology = {
-      instance_configuration_id = "%s"
-    }
+    
+    instance_configuration_id = "%s"
   }
 
   enterprise_search = {

@@ -24,9 +24,7 @@ resource "ec_deployment" "basic" {
   }
 
   apm = {
-    topology = {
-      instance_configuration_id = "%s"
-    }
+    instance_configuration_id = "%s"
   }
 
   enterprise_search = {

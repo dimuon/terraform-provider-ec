@@ -35,7 +35,7 @@ resource "ec_deployment" "basic_datasource" {
 
   kibana = { topology = {} }
 
-  apm = { topology = {} }
+  apm = {}
 
   enterprise_search = { topology = {} }
 
