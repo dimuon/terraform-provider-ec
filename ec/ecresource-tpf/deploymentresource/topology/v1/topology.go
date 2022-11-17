@@ -138,3 +138,51 @@ func matchIntegrationsServerTopology(id string, topologies []*models.Integration
 		id,
 	)
 }
+
+func (topology TopologyTF) KibanaTopologyPayload(ctx context.Context, planModels []*models.KibanaClusterTopologyElement, index int) (*models.KibanaClusterTopologyElement, diag.Diagnostics) {
+
+	icID := topology.InstanceConfigurationId.Value
+
+	// When a topology element is set but no instance_configuration_id
+	// is set, then obtain the instance_configuration_id from the topology
+	// element.
+	if icID == "" && index < len(planModels) {
+		icID = planModels[index].InstanceConfigurationID
+	}
+
+	size, err := converters.ParseTopologySizeTF(topology.Size, topology.SizeResource)
+
+	var diags diag.Diagnostics
+	if err != nil {
+		diags.AddError("size parsing error", err.Error())
+		return nil, diags
+	}
+
+	elem, err := matchKibanaTopology(icID, planModels)
+	if err != nil {
+		diags.AddError("kibana topology payload error", err.Error())
+		return nil, diags
+	}
+
+	if size != nil {
+		elem.Size = size
+	}
+
+	if topology.ZoneCount.Value > 0 {
+		elem.ZoneCount = int32(topology.ZoneCount.Value)
+	}
+
+	return elem, nil
+}
+
+func matchKibanaTopology(id string, topologies []*models.KibanaClusterTopologyElement) (*models.KibanaClusterTopologyElement, error) {
+	for _, t := range topologies {
+		if t.InstanceConfigurationID == id {
+			return t, nil
+		}
+	}
+	return nil, fmt.Errorf(
+		`kibana topology: invalid instance_configuration_id: "%s" doesn't match any of the deployment template instance configurations`,
+		id,
+	)
+}

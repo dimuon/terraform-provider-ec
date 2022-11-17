@@ -38,7 +38,7 @@ resource "ec_deployment" "example_minimal" {
     }
   }
 
-  kibana = { topology = {} }
+  kibana = {}
 
   enterprise_search = {
     zone_count = 1

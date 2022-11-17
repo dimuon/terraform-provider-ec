@@ -75,50 +75,39 @@ func KibanaSchema() tfsdk.Attribute {
 					resource.UseStateForUnknown(),
 				},
 			},
-			"topology": {
-				Description: `Optional topology element`,
-				// Optional:    true,
-				// Computed:    true,
-				Required: true,
+			"instance_configuration_id": {
+				Type:     types.StringType,
+				Optional: true,
+				Computed: true,
 				PlanModifiers: []tfsdk.AttributePlanModifier{
 					resource.UseStateForUnknown(),
 				},
-				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
-					"instance_configuration_id": {
-						Type:     types.StringType,
-						Optional: true,
-						Computed: true,
-						PlanModifiers: []tfsdk.AttributePlanModifier{
-							resource.UseStateForUnknown(),
-						},
-					},
-					"size": {
-						Type:     types.StringType,
-						Computed: true,
-						Optional: true,
-						PlanModifiers: []tfsdk.AttributePlanModifier{
-							resource.UseStateForUnknown(),
-						},
-					},
-					"size_resource": {
-						Type:        types.StringType,
-						Description: `Optional size type, defaults to "memory".`,
-						PlanModifiers: []tfsdk.AttributePlanModifier{
-							planmodifier.DefaultValue(types.String{Value: "memory"}),
-							resource.UseStateForUnknown(),
-						},
-						Computed: true,
-						Optional: true,
-					},
-					"zone_count": {
-						Type:     types.Int64Type,
-						Computed: true,
-						Optional: true,
-						PlanModifiers: []tfsdk.AttributePlanModifier{
-							resource.UseStateForUnknown(),
-						},
-					},
-				}),
+			},
+			"size": {
+				Type:     types.StringType,
+				Computed: true,
+				Optional: true,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					resource.UseStateForUnknown(),
+				},
+			},
+			"size_resource": {
+				Type:        types.StringType,
+				Description: `Optional size type, defaults to "memory".`,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					planmodifier.DefaultValue(types.String{Value: "memory"}),
+					resource.UseStateForUnknown(),
+				},
+				Computed: true,
+				Optional: true,
+			},
+			"zone_count": {
+				Type:     types.Int64Type,
+				Computed: true,
+				Optional: true,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					resource.UseStateForUnknown(),
+				},
 			},
 			"config": {
 				Optional: true,

@@ -23,9 +23,8 @@ resource "ec_deployment" "basic" {
     config = {
       user_settings_yaml = "csp.warnLegacyBrowsers: true"
     }
-    topology = {
-      instance_configuration_id = "%s"
-    }
+
+    instance_configuration_id = "%s"
   }
 
   apm = {

@@ -33,7 +33,7 @@ resource "ec_deployment" "basic_datasource" {
     }
   }
 
-  kibana = { topology = {} }
+  kibana = {}
 
   apm = {}
 

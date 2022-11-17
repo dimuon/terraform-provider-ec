@@ -22,5 +22,5 @@ resource "ec_deployment" "upgrade_retry" {
     }
   }
 
-  kibana = { topology = {} }
+  kibana = {}
 }

@@ -16,7 +16,7 @@ resource "ec_deployment" "basic" {
     }
   }
 
-  kibana = { topology = {} }
+  kibana = {}
 
   apm = {}
 

@@ -23,7 +23,7 @@ resource "ec_deployment" "deployment" {
     }
   }
 
-  kibana = { topology = {} }
+  kibana = {}
 }
 
 # Create a traffic filter to allow the instance's public IP address to access our deployment.

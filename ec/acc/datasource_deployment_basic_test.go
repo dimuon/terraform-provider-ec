@@ -70,10 +70,10 @@ func TestAccDatasourceDeployment_basic(t *testing.T) {
 					resource.TestCheckResourceAttrPair(datasourceName, "kibana.0.resource_id", resourceName, "kibana.resource_id"),
 					resource.TestCheckResourceAttrPair(datasourceName, "kibana.0.http_endpoint_id", resourceName, "kibana.http_endpoint_id"),
 					resource.TestCheckResourceAttrPair(datasourceName, "kibana.0.https_endpoint_id", resourceName, "kibana.https_endpoint_id"),
-					resource.TestCheckResourceAttrPair(datasourceName, "kibana.0.topology.0.instance_configuration_id", resourceName, "kibana.topology.instance_configuration_id"),
-					resource.TestCheckResourceAttrPair(datasourceName, "kibana.0.topology.0.size", resourceName, "kibana.topology.size"),
-					resource.TestCheckResourceAttrPair(datasourceName, "kibana.0.topology.0.size_resource", resourceName, "kibana.topology.size_resource"),
-					resource.TestCheckResourceAttrPair(datasourceName, "kibana.0.topology.0.zone_count", resourceName, "kibana.topology.zone_count"),
+					resource.TestCheckResourceAttrPair(datasourceName, "kibana.0.topology.0.instance_configuration_id", resourceName, "kibana.instance_configuration_id"),
+					resource.TestCheckResourceAttrPair(datasourceName, "kibana.0.topology.0.size", resourceName, "kibana.size"),
+					resource.TestCheckResourceAttrPair(datasourceName, "kibana.0.topology.0.size_resource", resourceName, "kibana.size_resource"),
+					resource.TestCheckResourceAttrPair(datasourceName, "kibana.0.topology.0.zone_count", resourceName, "kibana.zone_count"),
 
 					// APM
 					resource.TestCheckResourceAttrPair(datasourceName, "apm.0.elasticsearch_cluster_ref_id", resourceName, "apm.elasticsearch_cluster_ref_id"),

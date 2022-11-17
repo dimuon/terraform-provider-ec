@@ -23,9 +23,7 @@ resource "ec_deployment" "example_minimal" {
   }
 
   kibana = {
-    topology = {
-      size = "1g"
-    }
+    size = "1g"
   }
 }
 

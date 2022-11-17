@@ -16,7 +16,7 @@ resource "ec_deployment" "tf_assoc" {
     }
   }
 
-  kibana = { topology = {} }
+  kibana = {}
 }
 
 resource "ec_deployment_traffic_filter" "tf_assoc" {

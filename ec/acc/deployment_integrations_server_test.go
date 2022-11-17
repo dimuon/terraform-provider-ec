@@ -41,7 +41,7 @@ func TestAccDeployment_integrationsServer(t *testing.T) {
 				// Create an Integrations Server deployment with the default settings.
 				Config: cfg,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resName, "kibana.topology.zone_count", "1"),
+					resource.TestCheckResourceAttr(resName, "kibana.zone_count", "1"),
 					resource.TestCheckResourceAttr(resName, "integrations_server.zone_count", "1"),
 					resource.TestCheckResourceAttrSet(resName, "integrations_server.instance_configuration_id"),
 					resource.TestCheckResourceAttr(resName, "integrations_server.size", "1g"),
@@ -52,7 +52,7 @@ func TestAccDeployment_integrationsServer(t *testing.T) {
 				// Change the Integrations Server topology (increase zone count to 2).
 				Config: secondConfigCfg,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resName, "kibana.topology.zone_count", "1"),
+					resource.TestCheckResourceAttr(resName, "kibana.zone_count", "1"),
 					resource.TestCheckResourceAttr(resName, "integrations_server.zone_count", "2"),
 					resource.TestCheckResourceAttrSet(resName, "integrations_server.instance_configuration_id"),
 					resource.TestCheckResourceAttr(resName, "integrations_server.size", "1g"),

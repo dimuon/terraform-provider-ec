@@ -16,9 +16,7 @@ resource "ec_deployment" "defaults" {
   }
 
   kibana = {
-    topology = {
-      size = "2g"
-    }
+    size = "2g"
   }
 
   apm = {

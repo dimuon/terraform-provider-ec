@@ -24,9 +24,7 @@ resource "ec_deployment" "observability" {
   }
 
   kibana = {
-    topology = {
-      size       = "1g"
-      zone_count = 1
-    }
+    size       = "1g"
+    zone_count = 1
   }
 }

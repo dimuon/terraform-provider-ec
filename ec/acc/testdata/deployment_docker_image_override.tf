@@ -31,7 +31,6 @@ resource "ec_deployment" "docker_image" {
     config = {
       docker_image = "docker.elastic.co/cloud-ci/kibana:7.15.0-SNAPSHOT"
     }
-    topology = {}
   }
 
   apm = {

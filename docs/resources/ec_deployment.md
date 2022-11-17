@@ -41,7 +41,7 @@ resource "ec_deployment" "example_minimal" {
     }
   }
 
-  kibana = { topology = {} }
+  kibana = {}
 
   integrations_server = {}
 
@@ -105,7 +105,7 @@ resource "ec_deployment" "example_minimal" {
     ]
   }
 
-  kibana = { topology = {} }
+  kibana = {}
 
   integrations_server = {}
 
@@ -136,7 +136,7 @@ resource "ec_deployment" "example_observability" {
     }
   }
 
-  kibana = { topology = {} }
+  kibana = {}
 
   # Optional observability settings
   observability = {
@@ -193,7 +193,7 @@ resource "ec_deployment" "ccs" {
     }]
   }
 
-  kibana = { topology = {} }
+  kibana = {}
 }
 ```
 
@@ -421,11 +421,6 @@ The optional `kibana` block supports the following arguments:
 * `elasticsearch_cluster_ref_id` - (Optional) This field references the `ref_id` of the deployment Elasticsearch cluster. The default value `main-elasticsearch` is recommended.
 * `ref_id` - (Optional) Can be set on the Kibana resource. The default value `main-kibana` is recommended.
 * `config` (Optional) Kibana settings applied to all topologies unless overridden in the `topology` element.
-
-##### Topology
-
-The optional `kibana.topology` block supports the following arguments:
-
 * `instance_configuration_id` - (Optional) Default instance configuration of the deployment template. No need to change this value since Kibana has only one _instance type_.
 * `size` - (Optional) Amount of memory (RAM) per topology element in the "<size in GB>g" notation. When omitted, it defaults to the deployment template value.
 * `size_resource` - (Optional) Type of resource to which the size is assigned. Defaults to `"memory"`.
