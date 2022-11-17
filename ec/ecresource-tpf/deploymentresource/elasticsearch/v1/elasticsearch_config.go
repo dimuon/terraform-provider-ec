@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"reflect"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
@@ -49,6 +50,10 @@ type ElasticsearchConfig struct {
 }
 
 type ElasticsearchConfigs []ElasticsearchConfig
+
+func (c *ElasticsearchConfig) IsEmpty() bool {
+	return c == nil || reflect.ValueOf(*c).IsZero()
+}
 
 func ElasticsearchConfigsPayload(ctx context.Context, cfgList types.List, model *models.ElasticsearchConfiguration) (*models.ElasticsearchConfiguration, diag.Diagnostics) {
 	if cfgList.IsNull() || cfgList.IsUnknown() || len(cfgList.Elems) == 0 {
