@@ -395,7 +395,7 @@ func ElasticsearchTierSchema(description string, required bool, tierName string)
 				Description: `Computed Instance Configuration ID of the topology element`,
 				Computed:    true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
+					UseTierStateForUnknown(tierName),
 				},
 			},
 			"size": {
@@ -404,7 +404,7 @@ func ElasticsearchTierSchema(description string, required bool, tierName string)
 				Computed:    true,
 				Optional:    true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
+					UseTierStateForUnknown(tierName),
 				},
 			},
 			"size_resource": {
@@ -414,7 +414,7 @@ func ElasticsearchTierSchema(description string, required bool, tierName string)
 				Computed:    true,
 				PlanModifiers: []tfsdk.AttributePlanModifier{
 					planmodifier.DefaultValue(types.String{Value: "memory"}),
-					resource.UseStateForUnknown(),
+					UseTierStateForUnknown(tierName),
 				},
 			},
 			"zone_count": {
@@ -424,6 +424,7 @@ func ElasticsearchTierSchema(description string, required bool, tierName string)
 				Optional:    true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
 					resource.UseStateForUnknown(),
+					UseTierStateForUnknown(tierName),
 				},
 			},
 			"node_type_data": {
