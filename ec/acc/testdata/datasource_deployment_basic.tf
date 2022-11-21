@@ -33,11 +33,11 @@ resource "ec_deployment" "basic_datasource" {
     }
   }
 
-  kibana = { topology = {} }
+  kibana = {}
 
-  apm = { topology = {} }
+  apm = {}
 
-  enterprise_search = { topology = {} }
+  enterprise_search = {}
 
   observability = {
     deployment_id = ec_deployment.basic_observability.id

@@ -75,71 +75,60 @@ func EnterpriseSearchSchema() tfsdk.Attribute {
 					resource.UseStateForUnknown(),
 				},
 			},
-			"topology": {
-				Description: "Optional topology attribute",
-				// Optional:    true,
-				// Computed:    true,
-				Required: true,
+			"instance_configuration_id": {
+				Type:     types.StringType,
+				Optional: true,
+				Computed: true,
 				PlanModifiers: []tfsdk.AttributePlanModifier{
 					resource.UseStateForUnknown(),
 				},
-				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
-					"instance_configuration_id": {
-						Type:     types.StringType,
-						Optional: true,
-						Computed: true,
-						PlanModifiers: []tfsdk.AttributePlanModifier{
-							resource.UseStateForUnknown(),
-						},
-					},
-					"size": {
-						Type:     types.StringType,
-						Computed: true,
-						Optional: true,
-						PlanModifiers: []tfsdk.AttributePlanModifier{
-							resource.UseStateForUnknown(),
-						},
-					},
-					"size_resource": {
-						Type:        types.StringType,
-						Description: `Optional size type, defaults to "memory".`,
-						Optional:    true,
-						Computed:    true,
-						PlanModifiers: []tfsdk.AttributePlanModifier{
-							planmodifier.DefaultValue(types.String{Value: "memory"}),
-							resource.UseStateForUnknown(),
-						},
-					},
-					"zone_count": {
-						Type:     types.Int64Type,
-						Computed: true,
-						Optional: true,
-						PlanModifiers: []tfsdk.AttributePlanModifier{
-							resource.UseStateForUnknown(),
-						},
-					},
-					"node_type_appserver": {
-						Type:     types.BoolType,
-						Computed: true,
-						PlanModifiers: []tfsdk.AttributePlanModifier{
-							resource.UseStateForUnknown(),
-						},
-					},
-					"node_type_connector": {
-						Type:     types.BoolType,
-						Computed: true,
-						PlanModifiers: []tfsdk.AttributePlanModifier{
-							resource.UseStateForUnknown(),
-						},
-					},
-					"node_type_worker": {
-						Type:     types.BoolType,
-						Computed: true,
-						PlanModifiers: []tfsdk.AttributePlanModifier{
-							resource.UseStateForUnknown(),
-						},
-					},
-				}),
+			},
+			"size": {
+				Type:     types.StringType,
+				Computed: true,
+				Optional: true,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					resource.UseStateForUnknown(),
+				},
+			},
+			"size_resource": {
+				Type:        types.StringType,
+				Description: `Optional size type, defaults to "memory".`,
+				Optional:    true,
+				Computed:    true,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					planmodifier.DefaultValue(types.String{Value: "memory"}),
+					resource.UseStateForUnknown(),
+				},
+			},
+			"zone_count": {
+				Type:     types.Int64Type,
+				Computed: true,
+				Optional: true,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					resource.UseStateForUnknown(),
+				},
+			},
+			"node_type_appserver": {
+				Type:     types.BoolType,
+				Computed: true,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					resource.UseStateForUnknown(),
+				},
+			},
+			"node_type_connector": {
+				Type:     types.BoolType,
+				Computed: true,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					resource.UseStateForUnknown(),
+				},
+			},
+			"node_type_worker": {
+				Type:     types.BoolType,
+				Computed: true,
+				PlanModifiers: []tfsdk.AttributePlanModifier{
+					resource.UseStateForUnknown(),
+				},
 			},
 			"config": {
 				Description: `Optionally define the Enterprise Search configuration options for the Enterprise Search Server`,

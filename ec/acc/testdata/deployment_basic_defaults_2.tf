@@ -16,20 +16,14 @@ resource "ec_deployment" "defaults" {
   }
 
   kibana = {
-    topology = {
-      size = "2g"
-    }
+    size = "2g"
   }
 
   apm = {
-    topology = {
-      size = "1g"
-    }
+    size = "1g"
   }
 
   enterprise_search = {
-    topology = {
-      zone_count = 1
-    }
+    zone_count = 1
   }
 }

@@ -19,7 +19,6 @@ resource "ec_deployment" "with_extension" {
   deployment_template_id = local.deployment_template
 
   elasticsearch = {
-
     hot = {
       autoscaling = {}
     }

@@ -16,11 +16,11 @@ resource "ec_deployment" "basic" {
     }
   }
 
-  kibana = { topology = {} }
+  kibana = {}
 
-  apm = { topology = {} }
+  apm = {}
 
-  enterprise_search = { topology = {} }
+  enterprise_search = {}
 
   traffic_filter = [
     ec_deployment_traffic_filter.second.id,

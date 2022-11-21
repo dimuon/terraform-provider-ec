@@ -137,8 +137,6 @@ func EnterpriseSearchTopologiesPayload(ctx context.Context, tops types.List, pla
 }
 
 func EnterpriseSearchTopologyPayload(ctx context.Context, planModels []*models.EnterpriseSearchTopologyElement, index int, topObj attr.Value) (*models.EnterpriseSearchTopologyElement, diag.Diagnostics) {
-	var diags diag.Diagnostics
-
 	if topObj.IsNull() || topObj.IsUnknown() {
 		return nil, nil
 	}
@@ -148,6 +146,12 @@ func EnterpriseSearchTopologyPayload(ctx context.Context, planModels []*models.E
 	if diags := tfsdk.ValueAs(ctx, topObj, &topology); diags.HasError() {
 		return nil, diags
 	}
+
+	return topology.Payload(ctx, planModels, index)
+}
+
+func (topology EnterpriseSearchTopologyTF) Payload(ctx context.Context, planModels []*models.EnterpriseSearchTopologyElement, index int) (*models.EnterpriseSearchTopologyElement, diag.Diagnostics) {
+	var diags diag.Diagnostics
 
 	icID := topology.InstanceConfigurationId.Value
 

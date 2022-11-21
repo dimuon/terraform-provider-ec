@@ -38,19 +38,25 @@ type ApmTF struct {
 	Region                    types.String `tfsdk:"region"`
 	HttpEndpoint              types.String `tfsdk:"http_endpoint"`
 	HttpsEndpoint             types.String `tfsdk:"https_endpoint"`
-	Topology                  types.Object `tfsdk:"topology"`
+	InstanceConfigurationId   types.String `tfsdk:"instance_configuration_id"`
+	Size                      types.String `tfsdk:"size"`
+	SizeResource              types.String `tfsdk:"size_resource"`
+	ZoneCount                 types.Int64  `tfsdk:"zone_count"`
 	Config                    types.Object `tfsdk:"config"`
 }
 
 type Apm struct {
-	ElasticsearchClusterRefId *string              `tfsdk:"elasticsearch_cluster_ref_id"`
-	RefId                     *string              `tfsdk:"ref_id"`
-	ResourceId                *string              `tfsdk:"resource_id"`
-	Region                    *string              `tfsdk:"region"`
-	HttpEndpoint              *string              `tfsdk:"http_endpoint"`
-	HttpsEndpoint             *string              `tfsdk:"https_endpoint"`
-	Topology                  *topologyv1.Topology `tfsdk:"topology"`
-	Config                    *v1.ApmConfig        `tfsdk:"config"`
+	ElasticsearchClusterRefId *string       `tfsdk:"elasticsearch_cluster_ref_id"`
+	RefId                     *string       `tfsdk:"ref_id"`
+	ResourceId                *string       `tfsdk:"resource_id"`
+	Region                    *string       `tfsdk:"region"`
+	HttpEndpoint              *string       `tfsdk:"http_endpoint"`
+	HttpsEndpoint             *string       `tfsdk:"https_endpoint"`
+	InstanceConfigurationId   *string       `tfsdk:"instance_configuration_id"`
+	Size                      *string       `tfsdk:"size"`
+	SizeResource              *string       `tfsdk:"size_resource"`
+	ZoneCount                 int           `tfsdk:"zone_count"`
+	Config                    *v1.ApmConfig `tfsdk:"config"`
 }
 
 func ReadApm(in *models.ApmResourceInfo) (*Apm, error) {
@@ -74,7 +80,10 @@ func ReadApm(in *models.ApmResourceInfo) (*Apm, error) {
 	}
 
 	if len(topologies) > 0 {
-		apm.Topology = &topologies[0]
+		apm.InstanceConfigurationId = topologies[0].InstanceConfigurationId
+		apm.Size = topologies[0].Size
+		apm.SizeResource = topologies[0].SizeResource
+		apm.ZoneCount = topologies[0].ZoneCount
 	}
 
 	apm.ElasticsearchClusterRefId = in.ElasticsearchClusterRefID
@@ -120,7 +129,14 @@ func (apm ApmTF) Payload(ctx context.Context, payload models.ApmPayload) (*model
 		}
 	}
 
-	topologyPayload, ds := v1.ApmTopologyPayload(ctx, payload.Plan.ClusterTopology, 0, apm.Topology)
+	topology := topologyv1.TopologyTF{
+		InstanceConfigurationId: apm.InstanceConfigurationId,
+		Size:                    apm.Size,
+		SizeResource:            apm.SizeResource,
+		ZoneCount:               apm.ZoneCount,
+	}
+
+	topologyPayload, ds := topology.ApmTopologyPayload(ctx, payload.Plan.ClusterTopology, 0)
 
 	diags.Append(ds...)
 

@@ -15,5 +15,5 @@ resource "ec_deployment" "memory_optimized" {
     }
   }
 
-  kibana = { topology = {} }
+  kibana = {}
 }

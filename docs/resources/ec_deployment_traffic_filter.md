@@ -39,7 +39,7 @@ resource "ec_deployment" "example_minimal" {
     }
   }
 
-  kibana = { topology = {} }
+  kibana = {}
 }
 
 resource "ec_deployment_traffic_filter" "example" {
@@ -86,7 +86,7 @@ resource "ec_deployment" "example_minimal" {
     }
   }
 
-  kibana = { topology = {} }
+  kibana = {}
 }
 
 resource "ec_deployment_traffic_filter" "azure" {
@@ -135,7 +135,7 @@ resource "ec_deployment" "example_minimal" {
     }
   }
 
-  kibana = { topology = {} }
+  kibana = {}
 }
 
 resource "ec_deployment_traffic_filter" "gcp_psc" {

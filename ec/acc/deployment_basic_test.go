@@ -51,7 +51,6 @@ func TestAccDeployment_basic_tf(t *testing.T) {
 				Check: checkBasicDeploymentResource(resName, randomName, deploymentVersion,
 					resource.TestCheckResourceAttr(resName, "alias", randomAlias),
 					resource.TestCheckNoResourceAttr(resName, "apm.config"),
-					resource.TestCheckNoResourceAttr(resName, "elasticsearch.config"),
 					resource.TestCheckNoResourceAttr(resName, "enterprise_search.config"),
 					resource.TestCheckNoResourceAttr(resName, "traffic_filter"),
 					// Ensure at least 1 account is trusted (self).
@@ -76,7 +75,6 @@ func TestAccDeployment_basic_tf(t *testing.T) {
 			{
 				Config: cfg,
 				Check: checkBasicDeploymentResource(resName, randomName, deploymentVersion,
-					resource.TestCheckNoResourceAttr(resName, "elasticsearch.config"),
 					resource.TestCheckResourceAttr(resName, "traffic_filter.#", "0"),
 				),
 			},
@@ -115,11 +113,9 @@ func TestAccDeployment_basic_config(t *testing.T) {
 				Config: cfg,
 				Check: checkBasicDeploymentResource(resName, randomName, deploymentVersion,
 					resource.TestCheckResourceAttr(resName, "apm.config.%", "0"),
-					// The config block is unset in the configuration so it disappears from the state.
-					resource.TestCheckNoResourceAttr(resName, "elasticsearch.config"),
+					resource.TestCheckNoResourceAttr(resName, "elasticsearch.config.user_settings_yaml"),
 					resource.TestCheckResourceAttr(resName, "kibana.config.%", "0"),
 					resource.TestCheckResourceAttr(resName, "enterprise_search.config.%", "0"),
-					// resource.TestCh
 				),
 			},
 			// Import resource without complex ID
@@ -193,8 +189,8 @@ func checkBasicDeploymentResource(resName, randomDeploymentName, deploymentVersi
 		resource.TestCheckResourceAttr(resName, "name", randomDeploymentName),
 		resource.TestCheckResourceAttr(resName, "region", getRegion()),
 		resource.TestCheckResourceAttr(resName, "apm.region", getRegion()),
-		resource.TestCheckResourceAttr(resName, "apm.topology.size", "1g"),
-		resource.TestCheckResourceAttr(resName, "apm.topology.size_resource", "memory"),
+		resource.TestCheckResourceAttr(resName, "apm.size", "1g"),
+		resource.TestCheckResourceAttr(resName, "apm.size_resource", "memory"),
 		resource.TestCheckResourceAttrSet(resName, "apm_secret_token"),
 		resource.TestCheckResourceAttrSet(resName, "elasticsearch_username"),
 		resource.TestCheckResourceAttrSet(resName, "elasticsearch_password"),
@@ -206,13 +202,13 @@ func checkBasicDeploymentResource(resName, randomDeploymentName, deploymentVersi
 		resource.TestCheckResourceAttrSet(resName, "elasticsearch.http_endpoint"),
 		resource.TestCheckResourceAttrSet(resName, "elasticsearch.https_endpoint"),
 		resource.TestCheckResourceAttr(resName, "kibana.region", getRegion()),
-		resource.TestCheckResourceAttr(resName, "kibana.topology.size", "1g"),
-		resource.TestCheckResourceAttr(resName, "kibana.topology.size_resource", "memory"),
+		resource.TestCheckResourceAttr(resName, "kibana.size", "1g"),
+		resource.TestCheckResourceAttr(resName, "kibana.size_resource", "memory"),
 		resource.TestCheckResourceAttrSet(resName, "kibana.http_endpoint"),
 		resource.TestCheckResourceAttrSet(resName, "kibana.https_endpoint"),
 		resource.TestCheckResourceAttr(resName, "enterprise_search.region", getRegion()),
-		resource.TestCheckResourceAttr(resName, "enterprise_search.topology.size", "2g"),
-		resource.TestCheckResourceAttr(resName, "enterprise_search.topology.size_resource", "memory"),
+		resource.TestCheckResourceAttr(resName, "enterprise_search.size", "2g"),
+		resource.TestCheckResourceAttr(resName, "enterprise_search.size_resource", "memory"),
 		resource.TestCheckResourceAttrSet(resName, "enterprise_search.http_endpoint"),
 		resource.TestCheckResourceAttrSet(resName, "enterprise_search.https_endpoint"),
 	}, checks...)...)

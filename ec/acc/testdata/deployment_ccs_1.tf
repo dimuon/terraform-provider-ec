@@ -20,13 +20,6 @@ resource "ec_deployment" "ccs" {
         alias         = source_css.name
       }
     ]
-    # dynamic "remote_cluster" {
-    #   for_each = ec_deployment.source_ccs
-    #   content {
-    #     deployment_id = remote_cluster.value.id
-    #     alias         = remote_cluster.value.name
-    #   }
-    # }
   }
 }
 

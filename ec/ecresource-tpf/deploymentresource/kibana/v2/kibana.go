@@ -38,19 +38,25 @@ type KibanaTF struct {
 	Region                    types.String `tfsdk:"region"`
 	HttpEndpoint              types.String `tfsdk:"http_endpoint"`
 	HttpsEndpoint             types.String `tfsdk:"https_endpoint"`
-	Topology                  types.Object `tfsdk:"topology"`
+	InstanceConfigurationId   types.String `tfsdk:"instance_configuration_id"`
+	Size                      types.String `tfsdk:"size"`
+	SizeResource              types.String `tfsdk:"size_resource"`
+	ZoneCount                 types.Int64  `tfsdk:"zone_count"`
 	Config                    types.Object `tfsdk:"config"`
 }
 
 type Kibana struct {
-	ElasticsearchClusterRefId *string              `tfsdk:"elasticsearch_cluster_ref_id"`
-	RefId                     *string              `tfsdk:"ref_id"`
-	ResourceId                *string              `tfsdk:"resource_id"`
-	Region                    *string              `tfsdk:"region"`
-	HttpEndpoint              *string              `tfsdk:"http_endpoint"`
-	HttpsEndpoint             *string              `tfsdk:"https_endpoint"`
-	Topology                  *topologyv1.Topology `tfsdk:"topology"`
-	Config                    *v1.KibanaConfig     `tfsdk:"config"`
+	ElasticsearchClusterRefId *string          `tfsdk:"elasticsearch_cluster_ref_id"`
+	RefId                     *string          `tfsdk:"ref_id"`
+	ResourceId                *string          `tfsdk:"resource_id"`
+	Region                    *string          `tfsdk:"region"`
+	HttpEndpoint              *string          `tfsdk:"http_endpoint"`
+	HttpsEndpoint             *string          `tfsdk:"https_endpoint"`
+	InstanceConfigurationId   *string          `tfsdk:"instance_configuration_id"`
+	Size                      *string          `tfsdk:"size"`
+	SizeResource              *string          `tfsdk:"size_resource"`
+	ZoneCount                 int              `tfsdk:"zone_count"`
+	Config                    *v1.KibanaConfig `tfsdk:"config"`
 }
 
 func ReadKibana(in *models.KibanaResourceInfo) (*Kibana, error) {
@@ -75,7 +81,10 @@ func ReadKibana(in *models.KibanaResourceInfo) (*Kibana, error) {
 	}
 
 	if len(topologies) > 0 {
-		kibana.Topology = &topologies[0]
+		kibana.InstanceConfigurationId = topologies[0].InstanceConfigurationId
+		kibana.Size = topologies[0].Size
+		kibana.SizeResource = topologies[0].SizeResource
+		kibana.ZoneCount = topologies[0].ZoneCount
 	}
 
 	kibana.ElasticsearchClusterRefId = in.ElasticsearchClusterRefID
@@ -121,7 +130,14 @@ func (kibana KibanaTF) Payload(ctx context.Context, payload models.KibanaPayload
 		}
 	}
 
-	topologyPayload, ds := v1.KibanaTopologyPayload(ctx, v1.DefaultKibanaTopology(payload.Plan.ClusterTopology), 0, kibana.Topology)
+	topologyTF := topologyv1.TopologyTF{
+		InstanceConfigurationId: kibana.InstanceConfigurationId,
+		Size:                    kibana.Size,
+		SizeResource:            kibana.SizeResource,
+		ZoneCount:               kibana.ZoneCount,
+	}
+
+	topologyPayload, ds := topologyTF.KibanaTopologyPayload(ctx, v1.DefaultKibanaTopology(payload.Plan.ClusterTopology), 0)
 
 	diags.Append(ds...)
 

@@ -17,12 +17,13 @@ resource "ec_deployment" "deployment" {
 
   # Note the deployment will contain Elasticsearch and Kibana resources with default configurations.
   elasticsearch = {
+    config = {}
     hot = {
       autoscaling = {}
     }
   }
 
-  kibana = { topology = {} }
+  kibana = {}
 }
 
 # Create a traffic filter to allow the instance's public IP address to access our deployment.

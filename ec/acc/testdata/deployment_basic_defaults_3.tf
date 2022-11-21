@@ -16,8 +16,5 @@ resource "ec_deployment" "defaults" {
     }
   }
 
-  kibana = {
-    topology = {}
-  }
-
+  kibana = {}
 }

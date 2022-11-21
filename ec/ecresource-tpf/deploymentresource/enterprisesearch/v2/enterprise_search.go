@@ -37,19 +37,31 @@ type EnterpriseSearchTF struct {
 	Region                    types.String `tfsdk:"region"`
 	HttpEndpoint              types.String `tfsdk:"http_endpoint"`
 	HttpsEndpoint             types.String `tfsdk:"https_endpoint"`
-	Topology                  types.Object `tfsdk:"topology"`
+	InstanceConfigurationId   types.String `tfsdk:"instance_configuration_id"`
+	Size                      types.String `tfsdk:"size"`
+	SizeResource              types.String `tfsdk:"size_resource"`
+	ZoneCount                 types.Int64  `tfsdk:"zone_count"`
+	NodeTypeAppserver         types.Bool   `tfsdk:"node_type_appserver"`
+	NodeTypeConnector         types.Bool   `tfsdk:"node_type_connector"`
+	NodeTypeWorker            types.Bool   `tfsdk:"node_type_worker"`
 	Config                    types.Object `tfsdk:"config"`
 }
 
 type EnterpriseSearch struct {
-	ElasticsearchClusterRefId *string                      `tfsdk:"elasticsearch_cluster_ref_id"`
-	RefId                     *string                      `tfsdk:"ref_id"`
-	ResourceId                *string                      `tfsdk:"resource_id"`
-	Region                    *string                      `tfsdk:"region"`
-	HttpEndpoint              *string                      `tfsdk:"http_endpoint"`
-	HttpsEndpoint             *string                      `tfsdk:"https_endpoint"`
-	Topology                  *v1.EnterpriseSearchTopology `tfsdk:"topology"`
-	Config                    *v1.EnterpriseSearchConfig   `tfsdk:"config"`
+	ElasticsearchClusterRefId *string                    `tfsdk:"elasticsearch_cluster_ref_id"`
+	RefId                     *string                    `tfsdk:"ref_id"`
+	ResourceId                *string                    `tfsdk:"resource_id"`
+	Region                    *string                    `tfsdk:"region"`
+	HttpEndpoint              *string                    `tfsdk:"http_endpoint"`
+	HttpsEndpoint             *string                    `tfsdk:"https_endpoint"`
+	InstanceConfigurationId   *string                    `tfsdk:"instance_configuration_id"`
+	Size                      *string                    `tfsdk:"size"`
+	SizeResource              *string                    `tfsdk:"size_resource"`
+	ZoneCount                 int                        `tfsdk:"zone_count"`
+	NodeTypeAppserver         *bool                      `tfsdk:"node_type_appserver"`
+	NodeTypeConnector         *bool                      `tfsdk:"node_type_connector"`
+	NodeTypeWorker            *bool                      `tfsdk:"node_type_worker"`
+	Config                    *v1.EnterpriseSearchConfig `tfsdk:"config"`
 }
 
 type EnterpriseSearches []EnterpriseSearch
@@ -76,7 +88,13 @@ func ReadEnterpriseSearch(in *models.EnterpriseSearchResourceInfo) (*EnterpriseS
 	}
 
 	if len(topologies) > 0 {
-		ess.Topology = &topologies[0]
+		ess.InstanceConfigurationId = topologies[0].InstanceConfigurationId
+		ess.Size = topologies[0].Size
+		ess.SizeResource = topologies[0].SizeResource
+		ess.ZoneCount = topologies[0].ZoneCount
+		ess.NodeTypeAppserver = topologies[0].NodeTypeAppserver
+		ess.NodeTypeConnector = topologies[0].NodeTypeConnector
+		ess.NodeTypeWorker = topologies[0].NodeTypeWorker
 	}
 
 	ess.ElasticsearchClusterRefId = in.ElasticsearchClusterRefID
@@ -119,7 +137,17 @@ func (es *EnterpriseSearchTF) Payload(ctx context.Context, payload models.Enterp
 		}
 	}
 
-	topology, ds := v1.EnterpriseSearchTopologyPayload(ctx, v1.DefaultEssTopology(payload.Plan.ClusterTopology), 0, es.Topology)
+	topologyTF := v1.EnterpriseSearchTopologyTF{
+		InstanceConfigurationId: es.InstanceConfigurationId,
+		Size:                    es.Size,
+		SizeResource:            es.SizeResource,
+		ZoneCount:               es.ZoneCount,
+		NodeTypeAppserver:       es.NodeTypeAppserver,
+		NodeTypeConnector:       es.NodeTypeConnector,
+		NodeTypeWorker:          es.NodeTypeWorker,
+	}
+
+	topology, ds := topologyTF.Payload(ctx, v1.DefaultEssTopology(payload.Plan.ClusterTopology), 0)
 
 	diags = append(diags, ds...)
 

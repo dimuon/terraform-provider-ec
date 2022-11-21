@@ -159,7 +159,7 @@ func Test_readElasticsearch(t *testing.T) {
 					CloudID:       ec.String("some CLOUD ID"),
 					HttpEndpoint:  ec.String("http://somecluster.cloud.elastic.co:9200"),
 					HttpsEndpoint: ec.String("https://somecluster.cloud.elastic.co:9243"),
-					Config:        nil,
+					Config:        ElasticsearchConfigs{{}},
 					Topology: ElasticsearchTopologies{
 						{
 							Config:                  nil,

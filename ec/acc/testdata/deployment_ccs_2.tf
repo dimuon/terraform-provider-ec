@@ -16,5 +16,5 @@ resource "ec_deployment" "ccs" {
     }
   }
 
-  kibana = { topology = {} }
+  kibana = {}
 }

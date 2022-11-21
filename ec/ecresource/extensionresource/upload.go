@@ -40,7 +40,7 @@ func (r *Resource) uploadExtension(state modelV0) diag.Diagnostics {
 		File:        reader,
 	})
 	if err != nil {
-		diags.AddError("failed to upload file", err.Error())
+		diags.AddWarning("failed to upload file", err.Error())
 		return diags
 	}
 

@@ -32,7 +32,6 @@ import (
 	apmv2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/apm/v2"
 	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/deployment/v1"
 	elasticsearchv2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/elasticsearch/v2"
-	v2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/elasticsearch/v2"
 	enterprisesearchv2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/enterprisesearch/v2"
 	integrationsserverv2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/integrationsserver/v2"
 	kibanav2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/kibana/v2"
@@ -86,14 +85,17 @@ type Deployment struct {
 	Observability         *observabilityv2.Observability           `tfsdk:"observability"`
 }
 
-// Nullify Elasticsearch topologies that are not specified in plan
-// TODO: do it only for topologies that have zero size in response
+// Nullify Elasticsearch topologies that have zero size and are not specified in plan
 func (dep *Deployment) NullifyNotUsedEsTopologies(ctx context.Context, esPlanObj types.Object) diag.Diagnostics {
 	if esPlanObj.IsNull() || esPlanObj.IsUnknown() {
 		return nil
 	}
 
-	var esPlan *v2.ElasticsearchTF
+	if dep.Elasticsearch == nil {
+		return nil
+	}
+
+	var esPlan *elasticsearchv2.ElasticsearchTF
 
 	if diags := tfsdk.ValueAs(ctx, esPlanObj, &esPlan); diags.HasError() {
 		return diags
@@ -103,35 +105,30 @@ func (dep *Deployment) NullifyNotUsedEsTopologies(ctx context.Context, esPlanObj
 		return nil
 	}
 
-	if dep.Elasticsearch == nil {
-		return nil
-	}
+	dep.Elasticsearch.HotTier = nullifyUnspecifiedZeroSizedTier(esPlan.HotContentTier, dep.Elasticsearch.HotTier)
 
-	dep.Elasticsearch.HotTier = nullifyNutUsedZeroSizedTier(esPlan.HotContentTier, dep.Elasticsearch.HotTier)
+	dep.Elasticsearch.WarmTier = nullifyUnspecifiedZeroSizedTier(esPlan.WarmTier, dep.Elasticsearch.WarmTier)
 
-	dep.Elasticsearch.WarmTier = nullifyNutUsedZeroSizedTier(esPlan.WarmTier, dep.Elasticsearch.WarmTier)
+	dep.Elasticsearch.ColdTier = nullifyUnspecifiedZeroSizedTier(esPlan.ColdTier, dep.Elasticsearch.ColdTier)
 
-	dep.Elasticsearch.ColdTier = nullifyNutUsedZeroSizedTier(esPlan.ColdTier, dep.Elasticsearch.ColdTier)
+	dep.Elasticsearch.FrozenTier = nullifyUnspecifiedZeroSizedTier(esPlan.FrozenTier, dep.Elasticsearch.FrozenTier)
 
-	dep.Elasticsearch.FrozenTier = nullifyNutUsedZeroSizedTier(esPlan.FrozenTier, dep.Elasticsearch.FrozenTier)
+	dep.Elasticsearch.MlTier = nullifyUnspecifiedZeroSizedTier(esPlan.MlTier, dep.Elasticsearch.MlTier)
 
-	dep.Elasticsearch.MlTier = nullifyNutUsedZeroSizedTier(esPlan.MlTier, dep.Elasticsearch.MlTier)
+	dep.Elasticsearch.MasterTier = nullifyUnspecifiedZeroSizedTier(esPlan.MasterTier, dep.Elasticsearch.MasterTier)
 
-	dep.Elasticsearch.MasterTier = nullifyNutUsedZeroSizedTier(esPlan.MasterTier, dep.Elasticsearch.MasterTier)
-
-	dep.Elasticsearch.CoordinatingTier = nullifyNutUsedZeroSizedTier(esPlan.CoordinatingTier, dep.Elasticsearch.CoordinatingTier)
+	dep.Elasticsearch.CoordinatingTier = nullifyUnspecifiedZeroSizedTier(esPlan.CoordinatingTier, dep.Elasticsearch.CoordinatingTier)
 
 	return nil
 }
 
-func nullifyNutUsedZeroSizedTier(tierPlan types.Object, tier *v2.ElasticsearchTopology) *v2.ElasticsearchTopology {
+func nullifyUnspecifiedZeroSizedTier(tierPlan types.Object, tier *elasticsearchv2.ElasticsearchTopology) *elasticsearchv2.ElasticsearchTopology {
 
 	if tierPlan.IsNull() && tier != nil {
 
 		size, err := converters.ParseTopologySize(tier.Size, tier.SizeResource)
 
 		// we can ignore returning an error here - it's handled in readers
-		// just be safe
 		if err == nil && size != nil && size.Value != nil && *size.Value == 0 {
 			tier = nil
 		}
@@ -561,27 +558,6 @@ func (plan DeploymentTF) legacyToNodeRoles(ctx context.Context, curState Deploym
 		return false, diags
 	}
 
-	// When any topology elements in the state have the node_type_*
-	// properties set, the node_role field cannot be used, since
-	// we'd be changing the version AND migrating over `node_role`s
-	// which is not permitted by the API.
-
-	for _, obj := range []types.Object{es.HotContentTier, es.CoordinatingTier, es.MasterTier, es.WarmTier, es.ColdTier, es.FrozenTier, es.MlTier} {
-		if obj.IsNull() || obj.IsUnknown() {
-			continue
-		}
-
-		topology, diags := elasticsearchv2.ObjectToTopology(ctx, obj)
-
-		if diags.HasError() {
-			return false, diags
-		}
-
-		if topology.HasNodeType() {
-			return false, nil
-		}
-	}
-
 	return true, nil
 }
 
@@ -615,7 +591,7 @@ func HandleRemoteClusters(ctx context.Context, client *api.API, deploymentId str
 }
 
 func ElasticsearchRemoteClustersPayload(ctx context.Context, client *api.API, deploymentId string, esObj types.Object) (*models.RemoteResources, string, diag.Diagnostics) {
-	var es *v2.ElasticsearchTF
+	var es *elasticsearchv2.ElasticsearchTF
 
 	diags := tfsdk.ValueAs(ctx, esObj, &es)
 

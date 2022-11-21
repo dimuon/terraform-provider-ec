@@ -18,20 +18,14 @@ resource "ec_deployment" "basic" {
   }
 
   kibana = {
-    topology = {
-      instance_configuration_id = "%s"
-    }
+    instance_configuration_id = "%s"
   }
 
   apm = {
-    topology = {
-      instance_configuration_id = "%s"
-    }
+    instance_configuration_id = "%s"
   }
 
   enterprise_search = {
-    topology = {
-      instance_configuration_id = "%s"
-    }
+    instance_configuration_id = "%s"
   }
 }

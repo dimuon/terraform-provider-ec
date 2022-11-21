@@ -15,6 +15,7 @@ resource "ec_deployment" "example_minimal" {
   deployment_template_id = "aws-io-optimized-v2"
   traffic_filter         = [ec_deployment_traffic_filter.allow_all.id]
   elasticsearch = {
+    config = {}
     hot = {
       size        = "8g"
       autoscaling = {}
@@ -22,9 +23,7 @@ resource "ec_deployment" "example_minimal" {
   }
 
   kibana = {
-    topology = {
-      size = "1g"
-    }
+    size = "1g"
   }
 }
 

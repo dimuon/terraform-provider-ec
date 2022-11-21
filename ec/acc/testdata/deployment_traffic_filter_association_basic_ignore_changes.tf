@@ -16,7 +16,7 @@ resource "ec_deployment" "tf_assoc" {
     }
   }
 
-  kibana = { topology = {} }
+  kibana = {}
 
   lifecycle {
     ignore_changes = [traffic_filter]

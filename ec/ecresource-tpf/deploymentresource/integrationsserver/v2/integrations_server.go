@@ -38,7 +38,10 @@ type IntegrationsServerTF struct {
 	Region                    types.String `tfsdk:"region"`
 	HttpEndpoint              types.String `tfsdk:"http_endpoint"`
 	HttpsEndpoint             types.String `tfsdk:"https_endpoint"`
-	Topology                  types.Object `tfsdk:"topology"`
+	InstanceConfigurationId   types.String `tfsdk:"instance_configuration_id"`
+	Size                      types.String `tfsdk:"size"`
+	SizeResource              types.String `tfsdk:"size_resource"`
+	ZoneCount                 types.Int64  `tfsdk:"zone_count"`
 	Config                    types.Object `tfsdk:"config"`
 }
 
@@ -49,7 +52,10 @@ type IntegrationsServer struct {
 	Region                    *string                      `tfsdk:"region"`
 	HttpEndpoint              *string                      `tfsdk:"http_endpoint"`
 	HttpsEndpoint             *string                      `tfsdk:"https_endpoint"`
-	Topology                  *topologyv1.Topology         `tfsdk:"topology"`
+	InstanceConfigurationId   *string                      `tfsdk:"instance_configuration_id"`
+	Size                      *string                      `tfsdk:"size"`
+	SizeResource              *string                      `tfsdk:"size_resource"`
+	ZoneCount                 int                          `tfsdk:"zone_count"`
 	Config                    *v1.IntegrationsServerConfig `tfsdk:"config"`
 }
 
@@ -75,7 +81,10 @@ func ReadIntegrationsServer(in *models.IntegrationsServerResourceInfo) (*Integra
 	}
 
 	if len(topologies) > 0 {
-		srv.Topology = &topologies[0]
+		srv.InstanceConfigurationId = topologies[0].InstanceConfigurationId
+		srv.Size = topologies[0].Size
+		srv.SizeResource = topologies[0].SizeResource
+		srv.ZoneCount = topologies[0].ZoneCount
 	}
 
 	srv.ElasticsearchClusterRefId = in.ElasticsearchClusterRefID
@@ -113,7 +122,15 @@ func (srv IntegrationsServerTF) Payload(ctx context.Context, payload models.Inte
 	ds := v1.IntegrationsServerConfigPayload(ctx, srv.Config, payload.Plan.IntegrationsServer)
 	diags.Append(ds...)
 
-	toplogyPayload, ds := v1.IntegrationsServerTopologyPayload(ctx, v1.DefaultIntegrationsServerTopology(payload.Plan.ClusterTopology), 0, srv.Topology)
+	topologyTF := topologyv1.TopologyTF{
+		InstanceConfigurationId: srv.InstanceConfigurationId,
+		Size:                    srv.Size,
+		SizeResource:            srv.SizeResource,
+		ZoneCount:               srv.ZoneCount,
+	}
+
+	toplogyPayload, ds := topologyTF.IntegrationsServerTopologyPayload(ctx, v1.DefaultIntegrationsServerTopology(payload.Plan.ClusterTopology), 0)
+
 	diags.Append(ds...)
 
 	if !ds.HasError() && toplogyPayload != nil {

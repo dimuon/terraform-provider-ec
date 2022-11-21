@@ -15,13 +15,9 @@ resource "ec_deployment" "defaults" {
     }
   }
 
-  kibana = {
-    topology = {}
-  }
+  kibana = {}
 
   enterprise_search = {
-    topology = {
-      zone_count = 1
-    }
+    zone_count = 1
   }
 }

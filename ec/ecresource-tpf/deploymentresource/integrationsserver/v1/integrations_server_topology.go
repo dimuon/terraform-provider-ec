@@ -19,13 +19,11 @@ package v1
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
 	topologyv1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/topology/v1"
 	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/utils"
-	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -127,48 +125,5 @@ func IntegrationsServerTopologyPayload(ctx context.Context, planModels []*models
 		return nil, diags
 	}
 
-	icID := top.InstanceConfigurationId.Value
-
-	// When a topology element is set but no instance_configuration_id
-	// is set, then obtain the instance_configuration_id from the topology
-	// element.
-	if icID == "" && index < len(planModels) {
-		icID = planModels[index].InstanceConfigurationID
-	}
-
-	var diags diag.Diagnostics
-
-	size, err := converters.ParseTopologySizeTF(top.Size, top.SizeResource)
-	if err != nil {
-		diags.AddError("parse topology error", err.Error())
-		return nil, diags
-	}
-
-	elem, err := matchIntegrationsServerTopology(icID, planModels)
-	if err != nil {
-		diags.AddError("integrations_server topology payload error", err.Error())
-		return nil, diags
-	}
-
-	if size != nil {
-		elem.Size = size
-	}
-
-	if top.ZoneCount.Value > 0 {
-		elem.ZoneCount = int32(top.ZoneCount.Value)
-	}
-
-	return elem, nil
-}
-
-func matchIntegrationsServerTopology(id string, topologies []*models.IntegrationsServerTopologyElement) (*models.IntegrationsServerTopologyElement, error) {
-	for _, t := range topologies {
-		if t.InstanceConfigurationID == id {
-			return t, nil
-		}
-	}
-	return nil, fmt.Errorf(
-		`invalid instance_configuration_id: "%s" doesn't match any of the deployment template instance configurations`,
-		id,
-	)
+	return top.IntegrationsServerTopologyPayload(ctx, planModels, index)
 }

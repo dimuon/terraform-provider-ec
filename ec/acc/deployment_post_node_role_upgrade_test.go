@@ -49,6 +49,12 @@ func TestAccDeployment_post_node_roles(t *testing.T) {
 					resource.TestCheckResourceAttrSet(resName, "elasticsearch.hot.node_roles.#"),
 					resource.TestCheckResourceAttr(resName, "elasticsearch.hot.size_resource", "memory"),
 					resource.TestCheckResourceAttr(resName, "elasticsearch.hot.zone_count", "1"),
+
+					resource.TestCheckNoResourceAttr(resName, "elastic.hot.node_type_data"),
+					resource.TestCheckNoResourceAttr(resName, "elastic.hot.node_type_ingest"),
+					resource.TestCheckNoResourceAttr(resName, "elastic.hot.node_type_master"),
+					resource.TestCheckNoResourceAttr(resName, "elastic.hot.node_type_ml"),
+
 					resource.TestCheckNoResourceAttr(resName, "kibana"),
 					resource.TestCheckNoResourceAttr(resName, "apm"),
 					resource.TestCheckNoResourceAttr(resName, "enterprise_search"),
@@ -62,6 +68,12 @@ func TestAccDeployment_post_node_roles(t *testing.T) {
 					resource.TestCheckResourceAttrSet(resName, "elasticsearch.hot.node_roles.#"),
 					resource.TestCheckResourceAttr(resName, "elasticsearch.hot.size_resource", "memory"),
 					resource.TestCheckResourceAttr(resName, "elasticsearch.hot.zone_count", "1"),
+
+					resource.TestCheckNoResourceAttr(resName, "elastic.hot.node_type_data"),
+					resource.TestCheckNoResourceAttr(resName, "elastic.hot.node_type_ingest"),
+					resource.TestCheckNoResourceAttr(resName, "elastic.hot.node_type_master"),
+					resource.TestCheckNoResourceAttr(resName, "elastic.hot.node_type_ml"),
+
 					resource.TestCheckNoResourceAttr(resName, "kibana"),
 					resource.TestCheckNoResourceAttr(resName, "apm"),
 					resource.TestCheckNoResourceAttr(resName, "enterprise_search"),

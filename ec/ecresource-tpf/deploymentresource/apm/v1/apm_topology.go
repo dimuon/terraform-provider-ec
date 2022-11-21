@@ -19,13 +19,11 @@ package v1
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
 	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/topology/v1"
 	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/utils"
-	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -70,7 +68,6 @@ func ReadApmTopologies(in []*models.ApmTopologyElement) (v1.Topologies, error) {
 		topologies = append(topologies, *topology)
 	}
 
-	// return tfsdk.ValueFrom(ctx, tops, apmTopology().Type(), topologies)
 	return topologies, nil
 }
 
@@ -109,38 +106,7 @@ func ApmTopologyPayload(ctx context.Context, planModels []*models.ApmTopologyEle
 		return nil, diags
 	}
 
-	icID := topology.InstanceConfigurationId.Value
-
-	// When a topology element is set but no instance_configuration_id
-	// is set, then obtain the instance_configuration_id from the topology
-	// element.
-	if icID == "" && index < len(planModels) {
-		icID = planModels[index].InstanceConfigurationID
-	}
-
-	size, err := converters.ParseTopologySizeTF(topology.Size, topology.SizeResource)
-
-	var diags diag.Diagnostics
-	if err != nil {
-		diags.AddError("size parsing error", err.Error())
-		return nil, diags
-	}
-
-	topologyElem, err := matchApmTopology(icID, planModels)
-	if err != nil {
-		diags.AddError("cannot match topology element", err.Error())
-		return nil, diags
-	}
-
-	if size != nil {
-		topologyElem.Size = size
-	}
-
-	if topology.ZoneCount.Value > 0 {
-		topologyElem.ZoneCount = int32(topology.ZoneCount.Value)
-	}
-
-	return topologyElem, nil
+	return topology.ApmTopologyPayload(ctx, planModels, index)
 }
 
 // DefaultApmTopology iterates over all the templated topology elements and
@@ -157,16 +123,4 @@ func DefaultApmTopology(topology []*models.ApmTopologyElement) []*models.ApmTopo
 	}
 
 	return topology
-}
-
-func matchApmTopology(id string, topologies []*models.ApmTopologyElement) (*models.ApmTopologyElement, error) {
-	for _, t := range topologies {
-		if t.InstanceConfigurationID == id {
-			return t, nil
-		}
-	}
-	return nil, fmt.Errorf(
-		`apm topology: invalid instance_configuration_id: "%s" doesn't match any of the deployment template instance configurations`,
-		id,
-	)
 }

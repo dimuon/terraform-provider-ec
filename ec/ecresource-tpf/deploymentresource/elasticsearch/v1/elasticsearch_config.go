@@ -51,6 +51,10 @@ type ElasticsearchConfig struct {
 
 type ElasticsearchConfigs []ElasticsearchConfig
 
+func (c *ElasticsearchConfig) IsEmpty() bool {
+	return c == nil || reflect.ValueOf(*c).IsZero()
+}
+
 func ElasticsearchConfigsPayload(ctx context.Context, cfgList types.List, model *models.ElasticsearchConfiguration) (*models.ElasticsearchConfiguration, diag.Diagnostics) {
 	if cfgList.IsNull() || cfgList.IsUnknown() || len(cfgList.Elems) == 0 {
 		return model, nil
@@ -103,10 +107,6 @@ func ElasticsearchConfigPayload(ctx context.Context, cfgObj attr.Value, model *m
 	return model, diags
 }
 
-func (c *ElasticsearchConfig) isEmpty() bool {
-	return c == nil || reflect.ValueOf(*c).IsZero()
-}
-
 func ReadElasticsearchConfigs(in *models.ElasticsearchConfiguration) (ElasticsearchConfigs, error) {
 	config, err := ReadElasticsearchConfig(in)
 
@@ -125,7 +125,7 @@ func ReadElasticsearchConfig(in *models.ElasticsearchConfiguration) (*Elasticsea
 	var config ElasticsearchConfig
 
 	if in == nil {
-		return nil, nil
+		return &ElasticsearchConfig{}, nil
 	}
 
 	if len(in.EnabledBuiltInPlugins) > 0 {
@@ -154,10 +154,6 @@ func ReadElasticsearchConfig(in *models.ElasticsearchConfiguration) (*Elasticsea
 
 	if in.DockerImage != "" {
 		config.DockerImage = ec.String(in.DockerImage)
-	}
-
-	if config.isEmpty() {
-		return nil, nil
 	}
 
 	return &config, nil
