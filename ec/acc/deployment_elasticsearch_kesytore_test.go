@@ -124,6 +124,7 @@ func TestAccDeploymentElasticsearchKeystore_UpgradeFrom0_4_1(t *testing.T) {
 	secondResName := resType + ".gcs_creds"
 	randomName := prefix + acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
 	startCfg := "testdata/deployment_elasticsearch_keystore_1.tf"
+	migratedCfg := "testdata/deployment_elasticsearch_keystore_1_migrated.tf"
 
 	cfgF := func(cfg string) string {
 		return fixtureAccDeploymentResourceBasic(
@@ -156,7 +157,7 @@ func TestAccDeploymentElasticsearchKeystore_UpgradeFrom0_4_1(t *testing.T) {
 			{
 				PlanOnly:                 true,
 				ProtoV6ProviderFactories: testAccProviderFactory,
-				Config:                   cfgF(startCfg),
+				Config:                   cfgF(migratedCfg),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(firstResName, "setting_name", "xpack.notification.slack.account.hello.secure_url"),
 					resource.TestCheckResourceAttr(firstResName, "value", "hella"),
