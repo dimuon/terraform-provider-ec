@@ -542,22 +542,6 @@ func (plan DeploymentTF) legacyToNodeRoles(ctx context.Context, curState Deploym
 		return false, nil
 	}
 
-	if plan.Elasticsearch.IsNull() || plan.Elasticsearch.IsUnknown() {
-		diags.AddError("Cannot migrate node types to node roles", "cannot find elasticsearch data")
-		return false, diags
-	}
-
-	var es *elasticsearchv2.ElasticsearchTF
-
-	if diags := tfsdk.ValueAs(ctx, plan.Elasticsearch, &es); diags.HasError() {
-		return false, diags
-	}
-
-	if es == nil {
-		diags.AddError("Cannot migrate node types to node roles", "cannot find elasticsearch data")
-		return false, diags
-	}
-
 	return true, nil
 }
 

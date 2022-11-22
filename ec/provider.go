@@ -70,16 +70,6 @@ var (
 	defaultTimeout = 40 * time.Second
 )
 
-// LegacyProvider returns a schema.Provider.
-func LegacyProvider() *schema.Provider {
-	return &schema.Provider{
-		ConfigureContextFunc: configureAPI,
-		Schema:               newSchema(),
-		DataSourcesMap:       map[string]*schema.Resource{},
-		ResourcesMap:         map[string]*schema.Resource{},
-	}
-}
-
 func newSchema() map[string]*schema.Schema {
 	// This schema must match exactly the Terraform Protocol v6 (Terraform Plugin Framework) provider's schema.
 	// Notably the attributes can have no Default values.
