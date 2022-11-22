@@ -64,7 +64,7 @@ func UpgradeStateToV2(ctx context.Context, req resource.UpgradeStateRequest, res
 		ApmSecretToken:        priorStateData.ApmSecretToken,
 		TrafficFilter:         priorStateData.TrafficFilter,
 		Tags:                  priorStateData.Tags,
-		Elasticsearch:         ElasticsearchV1ToElasticsearchV2(priorStateData.Elasticsearch),
+		Elasticsearch:         ElasticsearchV1ToV2(priorStateData.Elasticsearch),
 		//Elasticsearch:         types.Object{Null: true, AttrTypes: elasticsearchv2.ElasticsearchSchema().Attributes.Type().(types.ObjectType).AttrTypes},
 		Kibana:             types.Object{Null: true, AttrTypes: kibanav2.KibanaSchema().Attributes.Type().(types.ObjectType).AttrTypes},
 		Apm:                types.Object{Null: true, AttrTypes: apmv2.ApmSchema().Attributes.Type().(types.ObjectType).AttrTypes},
@@ -82,7 +82,7 @@ func UpgradeStateToV2(ctx context.Context, req resource.UpgradeStateRequest, res
 	resp.Diagnostics.Append(resp.State.Set(ctx, upgradedStateData)...)
 }
 
-func ElasticsearchV1ToElasticsearchV2(list types.List) types.Object {
+func ElasticsearchV1ToV2(list types.List) types.Object {
 	//fmt.Println(dd.Dump(list, dd.WithIndent(4)))
 
 	if list.IsNull() || len(list.Elems) == 0 || list.Elems[0].IsNull() {
@@ -94,19 +94,19 @@ func ElasticsearchV1ToElasticsearchV2(list types.List) types.Object {
 	if value, ok := elasticsearch.Attrs["topology"]; ok {
 		topologyList := value.(types.List)
 
-		hot := types.Object{Null: true, AttrTypes: elasticsearchv2.ElasticsearchTierSchema("'hot' optional topology element", true).Attributes.Type().(types.ObjectType).AttrTypes}
-		coordinating := types.Object{Null: true, AttrTypes: elasticsearchv2.ElasticsearchTierSchema("'coordinating' optional topology element", false).Attributes.Type().(types.ObjectType).AttrTypes}
-		master := types.Object{Null: true, AttrTypes: elasticsearchv2.ElasticsearchTierSchema("'master' optional topology element", false).Attributes.Type().(types.ObjectType).AttrTypes}
-		warm := types.Object{Null: true, AttrTypes: elasticsearchv2.ElasticsearchTierSchema("'warm' optional topology element", false).Attributes.Type().(types.ObjectType).AttrTypes}
-		cold := types.Object{Null: true, AttrTypes: elasticsearchv2.ElasticsearchTierSchema("'cold' optional topology element", false).Attributes.Type().(types.ObjectType).AttrTypes}
-		frozen := types.Object{Null: true, AttrTypes: elasticsearchv2.ElasticsearchTierSchema("'frozen' optional topology element", false).Attributes.Type().(types.ObjectType).AttrTypes}
-		ml := types.Object{Null: true, AttrTypes: elasticsearchv2.ElasticsearchTierSchema("'ml' optional topology element", false).Attributes.Type().(types.ObjectType).AttrTypes}
+		hot := types.Object{Null: true, AttrTypes: elasticsearchv2.HotTierSchema.Attributes.Type().(types.ObjectType).AttrTypes}
+		coordinating := types.Object{Null: true, AttrTypes: elasticsearchv2.CoordinatingTierSchema.Attributes.Type().(types.ObjectType).AttrTypes}
+		master := types.Object{Null: true, AttrTypes: elasticsearchv2.MasterTierSchema.Attributes.Type().(types.ObjectType).AttrTypes}
+		warm := types.Object{Null: true, AttrTypes: elasticsearchv2.WarmTierSchema.Attributes.Type().(types.ObjectType).AttrTypes}
+		cold := types.Object{Null: true, AttrTypes: elasticsearchv2.ColdTierSchema.Attributes.Type().(types.ObjectType).AttrTypes}
+		frozen := types.Object{Null: true, AttrTypes: elasticsearchv2.FrozenTierSchema.Attributes.Type().(types.ObjectType).AttrTypes}
+		ml := types.Object{Null: true, AttrTypes: elasticsearchv2.MlTierSchema.Attributes.Type().(types.ObjectType).AttrTypes}
 
 		for _, elem := range topologyList.Elems {
 			topology := elem.(types.Object)
 			if !topology.Null && !topology.Attrs["id"].(types.String).Null {
 				id := topology.Attrs["id"].(types.String).Value
-				convertedTopology := ElasticsearchTopologyV1ToElasticsearchTopologyV2(topology)
+				convertedTopology := ElasticsearchTopologyV1ToV2(topology)
 				switch id {
 				case "hot_content":
 					convertedTopology.AttrTypes = hot.AttrTypes
@@ -166,7 +166,7 @@ func ElasticsearchV1ToElasticsearchV2(list types.List) types.Object {
 
 	// strategy used to be a list of structs with a field "type". This is just a string now.
 	if _, ok := elasticsearch.Attrs["strategy"]; ok {
-		elasticsearch.Attrs["strategy"] = ElasticsearchStrategyV1ToElasticsearchStrategyV2(elasticsearch.Attrs["strategy"])
+		elasticsearch.Attrs["strategy"] = ElasticsearchStrategyV1ToV2(elasticsearch.Attrs["strategy"])
 
 	}
 	//fmt.Println(dd.Dump(elasticsearch, dd.WithIndent(4)))
@@ -174,7 +174,7 @@ func ElasticsearchV1ToElasticsearchV2(list types.List) types.Object {
 	return elasticsearch
 }
 
-func ElasticsearchStrategyV1ToElasticsearchStrategyV2(old attr.Value) types.String {
+func ElasticsearchStrategyV1ToV2(old attr.Value) types.String {
 	list := old.(types.List)
 	strategy := types.String{Null: true}
 	if len(list.Elems) > 0 {
@@ -188,7 +188,7 @@ func ElasticsearchStrategyV1ToElasticsearchStrategyV2(old attr.Value) types.Stri
 	return strategy
 }
 
-func ElasticsearchTopologyV1ToElasticsearchTopologyV2(topology types.Object) types.Object {
+func ElasticsearchTopologyV1ToV2(topology types.Object) types.Object {
 	if topology.Null {
 		topology.Attrs = map[string]attr.Value{}
 		return topology
@@ -199,22 +199,12 @@ func ElasticsearchTopologyV1ToElasticsearchTopologyV2(topology types.Object) typ
 
 	// autoscaling was a list and is an object now. Schema stayed the same apart from that.
 	if value, ok := topology.Attrs["autoscaling"]; ok {
-		autoscaling := types.Object{Null: true, AttrTypes: elasticsearchv2.ElasticsearchTopologyAutoscalingSchema().Attributes.Type().(types.ObjectType).AttrTypes}
+		autoscaling := types.Object{Null: true, AttrTypes: elasticsearchv2.ElasticsearchTopologyAutoscalingSchema("hot").Attributes.Type().(types.ObjectType).AttrTypes}
 		autoscalingList := value.(types.List)
 		if len(autoscalingList.Elems) > 0 {
 			autoscaling = autoscalingList.Elems[0].(types.Object)
 		}
 		topology.Attrs["autoscaling"] = autoscaling
-	}
-
-	// config was a list and is an object now. Schema stayed the same apart from that.
-	if value, ok := topology.Attrs["config"]; ok {
-		config := types.Object{Null: true, AttrTypes: elasticsearchv2.ElasticsearchTopologyConfigSchema().Attributes.Type().(types.ObjectType).AttrTypes}
-		configList := value.(types.List)
-		if len(configList.Elems) > 0 {
-			config = configList.Elems[0].(types.Object)
-		}
-		topology.Attrs["config"] = config
 	}
 
 	return topology

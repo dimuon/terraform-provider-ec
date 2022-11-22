@@ -27,6 +27,16 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+var (
+	HotTierSchema          = ElasticsearchTierSchema("'hot' optional topology element", true, "hot")
+	CoordinatingTierSchema = ElasticsearchTierSchema("'coordinating' optional topology element", false, "coordinating")
+	MasterTierSchema       = ElasticsearchTierSchema("'master' optional topology element", false, "master")
+	WarmTierSchema         = ElasticsearchTierSchema("'warm' optional topology element", false, "warm")
+	ColdTierSchema         = ElasticsearchTierSchema("'cold' optional topology element", false, "cold")
+	FrozenTierSchema       = ElasticsearchTierSchema("'frozen' optional topology element", false, "frozen")
+	MlTierSchema           = ElasticsearchTierSchema("'ml' optional topology element", false, "ml")
+)
+
 // These constants are only used to determine whether or not a dedicated
 // tier of masters or ingest (coordinating) nodes are set.
 const (
@@ -97,13 +107,13 @@ func ElasticsearchSchema() tfsdk.Attribute {
 				Computed:    true,
 			},
 
-			"hot":          ElasticsearchTierSchema("'hot' optional topology element", true, "hot"),
-			"coordinating": ElasticsearchTierSchema("'coordinating' optional topology element", false, "coordinating"),
-			"master":       ElasticsearchTierSchema("'master' optional topology element", false, "master"),
-			"warm":         ElasticsearchTierSchema("'warm' optional topology element", false, "warm"),
-			"cold":         ElasticsearchTierSchema("'cold' optional topology element", false, "cold"),
-			"frozen":       ElasticsearchTierSchema("'frozen' optional topology element", false, "frozen"),
-			"ml":           ElasticsearchTierSchema("'ml' optional topology element", false, "ml"),
+			"hot":          HotTierSchema,
+			"coordinating": ColdTierSchema,
+			"master":       MasterTierSchema,
+			"warm":         WarmTierSchema,
+			"cold":         ColdTierSchema,
+			"frozen":       FrozenTierSchema,
+			"ml":           MlTierSchema,
 
 			"trust_account": ElasticsearchTrustAccountSchema(),
 

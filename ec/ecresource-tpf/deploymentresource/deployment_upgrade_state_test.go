@@ -53,13 +53,13 @@ func Test_upgradeElasticsearchStrategyV1ToElasticsearchStrategyV2(t *testing.T) 
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := deploymentresource.ElasticsearchStrategyV1ToElasticsearchStrategyV2(tt.in)
+			got := deploymentresource.ElasticsearchStrategyV1ToV2(tt.in)
 			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func Test_upgradeElasticsearchV1ToElasticsearchV2(t *testing.T) {
+func Test_upgradeElasticsearchV1ToV2(t *testing.T) {
 	in := types.List{
 		Elems: []attr.Value{
 			types.Object{
@@ -1539,7 +1539,7 @@ func Test_upgradeElasticsearchV1ToElasticsearchV2(t *testing.T) {
 			},
 		},
 	}
-	got := deploymentresource.ElasticsearchV1ToElasticsearchV2(in)
+	got := deploymentresource.ElasticsearchV1ToV2(in)
 
 	assert.Equal(t, inOrig, in)
 	assert.Equal(t, want, got)
