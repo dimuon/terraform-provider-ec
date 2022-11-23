@@ -21,7 +21,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/blang/semver"
 	"github.com/elastic/cloud-sdk-go/pkg/api"
 	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi/deptemplateapi"
 	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi/esremoteclustersapi"
@@ -82,10 +81,6 @@ type Deployment struct {
 	EnterpriseSearch      enterprisesearchv1.EnterpriseSearches    `tfsdk:"enterprise_search"`
 	Observability         observabilityv1.Observabilities          `tfsdk:"observability"`
 }
-
-var (
-	DataTiersVersion = semver.MustParse("7.10.0")
-)
 
 func ReadDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteResources, deploymentResources []*models.DeploymentResource) (*Deployment, error) {
 	var dep Deployment
@@ -194,7 +189,8 @@ func (dep DeploymentTF) CreateRequest(ctx context.Context, client *api.API) (*mo
 		return nil, diagsnostics
 	}
 
-	useNodeRoles, err := CompatibleWithNodeRoles(version)
+	useNodeRoles, err := utils.CompatibleWithNodeRoles(version)
+
 	if err != nil {
 		diagsnostics.AddError("Deployment parse error", err.Error())
 		return nil, diagsnostics
@@ -336,15 +332,6 @@ func ReadTrafficFilters(in *models.DeploymentSettings) ([]string, error) {
 	return append(rules, in.TrafficFilterSettings.Rulesets...), nil
 }
 
-func CompatibleWithNodeRoles(version string) (bool, error) {
-	deploymentVersion, err := semver.Parse(version)
-	if err != nil {
-		return false, fmt.Errorf("failed to parse Elasticsearch version: %w", err)
-	}
-
-	return deploymentVersion.GE(DataTiersVersion), nil
-}
-
 // TrafficFilterToModel expands the flattened "traffic_filter" settings to
 // a DeploymentCreateRequest.
 func TrafficFilterToModel(ctx context.Context, set types.Set, req *models.DeploymentCreateRequest) diag.Diagnostics {
@@ -409,17 +396,12 @@ func (plan DeploymentTF) UpdateRequest(ctx context.Context, client *api.API, cur
 	// This might not be necessary going forward as we move to
 	// tiered Elasticsearch nodes.
 
-	useNodeRoles, err := CompatibleWithNodeRoles(version)
-	if err != nil {
-		diagsnostics.AddError("Deployment parse error", err.Error())
+	useNodeRoles, diags := utils.UseNodeRoles(curState.Version, plan.Version)
+
+	if diags.HasError() {
+		diagsnostics.Append(diags...)
 		return nil, diagsnostics
 	}
-
-	convertLegacy, diags := plan.legacyToNodeRoles(ctx, curState)
-	if diags.HasError() {
-		return nil, diags
-	}
-	useNodeRoles = useNodeRoles && convertLegacy
 
 	elasticsearchPayload, diags := elasticsearchv1.ElasticsearchPayload(ctx, plan.Elasticsearch, template, dtID, version, useNodeRoles, skipEStopologies)
 
@@ -491,75 +473,6 @@ func (plan DeploymentTF) UpdateRequest(ctx context.Context, client *api.API, cur
 	}
 
 	return &result, diagsnostics
-}
-
-// legacyToNodeRoles returns true when the legacy  "node_type_*" should be
-// migrated over to node_roles. Which will be true when:
-// * The version field doesn't change.
-// * The version field changes but:
-//   - The Elasticsearch.0.toplogy doesn't have any node_type_* set.
-func (plan DeploymentTF) legacyToNodeRoles(ctx context.Context, curState DeploymentTF) (bool, diag.Diagnostics) {
-	if curState.Version.Value == "" || curState.Version.Value == plan.Version.Value {
-		return true, nil
-	}
-
-	// If the previous version is empty, node_roles should be used.
-	if curState.Version.Value == "" {
-		return true, nil
-	}
-
-	var diags diag.Diagnostics
-	oldV, err := semver.Parse(curState.Version.Value)
-	if err != nil {
-		diags.AddError("failed to parse previous Elasticsearch version", err.Error())
-		return false, diags
-	}
-	newV, err := semver.Parse(plan.Version.Value)
-	if err != nil {
-		diags.AddError("failed to parse new Elasticsearch version", err.Error())
-		return false, diags
-	}
-
-	// if the version change moves from non-node_roles to one
-	// that supports node roles, do not migrate on that step.
-	if oldV.LT(DataTiersVersion) && newV.GE(DataTiersVersion) {
-		return false, nil
-	}
-
-	// When any topology elements in the state have the node_type_*
-	// properties set, the node_role field cannot be used, since
-	// we'd be changing the version AND migrating over `node_role`s
-	// which is not permitted by the API.
-	var hasNodeTypeSet bool
-
-	var es *elasticsearchv1.ElasticsearchTF
-
-	if diags := utils.GetFirst(ctx, plan.Elasticsearch, &es); diags.HasError() {
-		return false, diags
-	}
-
-	if es == nil {
-		diags.AddError("Cannot migrate node types to node roles", "cannot find elasticsearch data")
-		return false, diags
-	}
-
-	var esTopologies []elasticsearchv1.ElasticsearchTopologyTF
-	if diags := es.Topology.ElementsAs(ctx, &esTopologies, true); diags.HasError() {
-		return false, diags
-	}
-
-	for _, topology := range esTopologies {
-		hasNodeTypeSet = topology.NodeTypeData.Value != "" ||
-			topology.NodeTypeIngest.Value != "" ||
-			topology.NodeTypeMaster.Value != "" ||
-			topology.NodeTypeMl.Value != ""
-	}
-
-	if hasNodeTypeSet {
-		return false, nil
-	}
-
-	return true, nil
 }
 
 func ensurePartialSnapshotStrategy(es *models.ElasticsearchPayload) {
