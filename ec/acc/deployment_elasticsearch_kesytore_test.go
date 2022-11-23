@@ -123,7 +123,7 @@ func TestAccDeploymentElasticsearchKeystore_UpgradeFrom0_4_1(t *testing.T) {
 	firstResName := resType + ".test"
 	secondResName := resType + ".gcs_creds"
 	randomName := prefix + acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
-	startCfg := "testdata/deployment_elasticsearch_keystore_1.tf"
+	startCfg := "testdata/deployment_elasticsearch_keystore_1_041.tf"
 	migratedCfg := "testdata/deployment_elasticsearch_keystore_1_migrated.tf"
 
 	cfgF := func(cfg string) string {
