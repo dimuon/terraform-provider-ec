@@ -469,9 +469,9 @@ func ElasticsearchTierSchema(description string, required bool, tierName string)
 				},
 				Description: `The computed list of node roles for the current topology element`,
 				Computed:    true,
-				// PlanModifiers: tfsdk.AttributePlanModifiers{
-				// 	v1.UseNodeRolesDefault(),
-				// },
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					UseNodeRolesDefault(),
+				},
 			},
 			"autoscaling": ElasticsearchTopologyAutoscalingSchema(tierName),
 		}),

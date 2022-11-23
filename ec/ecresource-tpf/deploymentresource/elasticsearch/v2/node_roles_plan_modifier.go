@@ -15,11 +15,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package v1
+package v2
 
 import (
 	"context"
 
+	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/utils"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -46,48 +47,48 @@ func (r nodeRolesDefault) Modify(ctx context.Context, req tfsdk.ModifyAttributeP
 		return
 	}
 
-	deploymentVersionChanged, diags := isAttributeChanged(ctx, path.Root("version"), req)
+	// if there is no state for "version" return
+	var stateVersion types.String
 
-	resp.Diagnostics = append(resp.Diagnostics, diags...)
+	if diags := req.State.GetAttribute(ctx, path.Root("version"), &stateVersion); diags.HasError() {
+		resp.Diagnostics.Append(diags...)
+		return
+	}
+
+	if stateVersion.IsNull() {
+		return
+	}
+
+	// if template changed return
+	templateChanged, diags := isAttributeChanged(ctx, path.Root("deployment_template_id"), req)
+
+	resp.Diagnostics.Append(diags...)
 
 	if diags.HasError() {
 		return
 	}
 
-	if deploymentVersionChanged {
+	if templateChanged {
 		return
 	}
 
-	topologyElementChanged, diags := isElasticTopologyChanged(ctx, req.AttributePath.ParentPath().ParentPath(), req)
+	// get version for plan and state and calculate useNodeRoles
 
-	resp.Diagnostics = append(resp.Diagnostics, diags...)
+	var planVersion types.String
+
+	if diags := req.Plan.GetAttribute(ctx, path.Root("version"), &planVersion); diags.HasError() {
+		resp.Diagnostics.Append(diags...)
+		return
+	}
+
+	useNodeRoles, diags := utils.UseNodeRoles(stateVersion, planVersion)
 
 	if diags.HasError() {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 
-	if topologyElementChanged {
-		return
-	}
-
-	if !req.AttributeState.IsUnknown() && !req.AttributeState.IsNull() {
-		resp.AttributePlan = req.AttributeState
-		return
-	}
-
-	nodeTypePath := req.AttributePath.ParentPath().AtName("node_type_data")
-
-	var nodeTypeState types.String
-
-	diags = req.State.GetAttribute(ctx, nodeTypePath, &nodeTypeState)
-
-	resp.Diagnostics = append(resp.Diagnostics, diags...)
-
-	if diags.HasError() {
-		return
-	}
-
-	if nodeTypeState.IsUnknown() || nodeTypeState.IsNull() {
+	if useNodeRoles && req.AttributeState.IsNull() {
 		return
 	}
 
@@ -96,10 +97,10 @@ func (r nodeRolesDefault) Modify(ctx context.Context, req tfsdk.ModifyAttributeP
 
 // Description returns a human-readable description of the plan modifier.
 func (r nodeRolesDefault) Description(ctx context.Context) string {
-	return "Calculate node roles value based on current state and `node_type_data`'s value."
+	return "Use current state if it's still valid."
 }
 
 // MarkdownDescription returns a markdown description of the plan modifier.
 func (r nodeRolesDefault) MarkdownDescription(ctx context.Context) string {
-	return "Calculate node roles value based on current state and `node_type_data`'s value."
+	return "Use current state if it's still valid."
 }
