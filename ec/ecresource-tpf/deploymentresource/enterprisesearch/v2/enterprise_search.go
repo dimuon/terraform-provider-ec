@@ -158,7 +158,7 @@ func (es *EnterpriseSearchTF) Payload(ctx context.Context, payload models.Enterp
 	return &payload, diags
 }
 
-func ReadEnterpriseSearches(in []*models.EnterpriseSearchResourceInfo) (EnterpriseSearches, error) {
+func ReadEnterpriseSearches(in []*models.EnterpriseSearchResourceInfo) (*EnterpriseSearch, error) {
 	for _, model := range in {
 		if util.IsCurrentEssPlanEmpty(model) || utils.IsEssResourceStopped(model) {
 			continue
@@ -169,7 +169,7 @@ func ReadEnterpriseSearches(in []*models.EnterpriseSearchResourceInfo) (Enterpri
 			return nil, err
 		}
 
-		return EnterpriseSearches{*es}, nil
+		return es, nil
 	}
 
 	return nil, nil

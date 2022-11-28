@@ -204,10 +204,8 @@ func ReadDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteRes
 		}
 	}
 
-	if len(res.Resources.EnterpriseSearch) > 0 {
-		if dep.EnterpriseSearch, err = enterprisesearchv2.ReadEnterpriseSearch(res.Resources.EnterpriseSearch[0]); err != nil {
-			return nil, err
-		}
+	if dep.EnterpriseSearch, err = enterprisesearchv2.ReadEnterpriseSearches(res.Resources.EnterpriseSearch); err != nil {
+		return nil, err
 	}
 
 	if dep.TrafficFilter, err = v1.ReadTrafficFilters(res.Settings); err != nil {

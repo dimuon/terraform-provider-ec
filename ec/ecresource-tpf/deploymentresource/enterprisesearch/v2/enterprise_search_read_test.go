@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package v1
+package v2
 
 import (
 	"testing"
@@ -25,6 +25,7 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/api/mock"
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
+	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/enterprisesearch/v1"
 )
 
 func Test_readEnterpriseSearch(t *testing.T) {
@@ -34,7 +35,7 @@ func Test_readEnterpriseSearch(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want EnterpriseSearches
+		want *EnterpriseSearch
 	}{
 		{
 			name: "empty resource list returns empty list",
@@ -154,32 +155,25 @@ func Test_readEnterpriseSearch(t *testing.T) {
 					},
 				},
 			}},
-			want: EnterpriseSearches{
-				{
-					ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-					RefId:                     ec.String("main-enterprise_search"),
-					ResourceId:                ec.String(mock.ValidClusterID),
-					Region:                    ec.String("some-region"),
-					HttpEndpoint:              ec.String("http://enterprisesearchresource.cloud.elastic.co:9200"),
-					HttpsEndpoint:             ec.String("https://enterprisesearchresource.cloud.elastic.co:9243"),
-					Config: EnterpriseSearchConfigs{
-						{
-							UserSettingsJson:         ec.String("{\"some.setting\":\"some other value\"}"),
-							UserSettingsOverrideJson: ec.String("{\"some.setting\":\"some other override\"}"),
-							UserSettingsOverrideYaml: ec.String("some.setting: some override"),
-							UserSettingsYaml:         ec.String("some.setting: some value"),
-						},
-					},
-					Topology: EnterpriseSearchTopologies{
-						{
-							InstanceConfigurationId: ec.String("aws.enterprisesearch.r4"),
-							Size:                    ec.String("1g"),
-							SizeResource:            ec.String("memory"),
-							ZoneCount:               1,
-							NodeTypeAppserver:       ec.Bool(true),
-							NodeTypeWorker:          ec.Bool(false),
-						}},
+			want: &EnterpriseSearch{
+				ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+				RefId:                     ec.String("main-enterprise_search"),
+				ResourceId:                ec.String(mock.ValidClusterID),
+				Region:                    ec.String("some-region"),
+				HttpEndpoint:              ec.String("http://enterprisesearchresource.cloud.elastic.co:9200"),
+				HttpsEndpoint:             ec.String("https://enterprisesearchresource.cloud.elastic.co:9243"),
+				Config: &v1.EnterpriseSearchConfig{
+					UserSettingsJson:         ec.String("{\"some.setting\":\"some other value\"}"),
+					UserSettingsOverrideJson: ec.String("{\"some.setting\":\"some other override\"}"),
+					UserSettingsOverrideYaml: ec.String("some.setting: some override"),
+					UserSettingsYaml:         ec.String("some.setting: some value"),
 				},
+				InstanceConfigurationId: ec.String("aws.enterprisesearch.r4"),
+				Size:                    ec.String("1g"),
+				SizeResource:            ec.String("memory"),
+				ZoneCount:               1,
+				NodeTypeAppserver:       ec.Bool(true),
+				NodeTypeWorker:          ec.Bool(false),
 			},
 		},
 	}
