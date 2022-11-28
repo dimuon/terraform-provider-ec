@@ -176,6 +176,30 @@ func Test_expandApmResources(t *testing.T) {
 			},
 		},
 		{
+			name: "parses an APM resource with multiple topologies element but no instance_configuration_id",
+			args: args{
+				tpl: tpl(),
+				ess: []interface{}{
+					map[string]interface{}{
+						"ref_id":                       "main-apm",
+						"resource_id":                  mock.ValidClusterID,
+						"region":                       "some-region",
+						"elasticsearch_cluster_ref_id": "somerefid",
+						"topology": []interface{}{
+							map[string]interface{}{
+								"size":          "2g",
+								"size_resource": "memory",
+							}, map[string]interface{}{
+								"size":          "2g",
+								"size_resource": "memory",
+							},
+						},
+					},
+				},
+			},
+			err: errors.New("apm topology: invalid instance_configuration_id: \"\" doesn't match any of the deployment template instance configurations"),
+		},
+		{
 			name: "parses an APM resource with explicit topology and some config",
 			args: args{
 				tpl: tpl(),
@@ -217,6 +241,47 @@ func Test_expandApmResources(t *testing.T) {
 							DebugEnabled: ec.Bool(true),
 						},
 					},
+					ClusterTopology: []*models.ApmTopologyElement{{
+						ZoneCount:               1,
+						InstanceConfigurationID: "aws.apm.r5d",
+						Size: &models.TopologySize{
+							Resource: ec.String("memory"),
+							Value:    ec.Int32(4096),
+						},
+					}},
+				},
+			}},
+		},
+		{
+			name: "parses an APM resource with explicit nils",
+			args: args{
+				tpl: tpl(),
+				ess: []interface{}{map[string]interface{}{
+					"ref_id":                       "tertiary-apm",
+					"elasticsearch_cluster_ref_id": "somerefid",
+					"resource_id":                  mock.ValidClusterID,
+					"region":                       nil,
+					"config": []interface{}{map[string]interface{}{
+						"user_settings_yaml":          nil,
+						"user_settings_override_yaml": nil,
+						"user_settings_json":          nil,
+						"user_settings_override_json": nil,
+						"debug_enabled":               nil,
+					}},
+					"topology": []interface{}{map[string]interface{}{
+						"instance_configuration_id": "aws.apm.r5d",
+						"size":                      "4g",
+						"size_resource":             "memory",
+						"zone_count":                1,
+					}},
+				}},
+			},
+			want: []*models.ApmPayload{{
+				ElasticsearchClusterRefID: ec.String("somerefid"),
+				Region:                    ec.String("us-east-1"),
+				RefID:                     ec.String("tertiary-apm"),
+				Plan: &models.ApmPlan{
+					Apm: &models.ApmConfiguration{},
 					ClusterTopology: []*models.ApmTopologyElement{{
 						ZoneCount:               1,
 						InstanceConfigurationID: "aws.apm.r5d",

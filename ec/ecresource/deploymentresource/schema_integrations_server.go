@@ -50,19 +50,27 @@ func newIntegrationsServerResource() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"topology": IntegrationsServerTopologySchema(),
+			"fleet_https_endpoint": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"apm_https_endpoint": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"topology": integrationsServerTopologySchema(),
 
-			"config": IntegrationsServerConfig(),
+			"config": integrationsServerConfig(),
 		},
 	}
 }
 
-// IntegrationsServerTopologySchema is ...
-func IntegrationsServerTopologySchema() *schema.Schema {
+func integrationsServerTopologySchema() *schema.Schema {
 	return &schema.Schema{
 		Type:     schema.TypeList,
 		Optional: true,
 		Computed: true,
+		MaxItems: 1,
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"instance_configuration_id": {
@@ -91,8 +99,7 @@ func IntegrationsServerTopologySchema() *schema.Schema {
 	}
 }
 
-// IntegrationsServerConfig returns the schema for an integrations server.
-func IntegrationsServerConfig() *schema.Schema {
+func integrationsServerConfig() *schema.Schema {
 	return &schema.Schema{
 		Type:             schema.TypeList,
 		Optional:         true,
