@@ -137,7 +137,7 @@ func (srv IntegrationsServerTF) Payload(ctx context.Context, payload models.Inte
 		payload.Plan.ClusterTopology = []*models.IntegrationsServerTopologyElement{toplogyPayload}
 	}
 
-	return &payload, nil
+	return &payload, diags
 }
 
 func IntegrationsServerPayload(ctx context.Context, srvObj types.Object, template *models.DeploymentTemplateInfoV2) (*models.IntegrationsServerPayload, diag.Diagnostics) {

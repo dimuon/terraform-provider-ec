@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package v1
+package v2
 
 import (
 	"context"
@@ -29,8 +29,8 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/api/mock"
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
+	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/integrationsserver/v1"
 	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/testutil"
-	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/topology/v1"
 )
 
 func Test_IntegrationsServerPayload(t *testing.T) {
@@ -39,7 +39,7 @@ func Test_IntegrationsServerPayload(t *testing.T) {
 		return testutil.ParseDeploymentTemplate(t, tplPath)
 	}
 	type args struct {
-		ess IntegrationsServers
+		srv *IntegrationsServer
 		tpl *models.DeploymentTemplateInfoV2
 	}
 	tests := []struct {
@@ -55,21 +55,15 @@ func Test_IntegrationsServerPayload(t *testing.T) {
 			name: "parses an Integrations Server resource with explicit topology",
 			args: args{
 				tpl: tpl(),
-				ess: IntegrationsServers{
-					{
-						RefId:                     ec.String("main-integrations_server"),
-						ResourceId:                &mock.ValidClusterID,
-						Region:                    ec.String("some-region"),
-						ElasticsearchClusterRefId: ec.String("somerefid"),
-						Topology: v1.Topologies{
-							{
-								InstanceConfigurationId: ec.String("integrations.server"),
-								Size:                    ec.String("2g"),
-								SizeResource:            ec.String("memory"),
-								ZoneCount:               1,
-							},
-						},
-					},
+				srv: &IntegrationsServer{
+					RefId:                     ec.String("main-integrations_server"),
+					ResourceId:                &mock.ValidClusterID,
+					Region:                    ec.String("some-region"),
+					ElasticsearchClusterRefId: ec.String("somerefid"),
+					InstanceConfigurationId:   ec.String("integrations.server"),
+					Size:                      ec.String("2g"),
+					SizeResource:              ec.String("memory"),
+					ZoneCount:                 1,
 				},
 			},
 			want: &models.IntegrationsServerPayload{
@@ -93,21 +87,15 @@ func Test_IntegrationsServerPayload(t *testing.T) {
 			name: "parses an Integrations Server resource with invalid instance_configuration_id",
 			args: args{
 				tpl: tpl(),
-				ess: IntegrationsServers{
-					{
-						RefId:                     ec.String("main-integrations_server"),
-						ResourceId:                &mock.ValidClusterID,
-						Region:                    ec.String("some-region"),
-						ElasticsearchClusterRefId: ec.String("somerefid"),
-						Topology: v1.Topologies{
-							{
-								InstanceConfigurationId: ec.String("invalid"),
-								Size:                    ec.String("2g"),
-								SizeResource:            ec.String("memory"),
-								ZoneCount:               1,
-							},
-						},
-					},
+				srv: &IntegrationsServer{
+					RefId:                     ec.String("main-integrations_server"),
+					ResourceId:                &mock.ValidClusterID,
+					Region:                    ec.String("some-region"),
+					ElasticsearchClusterRefId: ec.String("somerefid"),
+					InstanceConfigurationId:   ec.String("invalid"),
+					Size:                      ec.String("2g"),
+					SizeResource:              ec.String("memory"),
+					ZoneCount:                 1,
 				},
 			},
 			diags: func() diag.Diagnostics {
@@ -120,13 +108,11 @@ func Test_IntegrationsServerPayload(t *testing.T) {
 			name: "parses an Integrations Server resource with no topology",
 			args: args{
 				tpl: tpl(),
-				ess: IntegrationsServers{
-					{
-						RefId:                     ec.String("main-integrations_server"),
-						ResourceId:                &mock.ValidClusterID,
-						Region:                    ec.String("some-region"),
-						ElasticsearchClusterRefId: ec.String("somerefid"),
-					},
+				srv: &IntegrationsServer{
+					RefId:                     ec.String("main-integrations_server"),
+					ResourceId:                &mock.ValidClusterID,
+					Region:                    ec.String("some-region"),
+					ElasticsearchClusterRefId: ec.String("somerefid"),
 				},
 			},
 			want: &models.IntegrationsServerPayload{
@@ -150,19 +136,13 @@ func Test_IntegrationsServerPayload(t *testing.T) {
 			name: "parses an Integrations Server resource with a topology element but no instance_configuration_id",
 			args: args{
 				tpl: tpl(),
-				ess: IntegrationsServers{
-					{
-						RefId:                     ec.String("main-integrations_server"),
-						ResourceId:                &mock.ValidClusterID,
-						Region:                    ec.String("some-region"),
-						ElasticsearchClusterRefId: ec.String("somerefid"),
-						Topology: v1.Topologies{
-							{
-								Size:         ec.String("2g"),
-								SizeResource: ec.String("memory"),
-							},
-						},
-					},
+				srv: &IntegrationsServer{
+					RefId:                     ec.String("main-integrations_server"),
+					ResourceId:                &mock.ValidClusterID,
+					Region:                    ec.String("some-region"),
+					ElasticsearchClusterRefId: ec.String("somerefid"),
+					Size:                      ec.String("2g"),
+					SizeResource:              ec.String("memory"),
 				},
 			},
 			want: &models.IntegrationsServerPayload{
@@ -186,30 +166,22 @@ func Test_IntegrationsServerPayload(t *testing.T) {
 			name: "parses an Integrations Server resource with explicit topology and some config",
 			args: args{
 				tpl: tpl(),
-				ess: IntegrationsServers{
-					{
-						RefId:                     ec.String("tertiary-integrations_server"),
-						ResourceId:                &mock.ValidClusterID,
-						Region:                    ec.String("some-region"),
-						ElasticsearchClusterRefId: ec.String("somerefid"),
-						Config: IntegrationsServerConfigs{
-							{
-								UserSettingsYaml:         ec.String("some.setting: value"),
-								UserSettingsOverrideYaml: ec.String("some.setting: value2"),
-								UserSettingsJson:         ec.String("{\"some.setting\": \"value\"}"),
-								UserSettingsOverrideJson: ec.String("{\"some.setting\": \"value2\"}"),
-								DebugEnabled:             ec.Bool(true),
-							},
-						},
-						Topology: v1.Topologies{
-							{
-								InstanceConfigurationId: ec.String("integrations.server"),
-								Size:                    ec.String("4g"),
-								SizeResource:            ec.String("memory"),
-								ZoneCount:               1,
-							},
-						},
+				srv: &IntegrationsServer{
+					RefId:                     ec.String("tertiary-integrations_server"),
+					ResourceId:                &mock.ValidClusterID,
+					Region:                    ec.String("some-region"),
+					ElasticsearchClusterRefId: ec.String("somerefid"),
+					Config: &v1.IntegrationsServerConfig{
+						UserSettingsYaml:         ec.String("some.setting: value"),
+						UserSettingsOverrideYaml: ec.String("some.setting: value2"),
+						UserSettingsJson:         ec.String("{\"some.setting\": \"value\"}"),
+						UserSettingsOverrideJson: ec.String("{\"some.setting\": \"value2\"}"),
+						DebugEnabled:             ec.Bool(true),
 					},
+					InstanceConfigurationId: ec.String("integrations.server"),
+					Size:                    ec.String("4g"),
+					SizeResource:            ec.String("memory"),
+					ZoneCount:               1,
 				},
 			},
 			want: &models.IntegrationsServerPayload{
@@ -245,26 +217,18 @@ func Test_IntegrationsServerPayload(t *testing.T) {
 			name: "tries to parse an integrations_server resource when the template doesn't have an Integrations Server instance set.",
 			args: args{
 				tpl: nil,
-				ess: IntegrationsServers{
-					{
-						RefId:                     ec.String("tertiary-integrations_server"),
-						ResourceId:                &mock.ValidClusterID,
-						Region:                    ec.String("some-region"),
-						ElasticsearchClusterRefId: ec.String("somerefid"),
-						Config: IntegrationsServerConfigs{
-							{
-								DebugEnabled: ec.Bool(true),
-							},
-						},
-						Topology: v1.Topologies{
-							{
-								InstanceConfigurationId: ec.String("integrations.server"),
-								Size:                    ec.String("4g"),
-								SizeResource:            ec.String("memory"),
-								ZoneCount:               1,
-							},
-						},
+				srv: &IntegrationsServer{
+					RefId:                     ec.String("tertiary-integrations_server"),
+					ResourceId:                &mock.ValidClusterID,
+					Region:                    ec.String("some-region"),
+					ElasticsearchClusterRefId: ec.String("somerefid"),
+					Config: &v1.IntegrationsServerConfig{
+						DebugEnabled: ec.Bool(true),
 					},
+					InstanceConfigurationId: ec.String("integrations.server"),
+					Size:                    ec.String("4g"),
+					SizeResource:            ec.String("memory"),
+					ZoneCount:               1,
 				},
 			},
 			diags: func() diag.Diagnostics {
@@ -276,11 +240,11 @@ func Test_IntegrationsServerPayload(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var ess types.List
-			diags := tfsdk.ValueFrom(context.Background(), tt.args.ess, IntegrationsServerSchema().FrameworkType(), &ess)
+			var srv types.Object
+			diags := tfsdk.ValueFrom(context.Background(), tt.args.srv, IntegrationsServerSchema().FrameworkType(), &srv)
 			assert.Nil(t, diags)
 
-			if got, diags := IntegrationsServerPayload(context.Background(), ess, tt.args.tpl); tt.diags != nil {
+			if got, diags := IntegrationsServerPayload(context.Background(), srv, tt.args.tpl); tt.diags != nil {
 				assert.Equal(t, tt.diags, diags)
 			} else {
 				assert.Nil(t, diags)
