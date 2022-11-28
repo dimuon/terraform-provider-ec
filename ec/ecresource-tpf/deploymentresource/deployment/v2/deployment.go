@@ -194,10 +194,8 @@ func ReadDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteRes
 		}
 	}
 
-	if len(res.Resources.Apm) > 0 {
-		if dep.Apm, err = apmv2.ReadApm(res.Resources.Apm[0]); err != nil {
-			return nil, err
-		}
+	if dep.Apm, err = apmv2.ReadApms(res.Resources.Apm); err != nil {
+		return nil, err
 	}
 
 	if len(res.Resources.IntegrationsServer) > 0 {

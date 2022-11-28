@@ -59,11 +59,24 @@ type Apm struct {
 	Config                    *v1.ApmConfig `tfsdk:"config"`
 }
 
-func ReadApm(in *models.ApmResourceInfo) (*Apm, error) {
-	if util.IsCurrentApmPlanEmpty(in) || utils.IsApmResourceStopped(in) {
-		return nil, nil
+func ReadApms(in []*models.ApmResourceInfo) (*Apm, error) {
+	for _, model := range in {
+		if util.IsCurrentApmPlanEmpty(model) || utils.IsApmResourceStopped(model) {
+			continue
+		}
+
+		apm, err := ReadApm(model)
+		if err != nil {
+			return nil, err
+		}
+
+		return apm, nil
 	}
 
+	return nil, nil
+}
+
+func ReadApm(in *models.ApmResourceInfo) (*Apm, error) {
 	var apm Apm
 
 	apm.RefId = in.RefID
