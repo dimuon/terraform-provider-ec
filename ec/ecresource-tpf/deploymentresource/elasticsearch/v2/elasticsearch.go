@@ -112,6 +112,21 @@ func ElasticsearchPayload(ctx context.Context, esObj types.Object, template *mod
 	return payload, nil
 }
 
+func ReadElasticsearches(in []*models.ElasticsearchResourceInfo, remotes *models.RemoteResources) (*Elasticsearch, error) {
+	for _, model := range in {
+		if util.IsCurrentEsPlanEmpty(model) || utils.IsEsResourceStopped(model) {
+			continue
+		}
+		es, err := ReadElasticsearch(model, remotes)
+		if err != nil {
+			return nil, err
+		}
+		return es, nil
+	}
+
+	return nil, nil
+}
+
 func ReadElasticsearch(in *models.ElasticsearchResourceInfo, remotes *models.RemoteResources) (*Elasticsearch, error) {
 	var es Elasticsearch
 

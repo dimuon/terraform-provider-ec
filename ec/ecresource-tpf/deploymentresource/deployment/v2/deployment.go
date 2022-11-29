@@ -168,11 +168,9 @@ func ReadDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteRes
 	}
 	dep.Version = version
 
-	if len(res.Resources.Elasticsearch) > 0 {
-		dep.Elasticsearch, err = elasticsearchv2.ReadElasticsearch(res.Resources.Elasticsearch[0], remotes)
-		if err != nil {
-			return nil, err
-		}
+	dep.Elasticsearch, err = elasticsearchv2.ReadElasticsearches(res.Resources.Elasticsearch, remotes)
+	if err != nil {
+		return nil, err
 	}
 
 	if dep.Kibana, err = kibanav2.ReadKibanas(res.Resources.Kibana); err != nil {
