@@ -186,10 +186,8 @@ func ReadDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteRes
 		return nil, err
 	}
 
-	if len(res.Resources.IntegrationsServer) > 0 {
-		if dep.IntegrationsServer, err = integrationsserverv2.ReadIntegrationsServer(res.Resources.IntegrationsServer[0]); err != nil {
-			return nil, err
-		}
+	if dep.IntegrationsServer, err = integrationsserverv2.ReadIntegrationsServers(res.Resources.IntegrationsServer); err != nil {
+		return nil, err
 	}
 
 	if dep.EnterpriseSearch, err = enterprisesearchv2.ReadEnterpriseSearches(res.Resources.EnterpriseSearch); err != nil {

@@ -59,6 +59,23 @@ type IntegrationsServer struct {
 	Config                    *v1.IntegrationsServerConfig `tfsdk:"config"`
 }
 
+func ReadIntegrationsServers(in []*models.IntegrationsServerResourceInfo) (*IntegrationsServer, error) {
+	for _, model := range in {
+		if util.IsCurrentIntegrationsServerPlanEmpty(model) || utils.IsIntegrationsServerResourceStopped(model) {
+			continue
+		}
+
+		srv, err := ReadIntegrationsServer(model)
+		if err != nil {
+			return nil, err
+		}
+
+		return srv, nil
+	}
+
+	return nil, nil
+}
+
 func ReadIntegrationsServer(in *models.IntegrationsServerResourceInfo) (*IntegrationsServer, error) {
 	if util.IsCurrentIntegrationsServerPlanEmpty(in) || utils.IsIntegrationsServerResourceStopped(in) {
 		return nil, nil

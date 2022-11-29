@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package v1
+package v2
 
 import (
 	"context"
@@ -28,7 +28,7 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/api/mock"
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
-	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/topology/v1"
+	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/integrationsserver/v1"
 )
 
 func Test_readIntegrationsServer(t *testing.T) {
@@ -38,7 +38,7 @@ func Test_readIntegrationsServer(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want IntegrationsServers
+		want *IntegrationsServer
 	}{
 		{
 			name: "empty resource list returns empty list",
@@ -97,23 +97,17 @@ func Test_readIntegrationsServer(t *testing.T) {
 					},
 				},
 			}},
-			want: IntegrationsServers{
-				{
-					ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-					RefId:                     ec.String("main-integrations_server"),
-					ResourceId:                &mock.ValidClusterID,
-					Region:                    ec.String("some-region"),
-					HttpEndpoint:              ec.String("http://integrations_serverresource.cloud.elastic.co:9200"),
-					HttpsEndpoint:             ec.String("https://integrations_serverresource.cloud.elastic.co:9243"),
-					Topology: v1.Topologies{
-						{
-							InstanceConfigurationId: ec.String("aws.integrations_server.r4"),
-							Size:                    ec.String("1g"),
-							SizeResource:            ec.String("memory"),
-							ZoneCount:               1,
-						},
-					},
-				},
+			want: &IntegrationsServer{
+				ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+				RefId:                     ec.String("main-integrations_server"),
+				ResourceId:                &mock.ValidClusterID,
+				Region:                    ec.String("some-region"),
+				HttpEndpoint:              ec.String("http://integrations_serverresource.cloud.elastic.co:9200"),
+				HttpsEndpoint:             ec.String("https://integrations_serverresource.cloud.elastic.co:9243"),
+				InstanceConfigurationId:   ec.String("aws.integrations_server.r4"),
+				Size:                      ec.String("1g"),
+				SizeResource:              ec.String("memory"),
+				ZoneCount:                 1,
 			},
 		},
 		{
@@ -208,30 +202,22 @@ func Test_readIntegrationsServer(t *testing.T) {
 					},
 				},
 			}},
-			want: IntegrationsServers{
-				{
-					ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-					RefId:                     ec.String("main-integrations_server"),
-					ResourceId:                &mock.ValidClusterID,
-					Region:                    ec.String("some-region"),
-					HttpEndpoint:              ec.String("http://integrations_serverresource.cloud.elastic.co:9200"),
-					HttpsEndpoint:             ec.String("https://integrations_serverresource.cloud.elastic.co:9243"),
-					Topology: v1.Topologies{
-						{
-							InstanceConfigurationId: ec.String("aws.integrations_server.r4"),
-							Size:                    ec.String("1g"),
-							SizeResource:            ec.String("memory"),
-							ZoneCount:               1,
-						},
-					},
-					Config: IntegrationsServerConfigs{
-						{
-							UserSettingsYaml:         ec.String("some.setting: value"),
-							UserSettingsOverrideYaml: ec.String("some.setting: value2"),
-							UserSettingsJson:         ec.String("{\"some.setting\":\"value\"}"),
-							UserSettingsOverrideJson: ec.String("{\"some.setting\":\"value2\"}"),
-						},
-					},
+			want: &IntegrationsServer{
+				ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+				RefId:                     ec.String("main-integrations_server"),
+				ResourceId:                &mock.ValidClusterID,
+				Region:                    ec.String("some-region"),
+				HttpEndpoint:              ec.String("http://integrations_serverresource.cloud.elastic.co:9200"),
+				HttpsEndpoint:             ec.String("https://integrations_serverresource.cloud.elastic.co:9243"),
+				InstanceConfigurationId:   ec.String("aws.integrations_server.r4"),
+				Size:                      ec.String("1g"),
+				SizeResource:              ec.String("memory"),
+				ZoneCount:                 1,
+				Config: &v1.IntegrationsServerConfig{
+					UserSettingsYaml:         ec.String("some.setting: value"),
+					UserSettingsOverrideYaml: ec.String("some.setting: value2"),
+					UserSettingsJson:         ec.String("{\"some.setting\":\"value\"}"),
+					UserSettingsOverrideJson: ec.String("{\"some.setting\":\"value2\"}"),
 				},
 			},
 		},
@@ -285,43 +271,35 @@ func Test_readIntegrationsServer(t *testing.T) {
 					},
 				},
 			}},
-			want: IntegrationsServers{
-				{
-					ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-					RefId:                     ec.String("main-integrations_server"),
-					ResourceId:                &mock.ValidClusterID,
-					Region:                    ec.String("some-region"),
-					HttpEndpoint:              ec.String("http://integrations_serverresource.cloud.elastic.co:9200"),
-					HttpsEndpoint:             ec.String("https://integrations_serverresource.cloud.elastic.co:9243"),
-					Topology: v1.Topologies{
-						{
-							InstanceConfigurationId: ec.String("aws.integrations_server.r4"),
-							Size:                    ec.String("1g"),
-							SizeResource:            ec.String("memory"),
-							ZoneCount:               1,
-						},
-					},
-					Config: IntegrationsServerConfigs{
-						{
-							UserSettingsYaml:         ec.String("some.setting: value"),
-							UserSettingsOverrideYaml: ec.String("some.setting: value2"),
-							UserSettingsJson:         ec.String("{\"some.setting\":\"value\"}"),
-							UserSettingsOverrideJson: ec.String("{\"some.setting\":\"value2\"}"),
-							DebugEnabled:             ec.Bool(true),
-						},
-					},
+			want: &IntegrationsServer{
+				ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+				RefId:                     ec.String("main-integrations_server"),
+				ResourceId:                &mock.ValidClusterID,
+				Region:                    ec.String("some-region"),
+				HttpEndpoint:              ec.String("http://integrations_serverresource.cloud.elastic.co:9200"),
+				HttpsEndpoint:             ec.String("https://integrations_serverresource.cloud.elastic.co:9243"),
+				InstanceConfigurationId:   ec.String("aws.integrations_server.r4"),
+				Size:                      ec.String("1g"),
+				SizeResource:              ec.String("memory"),
+				ZoneCount:                 1,
+				Config: &v1.IntegrationsServerConfig{
+					UserSettingsYaml:         ec.String("some.setting: value"),
+					UserSettingsOverrideYaml: ec.String("some.setting: value2"),
+					UserSettingsJson:         ec.String("{\"some.setting\":\"value\"}"),
+					UserSettingsOverrideJson: ec.String("{\"some.setting\":\"value2\"}"),
+					DebugEnabled:             ec.Bool(true),
 				},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			srvs, err := ReadIntegrationsServers(tt.args.in)
+			srv, err := ReadIntegrationsServers(tt.args.in)
 			assert.Nil(t, err)
-			assert.Equal(t, tt.want, srvs)
+			assert.Equal(t, tt.want, srv)
 
-			var srvsTF types.List
-			diags := tfsdk.ValueFrom(context.Background(), srvs, IntegrationsServerSchema().FrameworkType(), &srvsTF)
+			var srvTF types.Object
+			diags := tfsdk.ValueFrom(context.Background(), srv, IntegrationsServerSchema().FrameworkType(), &srvTF)
 			assert.Nil(t, diags)
 		})
 	}
