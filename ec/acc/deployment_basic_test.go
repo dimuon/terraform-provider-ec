@@ -119,13 +119,12 @@ func TestAccDeployment_basic_config(t *testing.T) {
 				),
 			},
 			// Import resource without complex ID
-			// TODO: fix - it fails with "resource with ID 8.5.0 not found"
-			// {
-			// 	ResourceName:            resName,
-			// 	ImportState:             true,
-			// 	ImportStateVerify:       true,
-			// 	ImportStateVerifyIgnore: []string{"timeouts", "apm_secret_token", "elasticsearch_password", "elasticsearch_username"},
-			// },
+			{
+				ResourceName:            resName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"timeouts", "apm_secret_token", "elasticsearch_password", "elasticsearch_username"},
+			},
 		},
 	})
 }

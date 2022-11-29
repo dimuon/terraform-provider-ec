@@ -84,23 +84,13 @@ type Deployment struct {
 }
 
 // Nullify Elasticsearch topologies that have zero size and are not specified in plan
-func (dep *Deployment) NullifyNotUsedEsTopologies(ctx context.Context, esPlanObj types.Object) diag.Diagnostics {
-	if esPlanObj.IsNull() || esPlanObj.IsUnknown() {
-		return nil
-	}
-
+func (dep *Deployment) NullifyNotUsedEsTopologies(ctx context.Context, esPlan *elasticsearchv2.ElasticsearchTF) {
 	if dep.Elasticsearch == nil {
-		return nil
-	}
-
-	var esPlan *elasticsearchv2.ElasticsearchTF
-
-	if diags := tfsdk.ValueAs(ctx, esPlanObj, &esPlan); diags.HasError() {
-		return diags
+		return
 	}
 
 	if esPlan == nil {
-		return nil
+		return
 	}
 
 	dep.Elasticsearch.HotTier = nullifyUnspecifiedZeroSizedTier(esPlan.HotContentTier, dep.Elasticsearch.HotTier)
@@ -116,8 +106,6 @@ func (dep *Deployment) NullifyNotUsedEsTopologies(ctx context.Context, esPlanObj
 	dep.Elasticsearch.MasterTier = nullifyUnspecifiedZeroSizedTier(esPlan.MasterTier, dep.Elasticsearch.MasterTier)
 
 	dep.Elasticsearch.CoordinatingTier = nullifyUnspecifiedZeroSizedTier(esPlan.CoordinatingTier, dep.Elasticsearch.CoordinatingTier)
-
-	return nil
 }
 
 func nullifyUnspecifiedZeroSizedTier(tierPlan types.Object, tier *elasticsearchv2.ElasticsearchTopology) *elasticsearchv2.ElasticsearchTopology {
