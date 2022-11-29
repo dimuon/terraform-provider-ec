@@ -147,7 +147,7 @@ func (r *Resource) read(ctx context.Context, id string, state *deploymentv2.Depl
 		return nil, diags
 	}
 
-	if elasticsearchPlan.Config.IsNull() && deployment.Elasticsearch.Config != nil && deployment.Elasticsearch.Config.IsEmpty() {
+	if elasticsearchPlan.Config.IsNull() && deployment.Elasticsearch != nil && deployment.Elasticsearch.Config != nil && deployment.Elasticsearch.Config.IsEmpty() {
 		deployment.Elasticsearch.Config = nil
 	}
 
