@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package v1
+package v2
 
 import (
 	"context"
@@ -29,8 +29,8 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/api/mock"
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
+	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/kibana/v1"
 	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/testutil"
-	topologyv1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/topology/v1"
 )
 
 func Test_KibanaPayload(t *testing.T) {
@@ -39,8 +39,8 @@ func Test_KibanaPayload(t *testing.T) {
 		return testutil.ParseDeploymentTemplate(t, tplPath)
 	}
 	type args struct {
-		kibanas Kibanas
-		tpl     *models.DeploymentTemplateInfoV2
+		kibana *Kibana
+		tpl    *models.DeploymentTemplateInfoV2
 	}
 	tests := []struct {
 		name  string
@@ -55,20 +55,14 @@ func Test_KibanaPayload(t *testing.T) {
 			name: "parses a kibana resource with topology",
 			args: args{
 				tpl: tpl(),
-				kibanas: Kibanas{
-					{
-						RefId:                     ec.String("main-kibana"),
-						ResourceId:                &mock.ValidClusterID,
-						Region:                    ec.String("some-region"),
-						ElasticsearchClusterRefId: ec.String("somerefid"),
-						Topology: topologyv1.Topologies{
-							{
-								InstanceConfigurationId: ec.String("aws.kibana.r5d"),
-								Size:                    ec.String("2g"),
-								ZoneCount:               1,
-							},
-						},
-					},
+				kibana: &Kibana{
+					RefId:                     ec.String("main-kibana"),
+					ResourceId:                &mock.ValidClusterID,
+					Region:                    ec.String("some-region"),
+					ElasticsearchClusterRefId: ec.String("somerefid"),
+					InstanceConfigurationId:   ec.String("aws.kibana.r5d"),
+					Size:                      ec.String("2g"),
+					ZoneCount:                 1,
 				},
 			},
 			want: &models.KibanaPayload{
@@ -94,20 +88,14 @@ func Test_KibanaPayload(t *testing.T) {
 			name: "parses a kibana resource with incorrect instance_configuration_id",
 			args: args{
 				tpl: tpl(),
-				kibanas: Kibanas{
-					{
-						RefId:                     ec.String("main-kibana"),
-						ResourceId:                &mock.ValidClusterID,
-						Region:                    ec.String("some-region"),
-						ElasticsearchClusterRefId: ec.String("somerefid"),
-						Topology: topologyv1.Topologies{
-							{
-								InstanceConfigurationId: ec.String("gcp.some.config"),
-								Size:                    ec.String("2g"),
-								ZoneCount:               1,
-							},
-						},
-					},
+				kibana: &Kibana{
+					RefId:                     ec.String("main-kibana"),
+					ResourceId:                &mock.ValidClusterID,
+					Region:                    ec.String("some-region"),
+					ElasticsearchClusterRefId: ec.String("somerefid"),
+					InstanceConfigurationId:   ec.String("gcp.some.config"),
+					Size:                      ec.String("2g"),
+					ZoneCount:                 1,
 				},
 			},
 			diags: func() diag.Diagnostics {
@@ -120,13 +108,11 @@ func Test_KibanaPayload(t *testing.T) {
 			name: "parses a kibana resource without topology",
 			args: args{
 				tpl: tpl(),
-				kibanas: Kibanas{
-					{
-						RefId:                     ec.String("main-kibana"),
-						ResourceId:                &mock.ValidClusterID,
-						Region:                    ec.String("some-region"),
-						ElasticsearchClusterRefId: ec.String("somerefid"),
-					},
+				kibana: &Kibana{
+					RefId:                     ec.String("main-kibana"),
+					ResourceId:                &mock.ValidClusterID,
+					Region:                    ec.String("some-region"),
+					ElasticsearchClusterRefId: ec.String("somerefid"),
 				},
 			},
 			want: &models.KibanaPayload{
@@ -152,18 +138,12 @@ func Test_KibanaPayload(t *testing.T) {
 			name: "parses a kibana resource with a topology but no instance_configuration_id",
 			args: args{
 				tpl: tpl(),
-				kibanas: Kibanas{
-					{
-						RefId:                     ec.String("main-kibana"),
-						ResourceId:                &mock.ValidClusterID,
-						Region:                    ec.String("some-region"),
-						ElasticsearchClusterRefId: ec.String("somerefid"),
-						Topology: topologyv1.Topologies{
-							{
-								Size: ec.String("4g"),
-							},
-						},
-					},
+				kibana: &Kibana{
+					RefId:                     ec.String("main-kibana"),
+					ResourceId:                &mock.ValidClusterID,
+					Region:                    ec.String("some-region"),
+					ElasticsearchClusterRefId: ec.String("somerefid"),
+					Size:                      ec.String("4g"),
 				},
 			},
 			want: &models.KibanaPayload{
@@ -190,28 +170,20 @@ func Test_KibanaPayload(t *testing.T) {
 			name: "parses a kibana resource with topology and settings",
 			args: args{
 				tpl: tpl(),
-				kibanas: Kibanas{
-					{
-						RefId:                     ec.String("secondary-kibana"),
-						ResourceId:                &mock.ValidClusterID,
-						Region:                    ec.String("some-region"),
-						ElasticsearchClusterRefId: ec.String("somerefid"),
-						Config: KibanaConfigs{
-							{
-								UserSettingsYaml:         ec.String("some.setting: value"),
-								UserSettingsOverrideYaml: ec.String("some.setting: override"),
-								UserSettingsJson:         ec.String(`{"some.setting":"value"}`),
-								UserSettingsOverrideJson: ec.String(`{"some.setting":"override"}`),
-							},
-						},
-						Topology: topologyv1.Topologies{
-							{
-								InstanceConfigurationId: ec.String("aws.kibana.r5d"),
-								Size:                    ec.String("4g"),
-								ZoneCount:               1,
-							},
-						},
+				kibana: &Kibana{
+					RefId:                     ec.String("secondary-kibana"),
+					ResourceId:                &mock.ValidClusterID,
+					Region:                    ec.String("some-region"),
+					ElasticsearchClusterRefId: ec.String("somerefid"),
+					Config: &v1.KibanaConfig{
+						UserSettingsYaml:         ec.String("some.setting: value"),
+						UserSettingsOverrideYaml: ec.String("some.setting: override"),
+						UserSettingsJson:         ec.String(`{"some.setting":"value"}`),
+						UserSettingsOverrideJson: ec.String(`{"some.setting":"override"}`),
 					},
+					InstanceConfigurationId: ec.String("aws.kibana.r5d"),
+					Size:                    ec.String("4g"),
+					ZoneCount:               1,
 				},
 			},
 			want: &models.KibanaPayload{
@@ -244,21 +216,15 @@ func Test_KibanaPayload(t *testing.T) {
 			name: "tries to parse an kibana resource when the template doesn't have a kibana instance set.",
 			args: args{
 				tpl: nil,
-				kibanas: Kibanas{
-					{
-						RefId:                     ec.String("tertiary-kibana"),
-						ResourceId:                &mock.ValidClusterID,
-						Region:                    ec.String("some-region"),
-						ElasticsearchClusterRefId: ec.String("somerefid"),
-						Topology: topologyv1.Topologies{
-							{
-								InstanceConfigurationId: ec.String("aws.kibana.r5d"),
-								Size:                    ec.String("1g"),
-								SizeResource:            ec.String("memory"),
-								ZoneCount:               1,
-							},
-						},
-					},
+				kibana: &Kibana{
+					RefId:                     ec.String("tertiary-kibana"),
+					ResourceId:                &mock.ValidClusterID,
+					Region:                    ec.String("some-region"),
+					ElasticsearchClusterRefId: ec.String("somerefid"),
+					InstanceConfigurationId:   ec.String("aws.kibana.r5d"),
+					Size:                      ec.String("1g"),
+					SizeResource:              ec.String("memory"),
+					ZoneCount:                 1,
 				},
 			},
 			diags: func() diag.Diagnostics {
@@ -270,11 +236,11 @@ func Test_KibanaPayload(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var kibanas types.List
-			diags := tfsdk.ValueFrom(context.Background(), tt.args.kibanas, KibanaSchema().FrameworkType(), &kibanas)
+			var kibana types.Object
+			diags := tfsdk.ValueFrom(context.Background(), tt.args.kibana, KibanaSchema().FrameworkType(), &kibana)
 			assert.Nil(t, diags)
 
-			if got, diags := KibanaPayload(context.Background(), kibanas, tt.args.tpl); tt.diags != nil {
+			if got, diags := KibanaPayload(context.Background(), kibana, tt.args.tpl); tt.diags != nil {
 				assert.Equal(t, tt.diags, diags)
 			} else {
 				assert.Nil(t, diags)

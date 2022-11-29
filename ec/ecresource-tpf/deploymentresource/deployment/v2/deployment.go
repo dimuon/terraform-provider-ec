@@ -175,11 +175,8 @@ func ReadDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteRes
 		}
 	}
 
-	if len(res.Resources.Kibana) > 0 {
-		dep.Kibana, err = kibanav2.ReadKibana(res.Resources.Kibana[0])
-		if err != nil {
-			return nil, err
-		}
+	if dep.Kibana, err = kibanav2.ReadKibanas(res.Resources.Kibana); err != nil {
+		return nil, err
 	}
 
 	if dep.Apm, err = apmv2.ReadApms(res.Resources.Apm); err != nil {

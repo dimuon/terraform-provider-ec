@@ -77,9 +77,6 @@ func ReadIntegrationsServers(in []*models.IntegrationsServerResourceInfo) (*Inte
 }
 
 func ReadIntegrationsServer(in *models.IntegrationsServerResourceInfo) (*IntegrationsServer, error) {
-	if util.IsCurrentIntegrationsServerPlanEmpty(in) || utils.IsIntegrationsServerResourceStopped(in) {
-		return nil, nil
-	}
 
 	var srv IntegrationsServer
 

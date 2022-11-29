@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package v1
+package v2
 
 import (
 	"context"
@@ -28,7 +28,7 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/api/mock"
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
-	topologyv1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/topology/v1"
+	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/kibana/v1"
 )
 
 func Test_ReadKibana(t *testing.T) {
@@ -38,7 +38,7 @@ func Test_ReadKibana(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want Kibanas
+		want *Kibana
 	}{
 		{
 			name: "empty resource list returns empty list",
@@ -142,42 +142,34 @@ func Test_ReadKibana(t *testing.T) {
 					},
 				},
 			}},
-			want: Kibanas{
-				{
-					ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
-					RefId:                     ec.String("main-kibana"),
-					ResourceId:                &mock.ValidClusterID,
-					Region:                    ec.String("some-region"),
-					HttpEndpoint:              ec.String("http://kibanaresource.cloud.elastic.co:9200"),
-					HttpsEndpoint:             ec.String("https://kibanaresource.cloud.elastic.co:9243"),
-					Config: KibanaConfigs{
-						{
-							UserSettingsYaml:         ec.String("some.setting: value"),
-							UserSettingsOverrideYaml: ec.String("some.setting: override"),
-							UserSettingsJson:         ec.String(`{"some.setting":"value"}`),
-							UserSettingsOverrideJson: ec.String(`{"some.setting":"override"}`),
-						},
-					},
-					Topology: topologyv1.Topologies{
-						{
-							InstanceConfigurationId: ec.String("aws.kibana.r4"),
-							Size:                    ec.String("1g"),
-							SizeResource:            ec.String("memory"),
-							ZoneCount:               1,
-						},
-					},
+			want: &Kibana{
+				ElasticsearchClusterRefId: ec.String("main-elasticsearch"),
+				RefId:                     ec.String("main-kibana"),
+				ResourceId:                &mock.ValidClusterID,
+				Region:                    ec.String("some-region"),
+				HttpEndpoint:              ec.String("http://kibanaresource.cloud.elastic.co:9200"),
+				HttpsEndpoint:             ec.String("https://kibanaresource.cloud.elastic.co:9243"),
+				Config: &v1.KibanaConfig{
+					UserSettingsYaml:         ec.String("some.setting: value"),
+					UserSettingsOverrideYaml: ec.String("some.setting: override"),
+					UserSettingsJson:         ec.String(`{"some.setting":"value"}`),
+					UserSettingsOverrideJson: ec.String(`{"some.setting":"override"}`),
 				},
+				InstanceConfigurationId: ec.String("aws.kibana.r4"),
+				Size:                    ec.String("1g"),
+				SizeResource:            ec.String("memory"),
+				ZoneCount:               1,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			kibanas, err := ReadKibanas(tt.args.in)
+			kibana, err := ReadKibanas(tt.args.in)
 			assert.Nil(t, err)
-			assert.Equal(t, tt.want, kibanas)
+			assert.Equal(t, tt.want, kibana)
 
-			var kibanasTF types.List
-			diags := tfsdk.ValueFrom(context.Background(), kibanas, KibanaSchema().FrameworkType(), &kibanasTF)
+			var kibanaTF types.Object
+			diags := tfsdk.ValueFrom(context.Background(), kibana, KibanaSchema().FrameworkType(), &kibanaTF)
 			assert.Nil(t, diags)
 		})
 	}

@@ -59,11 +59,24 @@ type Kibana struct {
 	Config                    *v1.KibanaConfig `tfsdk:"config"`
 }
 
-func ReadKibana(in *models.KibanaResourceInfo) (*Kibana, error) {
-	if util.IsCurrentKibanaPlanEmpty(in) || utils.IsKibanaResourceStopped(in) {
-		return nil, nil
+func ReadKibanas(in []*models.KibanaResourceInfo) (*Kibana, error) {
+	for _, model := range in {
+		if util.IsCurrentKibanaPlanEmpty(model) || utils.IsKibanaResourceStopped(model) {
+			continue
+		}
+
+		kibana, err := ReadKibana(model)
+		if err != nil {
+			return nil, err
+		}
+
+		return kibana, nil
 	}
 
+	return nil, nil
+}
+
+func ReadKibana(in *models.KibanaResourceInfo) (*Kibana, error) {
 	var kibana Kibana
 
 	kibana.RefId = in.RefID
