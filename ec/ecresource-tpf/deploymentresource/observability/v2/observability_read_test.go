@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package v1
+package v2
 
 import (
 	"context"
@@ -37,7 +37,7 @@ func Test_readObservability(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want Observabilities
+		want *Observability
 	}{
 		{
 			name: "flattens no observability settings when empty",
@@ -63,12 +63,10 @@ func Test_readObservability(t *testing.T) {
 					},
 				},
 			}},
-			want: Observabilities{
-				{
-					DeploymentId: &mock.ValidClusterID,
-					RefId:        ec.String("main-elasticsearch"),
-					Logs:         true,
-				},
+			want: &Observability{
+				DeploymentId: &mock.ValidClusterID,
+				RefId:        ec.String("main-elasticsearch"),
+				Logs:         true,
 			},
 		},
 		{
@@ -83,12 +81,10 @@ func Test_readObservability(t *testing.T) {
 					},
 				},
 			}},
-			want: Observabilities{
-				{
-					DeploymentId: &mock.ValidClusterID,
-					RefId:        ec.String("main-elasticsearch"),
-					Metrics:      true,
-				},
+			want: &Observability{
+				DeploymentId: &mock.ValidClusterID,
+				RefId:        ec.String("main-elasticsearch"),
+				Metrics:      true,
 			},
 		},
 		{
@@ -109,24 +105,22 @@ func Test_readObservability(t *testing.T) {
 					},
 				},
 			}},
-			want: Observabilities{
-				{
-					DeploymentId: &mock.ValidClusterID,
-					RefId:        ec.String("main-elasticsearch"),
-					Logs:         true,
-					Metrics:      true,
-				},
+			want: &Observability{
+				DeploymentId: &mock.ValidClusterID,
+				RefId:        ec.String("main-elasticsearch"),
+				Logs:         true,
+				Metrics:      true,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			observabilities, err := ReadObservabilities(tt.args.settings)
+			observability, err := ReadObservability(tt.args.settings)
 			assert.Nil(t, err)
-			assert.Equal(t, tt.want, observabilities)
+			assert.Equal(t, tt.want, observability)
 
-			var observabilitiesTF types.List
-			diags := tfsdk.ValueFrom(context.Background(), observabilities, ObservabilitySchema().FrameworkType(), &observabilitiesTF)
+			var observabilityTF types.Object
+			diags := tfsdk.ValueFrom(context.Background(), observability, ObservabilitySchema().FrameworkType(), &observabilityTF)
 			assert.Nil(t, diags)
 		})
 	}

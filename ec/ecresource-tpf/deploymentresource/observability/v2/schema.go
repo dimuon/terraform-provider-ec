@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package v1
+package v2
 
 import (
 	"github.com/elastic/terraform-provider-ec/ec/internal/planmodifier"

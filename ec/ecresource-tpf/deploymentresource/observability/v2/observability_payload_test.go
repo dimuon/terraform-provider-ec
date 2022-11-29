@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package v1
+package v2
 
 import (
 	"context"
@@ -33,7 +33,7 @@ import (
 
 func Test_observabilityPayload(t *testing.T) {
 	type args struct {
-		observabilities Observabilities
+		observability *Observability
 		*api.API
 	}
 	tests := []struct {
@@ -48,13 +48,11 @@ func Test_observabilityPayload(t *testing.T) {
 		{
 			name: "expands all observability settings with given refID",
 			args: args{
-				observabilities: Observabilities{
-					{
-						DeploymentId: &mock.ValidClusterID,
-						RefId:        ec.String("main-elasticsearch"),
-						Metrics:      true,
-						Logs:         true,
-					},
+				observability: &Observability{
+					DeploymentId: &mock.ValidClusterID,
+					RefId:        ec.String("main-elasticsearch"),
+					Metrics:      true,
+					Logs:         true,
 				},
 			},
 			want: &models.DeploymentObservabilitySettings{
@@ -89,12 +87,10 @@ func Test_observabilityPayload(t *testing.T) {
 						}),
 					),
 				),
-				observabilities: Observabilities{
-					{
-						DeploymentId: &mock.ValidClusterID,
-						Metrics:      true,
-						Logs:         true,
-					},
+				observability: &Observability{
+					DeploymentId: &mock.ValidClusterID,
+					Metrics:      true,
+					Logs:         true,
 				},
 			},
 			want: &models.DeploymentObservabilitySettings{
@@ -129,12 +125,10 @@ func Test_observabilityPayload(t *testing.T) {
 						}),
 					),
 				),
-				observabilities: Observabilities{
-					{
-						DeploymentId: &mock.ValidClusterID,
-						Metrics:      false,
-						Logs:         true,
-					},
+				observability: &Observability{
+					DeploymentId: &mock.ValidClusterID,
+					Metrics:      false,
+					Logs:         true,
 				},
 			},
 			want: &models.DeploymentObservabilitySettings{
@@ -163,12 +157,10 @@ func Test_observabilityPayload(t *testing.T) {
 						}),
 					),
 				),
-				observabilities: Observabilities{
-					{
-						DeploymentId: &mock.ValidClusterID,
-						Metrics:      true,
-						Logs:         false,
-					},
+				observability: &Observability{
+					DeploymentId: &mock.ValidClusterID,
+					Metrics:      true,
+					Logs:         false,
 				},
 			},
 			want: &models.DeploymentObservabilitySettings{
@@ -197,12 +189,10 @@ func Test_observabilityPayload(t *testing.T) {
 						}),
 					),
 				),
-				observabilities: Observabilities{
-					{
-						DeploymentId: ec.String("self"),
-						Metrics:      true,
-						Logs:         false,
-					},
+				observability: &Observability{
+					DeploymentId: ec.String("self"),
+					Metrics:      true,
+					Logs:         false,
 				},
 			},
 			want: &models.DeploymentObservabilitySettings{
@@ -231,13 +221,11 @@ func Test_observabilityPayload(t *testing.T) {
 						}),
 					),
 				),
-				observabilities: Observabilities{
-					{
-						DeploymentId: ec.String("self"),
-						RefId:        ec.String("main-elasticsearch"),
-						Metrics:      true,
-						Logs:         false,
-					},
+				observability: &Observability{
+					DeploymentId: ec.String("self"),
+					RefId:        ec.String("main-elasticsearch"),
+					Metrics:      true,
+					Logs:         false,
 				},
 			},
 			want: &models.DeploymentObservabilitySettings{
@@ -252,11 +240,11 @@ func Test_observabilityPayload(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var observabilities types.List
-			diags := tfsdk.ValueFrom(context.Background(), tt.args.observabilities, ObservabilitySchema().FrameworkType(), &observabilities)
+			var observability types.Object
+			diags := tfsdk.ValueFrom(context.Background(), tt.args.observability, ObservabilitySchema().FrameworkType(), &observability)
 			assert.Nil(t, diags)
 
-			got, diags := ObservabilityPayload(context.Background(), observabilities, tt.args.API)
+			got, diags := ObservabilityPayload(context.Background(), observability, tt.args.API)
 			assert.Nil(t, diags)
 			assert.Equal(t, tt.want, got)
 		})
