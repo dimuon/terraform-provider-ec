@@ -147,7 +147,8 @@ func (r *Resource) read(ctx context.Context, id string, state *deploymentv2.Depl
 		return nil, diags
 	}
 
-	if elasticsearchPlan.Config.IsNull() && deployment.Elasticsearch != nil && deployment.Elasticsearch.Config != nil && deployment.Elasticsearch.Config.IsEmpty() {
+	// ReadDeployment returns empty config struct if there is no config, so we have to nullify it if plan doesn't contain it
+	if elasticsearchPlan != nil && elasticsearchPlan.Config.IsNull() && deployment.Elasticsearch != nil && deployment.Elasticsearch.Config != nil && deployment.Elasticsearch.Config.IsEmpty() {
 		deployment.Elasticsearch.Config = nil
 	}
 
