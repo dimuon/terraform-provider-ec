@@ -85,9 +85,9 @@ func TestAccDeployment_basic_tf(t *testing.T) {
 func TestAccDeployment_basic_config(t *testing.T) {
 	resName := "ec_deployment.basic"
 	randomName := prefix + acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
-	startCfg := "testdata/deployment_basic_settings_config_1.tf"
+	importCfg := "testdata/deployment_basic_settings_config_import.tf"
 	settingsConfig := "testdata/deployment_basic_settings_config_2.tf"
-	cfg := fixtureAccDeploymentResourceBasicWithApps(t, startCfg, randomName, getRegion(), defaultTemplate)
+	cfg := fixtureAccDeploymentResourceBasicWithApps(t, importCfg, randomName, getRegion(), defaultTemplate)
 	settingsConfigCfg := fixtureAccDeploymentResourceBasicWithApps(t, settingsConfig, randomName, getRegion(), defaultTemplate)
 	deploymentVersion, err := latestStackVersion()
 	if err != nil {
