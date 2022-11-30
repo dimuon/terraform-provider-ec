@@ -48,20 +48,20 @@ type EnterpriseSearchTF struct {
 }
 
 type EnterpriseSearch struct {
-	ElasticsearchClusterRefId *string                    `tfsdk:"elasticsearch_cluster_ref_id"`
-	RefId                     *string                    `tfsdk:"ref_id"`
-	ResourceId                *string                    `tfsdk:"resource_id"`
-	Region                    *string                    `tfsdk:"region"`
-	HttpEndpoint              *string                    `tfsdk:"http_endpoint"`
-	HttpsEndpoint             *string                    `tfsdk:"https_endpoint"`
-	InstanceConfigurationId   *string                    `tfsdk:"instance_configuration_id"`
-	Size                      *string                    `tfsdk:"size"`
-	SizeResource              *string                    `tfsdk:"size_resource"`
-	ZoneCount                 int                        `tfsdk:"zone_count"`
-	NodeTypeAppserver         *bool                      `tfsdk:"node_type_appserver"`
-	NodeTypeConnector         *bool                      `tfsdk:"node_type_connector"`
-	NodeTypeWorker            *bool                      `tfsdk:"node_type_worker"`
-	Config                    *v1.EnterpriseSearchConfig `tfsdk:"config"`
+	ElasticsearchClusterRefId *string                 `tfsdk:"elasticsearch_cluster_ref_id"`
+	RefId                     *string                 `tfsdk:"ref_id"`
+	ResourceId                *string                 `tfsdk:"resource_id"`
+	Region                    *string                 `tfsdk:"region"`
+	HttpEndpoint              *string                 `tfsdk:"http_endpoint"`
+	HttpsEndpoint             *string                 `tfsdk:"https_endpoint"`
+	InstanceConfigurationId   *string                 `tfsdk:"instance_configuration_id"`
+	Size                      *string                 `tfsdk:"size"`
+	SizeResource              *string                 `tfsdk:"size_resource"`
+	ZoneCount                 int                     `tfsdk:"zone_count"`
+	NodeTypeAppserver         *bool                   `tfsdk:"node_type_appserver"`
+	NodeTypeConnector         *bool                   `tfsdk:"node_type_connector"`
+	NodeTypeWorker            *bool                   `tfsdk:"node_type_worker"`
+	Config                    *EnterpriseSearchConfig `tfsdk:"config"`
 }
 
 type EnterpriseSearches []EnterpriseSearch
@@ -101,7 +101,7 @@ func ReadEnterpriseSearch(in *models.EnterpriseSearchResourceInfo) (*EnterpriseS
 
 	ess.HttpEndpoint, ess.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
 
-	cfg, err := v1.ReadEnterpriseSearchConfig(plan.EnterpriseSearch)
+	cfg, err := ReadEnterpriseSearchConfig(plan.EnterpriseSearch)
 	if err != nil {
 		return nil, err
 	}

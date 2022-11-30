@@ -28,7 +28,6 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/api/mock"
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
-	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/kibana/v1"
 )
 
 func Test_ReadKibana(t *testing.T) {
@@ -149,7 +148,7 @@ func Test_ReadKibana(t *testing.T) {
 				Region:                    ec.String("some-region"),
 				HttpEndpoint:              ec.String("http://kibanaresource.cloud.elastic.co:9200"),
 				HttpsEndpoint:             ec.String("https://kibanaresource.cloud.elastic.co:9243"),
-				Config: &v1.KibanaConfig{
+				Config: &KibanaConfig{
 					UserSettingsYaml:         ec.String("some.setting: value"),
 					UserSettingsOverrideYaml: ec.String("some.setting: override"),
 					UserSettingsJson:         ec.String(`{"some.setting":"value"}`),

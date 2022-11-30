@@ -19,6 +19,7 @@ package v2
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -47,17 +48,25 @@ type ElasticsearchTopologyTF struct {
 
 type ElasticsearchTopology struct {
 	id                      string
-	InstanceConfigurationId *string                              `tfsdk:"instance_configuration_id"`
-	Size                    *string                              `tfsdk:"size"`
-	SizeResource            *string                              `tfsdk:"size_resource"`
-	ZoneCount               int                                  `tfsdk:"zone_count"`
-	NodeTypeData            *string                              `tfsdk:"node_type_data"`
-	NodeTypeMaster          *string                              `tfsdk:"node_type_master"`
-	NodeTypeIngest          *string                              `tfsdk:"node_type_ingest"`
-	NodeTypeMl              *string                              `tfsdk:"node_type_ml"`
-	NodeRoles               []string                             `tfsdk:"node_roles"`
-	Autoscaling             *v1.ElasticsearchTopologyAutoscaling `tfsdk:"autoscaling"`
+	InstanceConfigurationId *string                           `tfsdk:"instance_configuration_id"`
+	Size                    *string                           `tfsdk:"size"`
+	SizeResource            *string                           `tfsdk:"size_resource"`
+	ZoneCount               int                               `tfsdk:"zone_count"`
+	NodeTypeData            *string                           `tfsdk:"node_type_data"`
+	NodeTypeMaster          *string                           `tfsdk:"node_type_master"`
+	NodeTypeIngest          *string                           `tfsdk:"node_type_ingest"`
+	NodeTypeMl              *string                           `tfsdk:"node_type_ml"`
+	NodeRoles               []string                          `tfsdk:"node_roles"`
+	Autoscaling             *ElasticsearchTopologyAutoscaling `tfsdk:"autoscaling"`
 }
+
+func CreateTierForTest(tierId string, tier ElasticsearchTopology) *ElasticsearchTopology {
+	res := tier
+	res.id = tierId
+	return &res
+}
+
+type ElasticsearchTopologyAutoscaling v1.ElasticsearchTopologyAutoscaling
 
 func (topology ElasticsearchTopologyTF) Payload(ctx context.Context, topologyID string, planTopologies []*models.ElasticsearchClusterTopologyElement) diag.Diagnostics {
 	var diags diag.Diagnostics
@@ -159,13 +168,37 @@ func ReadElasticsearchTopology(model *models.ElasticsearchClusterTopologyElement
 
 	topology.NodeRoles = model.NodeRoles
 
-	autoscaling, err := v1.ReadElasticsearchTopologyAutoscaling(model)
+	autoscaling, err := ReadElasticsearchTopologyAutoscaling(model)
 	if err != nil {
 		return nil, err
 	}
 	topology.Autoscaling = autoscaling
 
 	return &topology, nil
+}
+
+func ReadElasticsearchTopologyAutoscaling(topology *models.ElasticsearchClusterTopologyElement) (*ElasticsearchTopologyAutoscaling, error) {
+	var a ElasticsearchTopologyAutoscaling
+
+	if ascale := topology.AutoscalingMax; ascale != nil {
+		a.MaxSizeResource = ascale.Resource
+		a.MaxSize = ec.String(util.MemoryToState(*ascale.Value))
+	}
+
+	if ascale := topology.AutoscalingMin; ascale != nil {
+		a.MinSizeResource = ascale.Resource
+		a.MinSize = ec.String(util.MemoryToState(*ascale.Value))
+	}
+
+	if topology.AutoscalingPolicyOverrideJSON != nil {
+		b, err := json.Marshal(topology.AutoscalingPolicyOverrideJSON)
+		if err != nil {
+			return nil, fmt.Errorf("elasticsearch topology %s: unable to persist policy_override_json - %w", topology.ID, err)
+		}
+		a.PolicyOverrideJson = ec.String(string(b))
+	}
+
+	return &a, nil
 }
 
 func (topology *ElasticsearchTopologyTF) ParseLegacyNodeType(nodeType *models.ElasticsearchNodeType) error {

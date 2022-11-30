@@ -25,7 +25,6 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/api/mock"
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
-	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/enterprisesearch/v1"
 )
 
 func Test_readEnterpriseSearch(t *testing.T) {
@@ -162,7 +161,7 @@ func Test_readEnterpriseSearch(t *testing.T) {
 				Region:                    ec.String("some-region"),
 				HttpEndpoint:              ec.String("http://enterprisesearchresource.cloud.elastic.co:9200"),
 				HttpsEndpoint:             ec.String("https://enterprisesearchresource.cloud.elastic.co:9243"),
-				Config: &v1.EnterpriseSearchConfig{
+				Config: &EnterpriseSearchConfig{
 					UserSettingsJson:         ec.String("{\"some.setting\":\"some other value\"}"),
 					UserSettingsOverrideJson: ec.String("{\"some.setting\":\"some other override\"}"),
 					UserSettingsOverrideYaml: ec.String("some.setting: some override"),

@@ -476,7 +476,7 @@ func Test_writeElasticsearch(t *testing.T) {
 					RefId:      ec.String("main-elasticsearch"),
 					ResourceId: ec.String(mock.ValidClusterID),
 					Region:     ec.String("some-region"),
-					Config: &v1.ElasticsearchConfig{
+					Config: &ElasticsearchConfig{
 						UserSettingsYaml: ec.String("somesetting: true"),
 					},
 					HotTier: &ElasticsearchTopology{
@@ -1051,27 +1051,27 @@ func Test_writeElasticsearch(t *testing.T) {
 					Region:     ec.String("some-region"),
 					HotTier: &ElasticsearchTopology{
 						id: "hot_content",
-						Autoscaling: &v1.ElasticsearchTopologyAutoscaling{
+						Autoscaling: &ElasticsearchTopologyAutoscaling{
 							MaxSize: ec.String("58g"),
 						},
 					},
 					WarmTier: &ElasticsearchTopology{
 						id: "warm",
-						Autoscaling: &v1.ElasticsearchTopologyAutoscaling{
+						Autoscaling: &ElasticsearchTopologyAutoscaling{
 							MaxSize: ec.String("29g"),
 						},
 					},
 					ColdTier: &ElasticsearchTopology{
 						id:   "cold",
 						Size: ec.String("2g"),
-						Autoscaling: &v1.ElasticsearchTopologyAutoscaling{
+						Autoscaling: &ElasticsearchTopologyAutoscaling{
 							MaxSize: ec.String("29g"),
 						},
 					},
 					MlTier: &ElasticsearchTopology{
 						id:   "ml",
 						Size: ec.String("1g"),
-						Autoscaling: &v1.ElasticsearchTopologyAutoscaling{
+						Autoscaling: &ElasticsearchTopologyAutoscaling{
 							MaxSize: ec.String("29g"),
 							MinSize: ec.String("1g"),
 						},
@@ -1228,14 +1228,14 @@ func Test_writeElasticsearch(t *testing.T) {
 					Region:     ec.String("some-region"),
 					HotTier: &ElasticsearchTopology{
 						id: "hot_content",
-						Autoscaling: &v1.ElasticsearchTopologyAutoscaling{
+						Autoscaling: &ElasticsearchTopologyAutoscaling{
 							MaxSize: ec.String("450g"),
 							MinSize: ec.String("2g"),
 						},
 					},
 					MasterTier: &ElasticsearchTopology{
 						id: "master",
-						Autoscaling: &v1.ElasticsearchTopologyAutoscaling{
+						Autoscaling: &ElasticsearchTopologyAutoscaling{
 							MaxSize: ec.String("250g"),
 							MinSize: ec.String("1g"),
 						},
@@ -1340,14 +1340,14 @@ func Test_writeElasticsearch(t *testing.T) {
 					Region:     ec.String("some-region"),
 					HotTier: &ElasticsearchTopology{
 						id: "hot_content",
-						Autoscaling: &v1.ElasticsearchTopologyAutoscaling{
+						Autoscaling: &ElasticsearchTopologyAutoscaling{
 							MaxSize:         ec.String("450g"),
 							MaxSizeResource: ec.String("storage"),
 						},
 					},
 					WarmTier: &ElasticsearchTopology{
 						id: "warm",
-						Autoscaling: &v1.ElasticsearchTopologyAutoscaling{
+						Autoscaling: &ElasticsearchTopologyAutoscaling{
 							MaxSize:         ec.String("870g"),
 							MaxSizeResource: ec.String("storage"),
 						},
@@ -1355,7 +1355,7 @@ func Test_writeElasticsearch(t *testing.T) {
 					ColdTier: &ElasticsearchTopology{
 						id:   "cold",
 						Size: ec.String("4g"),
-						Autoscaling: &v1.ElasticsearchTopologyAutoscaling{
+						Autoscaling: &ElasticsearchTopologyAutoscaling{
 							MaxSize:         ec.String("1740g"),
 							MaxSizeResource: ec.String("storage"),
 							MinSizeResource: ec.String("storage"),
@@ -1488,7 +1488,7 @@ func Test_writeElasticsearch(t *testing.T) {
 					RefId:      ec.String("main-elasticsearch"),
 					ResourceId: ec.String(mock.ValidClusterID),
 					Region:     ec.String("some-region"),
-					Config: &v1.ElasticsearchConfig{
+					Config: &ElasticsearchConfig{
 						UserSettingsYaml:         ec.String("some.setting: value"),
 						UserSettingsOverrideYaml: ec.String("some.setting: value2"),
 						UserSettingsJson:         ec.String("{\"some.setting\":\"value\"}"),

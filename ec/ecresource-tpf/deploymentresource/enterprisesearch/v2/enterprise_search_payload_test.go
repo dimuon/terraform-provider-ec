@@ -29,7 +29,6 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/api/mock"
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
-	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/enterprisesearch/v1"
 	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/testutil"
 )
 
@@ -229,7 +228,7 @@ func Test_enterpriseSearchPayload(t *testing.T) {
 					ResourceId:                ec.String(mock.ValidClusterID),
 					Region:                    ec.String("some-region"),
 					ElasticsearchClusterRefId: ec.String("somerefid"),
-					Config: &v1.EnterpriseSearchConfig{
+					Config: &EnterpriseSearchConfig{
 						UserSettingsYaml:         ec.String("some.setting: value"),
 						UserSettingsOverrideYaml: ec.String("some.setting: override"),
 						UserSettingsJson:         ec.String(`{"some.setting":"value"}`),
@@ -303,7 +302,7 @@ func Test_enterpriseSearchPayload(t *testing.T) {
 					ResourceId:                ec.String(mock.ValidClusterID),
 					Region:                    ec.String("some-region"),
 					ElasticsearchClusterRefId: ec.String("somerefid"),
-					Config: &v1.EnterpriseSearchConfig{
+					Config: &EnterpriseSearchConfig{
 						UserSettingsYaml:         ec.String("some.setting: value"),
 						UserSettingsOverrideYaml: ec.String("some.setting: value2"),
 						UserSettingsJson:         ec.String(`{"some.setting": "value"}`),

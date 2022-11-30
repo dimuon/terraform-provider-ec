@@ -159,7 +159,7 @@ func Test_readElasticsearch(t *testing.T) {
 				CloudID:       ec.String("some CLOUD ID"),
 				HttpEndpoint:  ec.String("http://somecluster.cloud.elastic.co:9200"),
 				HttpsEndpoint: ec.String("https://somecluster.cloud.elastic.co:9243"),
-				Config:        &v1.ElasticsearchConfig{},
+				Config:        &ElasticsearchConfig{},
 				HotTier: &ElasticsearchTopology{
 					id:                      "hot_content",
 					InstanceConfigurationId: ec.String("aws.data.highio.i3"),
@@ -170,7 +170,7 @@ func Test_readElasticsearch(t *testing.T) {
 					NodeTypeMaster:          ec.String("true"),
 					NodeTypeMl:              ec.String("false"),
 					ZoneCount:               1,
-					Autoscaling:             &v1.ElasticsearchTopologyAutoscaling{},
+					Autoscaling:             &ElasticsearchTopologyAutoscaling{},
 				},
 			},
 		},
@@ -233,7 +233,7 @@ func Test_readElasticsearch(t *testing.T) {
 				Region:        ec.String("some-region"),
 				HttpEndpoint:  ec.String("http://othercluster.cloud.elastic.co:9200"),
 				HttpsEndpoint: ec.String("https://othercluster.cloud.elastic.co:9243"),
-				Config: &v1.ElasticsearchConfig{
+				Config: &ElasticsearchConfig{
 					UserSettingsYaml:         ec.String("some.setting: value"),
 					UserSettingsOverrideYaml: ec.String("some.setting: value2"),
 					UserSettingsJson:         ec.String("{\"some.setting\":\"value\"}"),
@@ -249,7 +249,7 @@ func Test_readElasticsearch(t *testing.T) {
 					NodeTypeMaster:          ec.String("true"),
 					NodeTypeMl:              ec.String("false"),
 					ZoneCount:               1,
-					Autoscaling:             &v1.ElasticsearchTopologyAutoscaling{},
+					Autoscaling:             &ElasticsearchTopologyAutoscaling{},
 				},
 			},
 		},
@@ -316,7 +316,7 @@ func Test_readElasticsearchTopology(t *testing.T) {
 					NodeTypeData:            ec.String("true"),
 					NodeTypeIngest:          ec.String("true"),
 					NodeTypeMaster:          ec.String("true"),
-					Autoscaling:             &v1.ElasticsearchTopologyAutoscaling{},
+					Autoscaling:             &ElasticsearchTopologyAutoscaling{},
 				},
 				{
 					id:                      "coordinating",
@@ -324,7 +324,7 @@ func Test_readElasticsearchTopology(t *testing.T) {
 					Size:                    ec.String("0g"),
 					SizeResource:            ec.String("memory"),
 					ZoneCount:               2,
-					Autoscaling:             &v1.ElasticsearchTopologyAutoscaling{},
+					Autoscaling:             &ElasticsearchTopologyAutoscaling{},
 				},
 			},
 		},
@@ -372,7 +372,7 @@ func Test_readElasticsearchTopology(t *testing.T) {
 					NodeTypeData:            ec.String("true"),
 					NodeTypeIngest:          ec.String("true"),
 					NodeTypeMaster:          ec.String("true"),
-					Autoscaling:             &v1.ElasticsearchTopologyAutoscaling{},
+					Autoscaling:             &ElasticsearchTopologyAutoscaling{},
 				},
 				{
 					id:                      "ml",
@@ -380,7 +380,7 @@ func Test_readElasticsearchTopology(t *testing.T) {
 					Size:                    ec.String("0g"),
 					SizeResource:            ec.String("memory"),
 					ZoneCount:               1,
-					Autoscaling: &v1.ElasticsearchTopologyAutoscaling{
+					Autoscaling: &ElasticsearchTopologyAutoscaling{
 						MaxSize:         ec.String("8g"),
 						MaxSizeResource: ec.String("memory"),
 						MinSize:         ec.String("0g"),
