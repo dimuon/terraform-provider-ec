@@ -332,8 +332,7 @@ func ReadTrafficFilters(in *models.DeploymentSettings) ([]string, error) {
 	return append(rules, in.TrafficFilterSettings.Rulesets...), nil
 }
 
-// TrafficFilterToModel expands the flattened "traffic_filter" settings to
-// a DeploymentCreateRequest.
+// TrafficFilterToModel expands the flattened "traffic_filter" settings to a DeploymentCreateRequest.
 func TrafficFilterToModel(ctx context.Context, set types.Set, req *models.DeploymentCreateRequest) diag.Diagnostics {
 	if len(set.Elems) == 0 || req == nil {
 		return nil

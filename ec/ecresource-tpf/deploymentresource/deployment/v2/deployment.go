@@ -285,7 +285,7 @@ func (dep DeploymentTF) CreateRequest(ctx context.Context, client *api.API) (*mo
 		result.Resources.EnterpriseSearch = []*models.EnterpriseSearchPayload{enterpriseSearchPayload}
 	}
 
-	if diags := v1.TrafficFilterToModel(ctx, dep.TrafficFilter, &result); diags.HasError() {
+	if diags := TrafficFilterToModel(ctx, dep.TrafficFilter, &result); diags.HasError() {
 		diagsnostics.Append(diags...)
 	}
 
@@ -304,6 +304,43 @@ func (dep DeploymentTF) CreateRequest(ctx context.Context, client *api.API) (*mo
 	}
 
 	return &result, diagsnostics
+}
+
+func ReadTrafficFilters(in *models.DeploymentSettings) ([]string, error) {
+	if in == nil || in.TrafficFilterSettings == nil || len(in.TrafficFilterSettings.Rulesets) == 0 {
+		return nil, nil
+	}
+
+	var rules []string
+
+	return append(rules, in.TrafficFilterSettings.Rulesets...), nil
+}
+
+// TrafficFilterToModel expands the flattened "traffic_filter" settings to a DeploymentCreateRequest.
+func TrafficFilterToModel(ctx context.Context, set types.Set, req *models.DeploymentCreateRequest) diag.Diagnostics {
+	if len(set.Elems) == 0 || req == nil {
+		return nil
+	}
+
+	if req.Settings == nil {
+		req.Settings = &models.DeploymentCreateSettings{}
+	}
+
+	if req.Settings.TrafficFilterSettings == nil {
+		req.Settings.TrafficFilterSettings = &models.TrafficFilterSettings{}
+	}
+
+	var rulesets []string
+	if diags := tfsdk.ValueAs(ctx, set, &rulesets); diags.HasError() {
+		return diags
+	}
+
+	req.Settings.TrafficFilterSettings.Rulesets = append(
+		req.Settings.TrafficFilterSettings.Rulesets,
+		rulesets...,
+	)
+
+	return nil
 }
 
 // parseCredentials parses the Create or Update response Resources populating
@@ -512,6 +549,12 @@ func ElasticsearchRemoteClustersPayload(ctx context.Context, client *api.API, de
 	diags := tfsdk.ValueAs(ctx, esObj, &es)
 
 	if diags.HasError() {
+		return nil, "", diags
+	}
+
+	if es == nil {
+		var diags diag.Diagnostics
+		diags.AddError("failed create remote clusters payload", "there is no elasticsearch")
 		return nil, "", diags
 	}
 
