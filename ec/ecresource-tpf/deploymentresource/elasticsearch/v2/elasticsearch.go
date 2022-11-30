@@ -102,7 +102,7 @@ func ElasticsearchPayload(ctx context.Context, esObj types.Object, template *mod
 		return nil, diags
 	}
 
-	templatePayload := v1.EnrichElasticsearchTemplate(v1.EsResource(template), dtID, version, useNodeRoles)
+	templatePayload := utils.EnrichElasticsearchTemplate(utils.EsResource(template), dtID, version, useNodeRoles)
 
 	payload, diags := es.Payload(ctx, templatePayload, skipTopologies)
 	if diags.HasError() {
