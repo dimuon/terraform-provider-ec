@@ -28,6 +28,10 @@ import (
 
 type ElasticsearchConfig v1.ElasticsearchConfig
 
+func (c *ElasticsearchConfig) IsEmpty() bool {
+	return (*v1.ElasticsearchConfig)(c).IsEmpty()
+}
+
 func ReadElasticsearchConfig(in *models.ElasticsearchConfiguration) (*ElasticsearchConfig, error) {
 	var config ElasticsearchConfig
 
