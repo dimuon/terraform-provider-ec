@@ -59,8 +59,6 @@ type Apm struct {
 	Config                    *ApmConfig `tfsdk:"config"`
 }
 
-type ApmConfig = v1.ApmConfig
-
 func ReadApms(in []*models.ApmResourceInfo) (*Apm, error) {
 	for _, model := range in {
 		if util.IsCurrentApmPlanEmpty(model) || utils.IsApmResourceStopped(model) {
@@ -89,7 +87,7 @@ func ReadApm(in *models.ApmResourceInfo) (*Apm, error) {
 
 	plan := in.Info.PlanInfo.Current.Plan
 
-	topologies, err := v1.ReadApmTopologies(plan.ClusterTopology)
+	topologies, err := ReadApmTopologies(plan.ClusterTopology)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +103,7 @@ func ReadApm(in *models.ApmResourceInfo) (*Apm, error) {
 
 	apm.HttpEndpoint, apm.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
 
-	configs, err := v1.ReadApmConfigs(plan.Apm)
+	configs, err := ReadApmConfigs(plan.Apm)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +138,7 @@ func (apm ApmTF) Payload(ctx context.Context, payload models.ApmPayload) (*model
 		diags.Append(ds...)
 
 		if !ds.HasError() {
-			diags.Append(cfg.Payload(ctx, payload.Plan.Apm)...)
+			diags.Append(ApmConfigPayload(ctx, cfg, payload.Plan.Apm)...)
 		}
 	}
 
@@ -175,7 +173,7 @@ func ApmPayload(ctx context.Context, apmObj types.Object, template *models.Deplo
 		return nil, nil
 	}
 
-	templatePayload := v1.ApmResource(template)
+	templatePayload := ApmResource(template)
 
 	if templatePayload == nil {
 		diags.AddError("apm payload error", "apm specified but deployment template is not configured for it. Use a different template if you wish to add apm")
@@ -189,4 +187,13 @@ func ApmPayload(ctx context.Context, apmObj types.Object, template *models.Deplo
 	}
 
 	return payload, nil
+}
+
+// ApmResource returns the ApmPayload from a deployment
+// template or an empty version of the payload.
+func ApmResource(template *models.DeploymentTemplateInfoV2) *models.ApmPayload {
+	if template == nil || len(template.DeploymentTemplate.Resources.Apm) == 0 {
+		return nil
+	}
+	return template.DeploymentTemplate.Resources.Apm[0]
 }
