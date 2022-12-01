@@ -442,36 +442,36 @@ func ElasticsearchTierSchema(description string, required bool, tierName string)
 				Description: `The node type for the Elasticsearch Topology element (data node)`,
 				Computed:    true,
 				Optional:    true,
-				// PlanModifiers: tfsdk.AttributePlanModifiers{
-				// 	v1.UseNodeTypesDefault(),
-				// },
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					UseNodeTypesDefault(),
+				},
 			},
 			"node_type_master": {
 				Type:        types.StringType,
 				Description: `The node type for the Elasticsearch Topology element (master node)`,
 				Computed:    true,
 				Optional:    true,
-				// PlanModifiers: tfsdk.AttributePlanModifiers{
-				// 	v1.UseNodeTypesDefault(),
-				// },
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					UseNodeTypesDefault(),
+				},
 			},
 			"node_type_ingest": {
 				Type:        types.StringType,
 				Description: `The node type for the Elasticsearch Topology element (ingest node)`,
 				Computed:    true,
 				Optional:    true,
-				// PlanModifiers: tfsdk.AttributePlanModifiers{
-				// 	v1.UseNodeTypesDefault(),
-				// },
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					UseNodeTypesDefault(),
+				},
 			},
 			"node_type_ml": {
 				Type:        types.StringType,
 				Description: `The node type for the Elasticsearch Topology element (machine learning node)`,
 				Computed:    true,
 				Optional:    true,
-				// PlanModifiers: tfsdk.AttributePlanModifiers{
-				// 	v1.UseNodeTypesDefault(),
-				// },
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					UseNodeTypesDefault(),
+				},
 			},
 			"node_roles": {
 				Type: types.SetType{
@@ -479,9 +479,9 @@ func ElasticsearchTierSchema(description string, required bool, tierName string)
 				},
 				Description: `The computed list of node roles for the current topology element`,
 				Computed:    true,
-				// PlanModifiers: tfsdk.AttributePlanModifiers{
-				// 	v1.UseNodeRolesDefault(),
-				// },
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					UseNodeRolesDefault(),
+				},
 			},
 			"autoscaling": ElasticsearchTopologyAutoscalingSchema(tierName),
 		}),

@@ -46,24 +46,37 @@ type KibanaTF struct {
 }
 
 type Kibana struct {
-	ElasticsearchClusterRefId *string          `tfsdk:"elasticsearch_cluster_ref_id"`
-	RefId                     *string          `tfsdk:"ref_id"`
-	ResourceId                *string          `tfsdk:"resource_id"`
-	Region                    *string          `tfsdk:"region"`
-	HttpEndpoint              *string          `tfsdk:"http_endpoint"`
-	HttpsEndpoint             *string          `tfsdk:"https_endpoint"`
-	InstanceConfigurationId   *string          `tfsdk:"instance_configuration_id"`
-	Size                      *string          `tfsdk:"size"`
-	SizeResource              *string          `tfsdk:"size_resource"`
-	ZoneCount                 int              `tfsdk:"zone_count"`
-	Config                    *v1.KibanaConfig `tfsdk:"config"`
+	ElasticsearchClusterRefId *string       `tfsdk:"elasticsearch_cluster_ref_id"`
+	RefId                     *string       `tfsdk:"ref_id"`
+	ResourceId                *string       `tfsdk:"resource_id"`
+	Region                    *string       `tfsdk:"region"`
+	HttpEndpoint              *string       `tfsdk:"http_endpoint"`
+	HttpsEndpoint             *string       `tfsdk:"https_endpoint"`
+	InstanceConfigurationId   *string       `tfsdk:"instance_configuration_id"`
+	Size                      *string       `tfsdk:"size"`
+	SizeResource              *string       `tfsdk:"size_resource"`
+	ZoneCount                 int           `tfsdk:"zone_count"`
+	Config                    *KibanaConfig `tfsdk:"config"`
+}
+
+func ReadKibanas(in []*models.KibanaResourceInfo) (*Kibana, error) {
+	for _, model := range in {
+		if util.IsCurrentKibanaPlanEmpty(model) || utils.IsKibanaResourceStopped(model) {
+			continue
+		}
+
+		kibana, err := ReadKibana(model)
+		if err != nil {
+			return nil, err
+		}
+
+		return kibana, nil
+	}
+
+	return nil, nil
 }
 
 func ReadKibana(in *models.KibanaResourceInfo) (*Kibana, error) {
-	if util.IsCurrentKibanaPlanEmpty(in) || utils.IsKibanaResourceStopped(in) {
-		return nil, nil
-	}
-
 	var kibana Kibana
 
 	kibana.RefId = in.RefID
@@ -91,14 +104,12 @@ func ReadKibana(in *models.KibanaResourceInfo) (*Kibana, error) {
 
 	kibana.HttpEndpoint, kibana.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
 
-	configs, err := v1.ReadKibanaConfig(plan.Kibana)
+	config, err := ReadKibanaConfig(plan.Kibana)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(configs) > 0 {
-		kibana.Config = &configs[0]
-	}
+	kibana.Config = config
 
 	return &kibana, nil
 }

@@ -98,7 +98,7 @@ func ElasticsearchPayload(ctx context.Context, list types.List, template *models
 		return nil, diags
 	}
 
-	templatePayload := EnrichElasticsearchTemplate(EsResource(template), dtID, version, useNodeRoles)
+	templatePayload := utils.EnrichElasticsearchTemplate(utils.EsResource(template), dtID, version, useNodeRoles)
 
 	payload, diags := es.Payload(ctx, templatePayload, skipTopologies)
 	if diags.HasError() {
@@ -229,42 +229,6 @@ func (es *ElasticsearchTF) Payload(ctx context.Context, res *models.Elasticsearc
 	diags.Append(ElasticsearchStrategiesPayload(ctx, es.Strategy, res.Plan)...)
 
 	return res, diags
-}
-
-func EnrichElasticsearchTemplate(tpl *models.ElasticsearchPayload, templateId, version string, useNodeRoles bool) *models.ElasticsearchPayload {
-	if tpl.Plan.DeploymentTemplate == nil {
-		tpl.Plan.DeploymentTemplate = &models.DeploymentTemplateReference{}
-	}
-
-	if tpl.Plan.DeploymentTemplate.ID == nil || *tpl.Plan.DeploymentTemplate.ID == "" {
-		tpl.Plan.DeploymentTemplate.ID = ec.String(templateId)
-	}
-
-	if tpl.Plan.Elasticsearch.Version == "" {
-		tpl.Plan.Elasticsearch.Version = version
-	}
-
-	for _, topology := range tpl.Plan.ClusterTopology {
-		if useNodeRoles {
-			topology.NodeType = nil
-			continue
-		}
-		topology.NodeRoles = nil
-	}
-
-	return tpl
-}
-
-func EsResource(res *models.DeploymentTemplateInfoV2) *models.ElasticsearchPayload {
-	if res == nil || len(res.DeploymentTemplate.Resources.Elasticsearch) == 0 {
-		return &models.ElasticsearchPayload{
-			Plan: &models.ElasticsearchClusterPlan{
-				Elasticsearch: &models.ElasticsearchConfiguration{},
-			},
-			Settings: &models.ElasticsearchClusterSettings{},
-		}
-	}
-	return res.DeploymentTemplate.Resources.Elasticsearch[0]
 }
 
 func UnsetElasticsearchCuration(payload *models.ElasticsearchPayload) {

@@ -176,6 +176,30 @@ func Test_expandIntegrationsServerResources(t *testing.T) {
 			},
 		},
 		{
+			name: "parses an Integrations Server resource with multiple topology elements but no instance_configuration_id",
+			args: args{
+				tpl: tpl(),
+				ess: []interface{}{
+					map[string]interface{}{
+						"ref_id":                       "main-integrations_server",
+						"resource_id":                  mock.ValidClusterID,
+						"region":                       "some-region",
+						"elasticsearch_cluster_ref_id": "somerefid",
+						"topology": []interface{}{
+							map[string]interface{}{
+								"size":          "2g",
+								"size_resource": "memory",
+							}, map[string]interface{}{
+								"size":          "2g",
+								"size_resource": "memory",
+							},
+						},
+					},
+				},
+			},
+			err: errors.New("IntegrationsServer topology: invalid instance_configuration_id: \"\" doesn't match any of the deployment template instance configurations"),
+		},
+		{
 			name: "parses an Integrations Server resource with explicit topology and some config",
 			args: args{
 				tpl: tpl(),
@@ -223,6 +247,51 @@ func Test_expandIntegrationsServerResources(t *testing.T) {
 						Size: &models.TopologySize{
 							Resource: ec.String("memory"),
 							Value:    ec.Int32(4096),
+						},
+					}},
+				},
+			}},
+		},
+		{
+			name: "parses an Integrations Server resource with explicit nils",
+			args: args{
+				tpl: tpl(),
+				ess: []interface{}{map[string]interface{}{
+					"ref_id":                       "tertiary-integrations_server",
+					"elasticsearch_cluster_ref_id": "somerefid",
+					"resource_id":                  mock.ValidClusterID,
+					"region":                       "some-region",
+					"config": []interface{}{map[string]interface{}{
+						"user_settings_yaml":          nil,
+						"user_settings_override_yaml": nil,
+						"user_settings_json":          nil,
+						"user_settings_override_json": nil,
+						"debug_enabled":               true,
+					}},
+					"topology": []interface{}{map[string]interface{}{
+						"instance_configuration_id": "integrations.server",
+						"size":                      nil,
+						"size_resource":             "memory",
+						"zone_count":                1,
+					}},
+				}},
+			},
+			want: []*models.IntegrationsServerPayload{{
+				ElasticsearchClusterRefID: ec.String("somerefid"),
+				Region:                    ec.String("some-region"),
+				RefID:                     ec.String("tertiary-integrations_server"),
+				Plan: &models.IntegrationsServerPlan{
+					IntegrationsServer: &models.IntegrationsServerConfiguration{
+						SystemSettings: &models.IntegrationsServerSystemSettings{
+							DebugEnabled: ec.Bool(true),
+						},
+					},
+					ClusterTopology: []*models.IntegrationsServerTopologyElement{{
+						ZoneCount:               1,
+						InstanceConfigurationID: "integrations.server",
+						Size: &models.TopologySize{
+							Resource: ec.String("memory"),
+							Value:    ec.Int32(1024),
 						},
 					}},
 				},

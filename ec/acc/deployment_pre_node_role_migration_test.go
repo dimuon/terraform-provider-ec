@@ -54,6 +54,7 @@ func TestAccDeployment_pre_node_roles(t *testing.T) {
 					resource.TestCheckResourceAttr(resName, "elasticsearch.hot.node_type_ml", "false"),
 					resource.TestCheckResourceAttr(resName, "elasticsearch.hot.node_roles.#", "0"),
 					resource.TestCheckResourceAttr(resName, "elasticsearch.hot.zone_count", "1"),
+
 					resource.TestCheckNoResourceAttr(resName, "kibana"),
 					resource.TestCheckNoResourceAttr(resName, "apm"),
 					resource.TestCheckNoResourceAttr(resName, "enterprise_search"),
@@ -71,6 +72,7 @@ func TestAccDeployment_pre_node_roles(t *testing.T) {
 					resource.TestCheckResourceAttr(resName, "elasticsearch.hot.node_type_ml", "false"),
 					resource.TestCheckResourceAttr(resName, "elasticsearch.hot.node_roles.#", "0"),
 					resource.TestCheckResourceAttr(resName, "elasticsearch.hot.zone_count", "1"),
+
 					resource.TestCheckNoResourceAttr(resName, "kibana"),
 					resource.TestCheckNoResourceAttr(resName, "apm"),
 					resource.TestCheckNoResourceAttr(resName, "enterprise_search"),

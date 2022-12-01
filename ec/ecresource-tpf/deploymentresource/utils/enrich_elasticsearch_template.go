@@ -45,3 +45,15 @@ func EnrichElasticsearchTemplate(tpl *models.ElasticsearchPayload, templateId, v
 
 	return tpl
 }
+
+func EsResource(res *models.DeploymentTemplateInfoV2) *models.ElasticsearchPayload {
+	if res == nil || len(res.DeploymentTemplate.Resources.Elasticsearch) == 0 {
+		return &models.ElasticsearchPayload{
+			Plan: &models.ElasticsearchClusterPlan{
+				Elasticsearch: &models.ElasticsearchConfiguration{},
+			},
+			Settings: &models.ElasticsearchClusterSettings{},
+		}
+	}
+	return res.DeploymentTemplate.Resources.Elasticsearch[0]
+}

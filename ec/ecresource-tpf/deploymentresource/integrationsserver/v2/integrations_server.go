@@ -59,10 +59,24 @@ type IntegrationsServer struct {
 	Config                    *v1.IntegrationsServerConfig `tfsdk:"config"`
 }
 
-func ReadIntegrationsServer(in *models.IntegrationsServerResourceInfo) (*IntegrationsServer, error) {
-	if util.IsCurrentIntegrationsServerPlanEmpty(in) || utils.IsIntegrationsServerResourceStopped(in) {
-		return nil, nil
+func ReadIntegrationsServers(in []*models.IntegrationsServerResourceInfo) (*IntegrationsServer, error) {
+	for _, model := range in {
+		if util.IsCurrentIntegrationsServerPlanEmpty(model) || utils.IsIntegrationsServerResourceStopped(model) {
+			continue
+		}
+
+		srv, err := ReadIntegrationsServer(model)
+		if err != nil {
+			return nil, err
+		}
+
+		return srv, nil
 	}
+
+	return nil, nil
+}
+
+func ReadIntegrationsServer(in *models.IntegrationsServerResourceInfo) (*IntegrationsServer, error) {
 
 	var srv IntegrationsServer
 
@@ -137,7 +151,7 @@ func (srv IntegrationsServerTF) Payload(ctx context.Context, payload models.Inte
 		payload.Plan.ClusterTopology = []*models.IntegrationsServerTopologyElement{toplogyPayload}
 	}
 
-	return &payload, nil
+	return &payload, diags
 }
 
 func IntegrationsServerPayload(ctx context.Context, srvObj types.Object, template *models.DeploymentTemplateInfoV2) (*models.IntegrationsServerPayload, diag.Diagnostics) {

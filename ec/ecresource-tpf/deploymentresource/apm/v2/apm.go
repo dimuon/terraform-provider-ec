@@ -46,24 +46,39 @@ type ApmTF struct {
 }
 
 type Apm struct {
-	ElasticsearchClusterRefId *string       `tfsdk:"elasticsearch_cluster_ref_id"`
-	RefId                     *string       `tfsdk:"ref_id"`
-	ResourceId                *string       `tfsdk:"resource_id"`
-	Region                    *string       `tfsdk:"region"`
-	HttpEndpoint              *string       `tfsdk:"http_endpoint"`
-	HttpsEndpoint             *string       `tfsdk:"https_endpoint"`
-	InstanceConfigurationId   *string       `tfsdk:"instance_configuration_id"`
-	Size                      *string       `tfsdk:"size"`
-	SizeResource              *string       `tfsdk:"size_resource"`
-	ZoneCount                 int           `tfsdk:"zone_count"`
-	Config                    *v1.ApmConfig `tfsdk:"config"`
+	ElasticsearchClusterRefId *string    `tfsdk:"elasticsearch_cluster_ref_id"`
+	RefId                     *string    `tfsdk:"ref_id"`
+	ResourceId                *string    `tfsdk:"resource_id"`
+	Region                    *string    `tfsdk:"region"`
+	HttpEndpoint              *string    `tfsdk:"http_endpoint"`
+	HttpsEndpoint             *string    `tfsdk:"https_endpoint"`
+	InstanceConfigurationId   *string    `tfsdk:"instance_configuration_id"`
+	Size                      *string    `tfsdk:"size"`
+	SizeResource              *string    `tfsdk:"size_resource"`
+	ZoneCount                 int        `tfsdk:"zone_count"`
+	Config                    *ApmConfig `tfsdk:"config"`
+}
+
+type ApmConfig = v1.ApmConfig
+
+func ReadApms(in []*models.ApmResourceInfo) (*Apm, error) {
+	for _, model := range in {
+		if util.IsCurrentApmPlanEmpty(model) || utils.IsApmResourceStopped(model) {
+			continue
+		}
+
+		apm, err := ReadApm(model)
+		if err != nil {
+			return nil, err
+		}
+
+		return apm, nil
+	}
+
+	return nil, nil
 }
 
 func ReadApm(in *models.ApmResourceInfo) (*Apm, error) {
-	if util.IsCurrentApmPlanEmpty(in) || utils.IsApmResourceStopped(in) {
-		return nil, nil
-	}
-
 	var apm Apm
 
 	apm.RefId = in.RefID

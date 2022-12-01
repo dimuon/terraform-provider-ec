@@ -54,7 +54,7 @@ func (r *Resource) Read(ctx context.Context, request resource.ReadRequest, respo
 	var newState *deploymentv2.DeploymentTF
 	var err error
 
-	// use state for the plan - otherwise we can get unempty plan output
+	// use state for the plan (there is no plan and config during Read) - otherwise we can get unempty plan output
 	if newState, diags = r.read(ctx, curState.Id.Value, &curState, curState, nil); err != nil {
 		response.Diagnostics.Append(diags...)
 	}
@@ -143,11 +143,11 @@ func (r *Resource) read(ctx context.Context, id string, state *deploymentv2.Depl
 
 	deployment.ProcessSelfInObservability()
 
-	if diags := deployment.NullifyNotUsedEsTopologies(ctx, plan.Elasticsearch); diags.HasError() {
-		return nil, diags
-	}
+	deployment.NullifyNotUsedEsTopologies(ctx, elasticsearchPlan)
 
-	if elasticsearchPlan.Config.IsNull() && deployment.Elasticsearch.Config != nil && deployment.Elasticsearch.Config.IsEmpty() {
+	// ReadDeployment returns empty config struct if there is no config, so we have to nullify it if plan doesn't contain it
+	// we use state for plan in Read and there is no state during import so we need to check elasticsearchPlan against nil
+	if elasticsearchPlan != nil && elasticsearchPlan.Config.IsNull() && deployment.Elasticsearch != nil && deployment.Elasticsearch.Config != nil && deployment.Elasticsearch.Config.IsEmpty() {
 		deployment.Elasticsearch.Config = nil
 	}
 

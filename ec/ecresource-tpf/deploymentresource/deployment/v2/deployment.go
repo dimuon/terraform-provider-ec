@@ -21,8 +21,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/blang/semver"
-
 	"github.com/elastic/cloud-sdk-go/pkg/api"
 	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi/deptemplateapi"
 	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi/esremoteclustersapi"
@@ -86,23 +84,13 @@ type Deployment struct {
 }
 
 // Nullify Elasticsearch topologies that have zero size and are not specified in plan
-func (dep *Deployment) NullifyNotUsedEsTopologies(ctx context.Context, esPlanObj types.Object) diag.Diagnostics {
-	if esPlanObj.IsNull() || esPlanObj.IsUnknown() {
-		return nil
-	}
-
+func (dep *Deployment) NullifyNotUsedEsTopologies(ctx context.Context, esPlan *elasticsearchv2.ElasticsearchTF) {
 	if dep.Elasticsearch == nil {
-		return nil
-	}
-
-	var esPlan *elasticsearchv2.ElasticsearchTF
-
-	if diags := tfsdk.ValueAs(ctx, esPlanObj, &esPlan); diags.HasError() {
-		return diags
+		return
 	}
 
 	if esPlan == nil {
-		return nil
+		return
 	}
 
 	dep.Elasticsearch.HotTier = nullifyUnspecifiedZeroSizedTier(esPlan.HotContentTier, dep.Elasticsearch.HotTier)
@@ -118,8 +106,6 @@ func (dep *Deployment) NullifyNotUsedEsTopologies(ctx context.Context, esPlanObj
 	dep.Elasticsearch.MasterTier = nullifyUnspecifiedZeroSizedTier(esPlan.MasterTier, dep.Elasticsearch.MasterTier)
 
 	dep.Elasticsearch.CoordinatingTier = nullifyUnspecifiedZeroSizedTier(esPlan.CoordinatingTier, dep.Elasticsearch.CoordinatingTier)
-
-	return nil
 }
 
 func nullifyUnspecifiedZeroSizedTier(tierPlan types.Object, tier *elasticsearchv2.ElasticsearchTopology) *elasticsearchv2.ElasticsearchTopology {
@@ -182,36 +168,25 @@ func ReadDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteRes
 	}
 	dep.Version = version
 
-	if len(res.Resources.Elasticsearch) > 0 {
-		dep.Elasticsearch, err = elasticsearchv2.ReadElasticsearch(res.Resources.Elasticsearch[0], remotes)
-		if err != nil {
-			return nil, err
-		}
+	dep.Elasticsearch, err = elasticsearchv2.ReadElasticsearches(res.Resources.Elasticsearch, remotes)
+	if err != nil {
+		return nil, err
 	}
 
-	if len(res.Resources.Kibana) > 0 {
-		dep.Kibana, err = kibanav2.ReadKibana(res.Resources.Kibana[0])
-		if err != nil {
-			return nil, err
-		}
+	if dep.Kibana, err = kibanav2.ReadKibanas(res.Resources.Kibana); err != nil {
+		return nil, err
 	}
 
-	if len(res.Resources.Apm) > 0 {
-		if dep.Apm, err = apmv2.ReadApm(res.Resources.Apm[0]); err != nil {
-			return nil, err
-		}
+	if dep.Apm, err = apmv2.ReadApms(res.Resources.Apm); err != nil {
+		return nil, err
 	}
 
-	if len(res.Resources.IntegrationsServer) > 0 {
-		if dep.IntegrationsServer, err = integrationsserverv2.ReadIntegrationsServer(res.Resources.IntegrationsServer[0]); err != nil {
-			return nil, err
-		}
+	if dep.IntegrationsServer, err = integrationsserverv2.ReadIntegrationsServers(res.Resources.IntegrationsServer); err != nil {
+		return nil, err
 	}
 
-	if len(res.Resources.EnterpriseSearch) > 0 {
-		if dep.EnterpriseSearch, err = enterprisesearchv2.ReadEnterpriseSearch(res.Resources.EnterpriseSearch[0]); err != nil {
-			return nil, err
-		}
+	if dep.EnterpriseSearch, err = enterprisesearchv2.ReadEnterpriseSearches(res.Resources.EnterpriseSearch); err != nil {
+		return nil, err
 	}
 
 	if dep.TrafficFilter, err = v1.ReadTrafficFilters(res.Settings); err != nil {
@@ -254,7 +229,7 @@ func (dep DeploymentTF) CreateRequest(ctx context.Context, client *api.API) (*mo
 		return nil, diagsnostics
 	}
 
-	useNodeRoles, err := v1.CompatibleWithNodeRoles(version)
+	useNodeRoles, err := utils.CompatibleWithNodeRoles(version)
 	if err != nil {
 		diagsnostics.AddError("Deployment parse error", err.Error())
 		return nil, diagsnostics
@@ -310,7 +285,7 @@ func (dep DeploymentTF) CreateRequest(ctx context.Context, client *api.API) (*mo
 		result.Resources.EnterpriseSearch = []*models.EnterpriseSearchPayload{enterpriseSearchPayload}
 	}
 
-	if diags := v1.TrafficFilterToModel(ctx, dep.TrafficFilter, &result); diags.HasError() {
+	if diags := TrafficFilterToModel(ctx, dep.TrafficFilter, &result); diags.HasError() {
 		diagsnostics.Append(diags...)
 	}
 
@@ -329,6 +304,43 @@ func (dep DeploymentTF) CreateRequest(ctx context.Context, client *api.API) (*mo
 	}
 
 	return &result, diagsnostics
+}
+
+func ReadTrafficFilters(in *models.DeploymentSettings) ([]string, error) {
+	if in == nil || in.TrafficFilterSettings == nil || len(in.TrafficFilterSettings.Rulesets) == 0 {
+		return nil, nil
+	}
+
+	var rules []string
+
+	return append(rules, in.TrafficFilterSettings.Rulesets...), nil
+}
+
+// TrafficFilterToModel expands the flattened "traffic_filter" settings to a DeploymentCreateRequest.
+func TrafficFilterToModel(ctx context.Context, set types.Set, req *models.DeploymentCreateRequest) diag.Diagnostics {
+	if len(set.Elems) == 0 || req == nil {
+		return nil
+	}
+
+	if req.Settings == nil {
+		req.Settings = &models.DeploymentCreateSettings{}
+	}
+
+	if req.Settings.TrafficFilterSettings == nil {
+		req.Settings.TrafficFilterSettings = &models.TrafficFilterSettings{}
+	}
+
+	var rulesets []string
+	if diags := tfsdk.ValueAs(ctx, set, &rulesets); diags.HasError() {
+		return diags
+	}
+
+	req.Settings.TrafficFilterSettings.Rulesets = append(
+		req.Settings.TrafficFilterSettings.Rulesets,
+		rulesets...,
+	)
+
+	return nil
 }
 
 // parseCredentials parses the Create or Update response Resources populating
@@ -389,7 +401,7 @@ func (dep *Deployment) SetCredentialsIfEmpty(state *DeploymentTF) {
 	}
 }
 
-func (plan DeploymentTF) UpdateRequest(ctx context.Context, client *api.API, curState DeploymentTF) (*models.DeploymentUpdateRequest, diag.Diagnostics) {
+func (plan DeploymentTF) UpdateRequest(ctx context.Context, client *api.API, state DeploymentTF) (*models.DeploymentUpdateRequest, diag.Diagnostics) {
 	var result = models.DeploymentUpdateRequest{
 		Name:         plan.Name.Value,
 		Alias:        plan.Alias.Value,
@@ -400,7 +412,6 @@ func (plan DeploymentTF) UpdateRequest(ctx context.Context, client *api.API, cur
 	}
 
 	dtID := plan.DeploymentTemplateId.Value
-	version := plan.Version.Value
 
 	var diagsnostics diag.Diagnostics
 
@@ -418,26 +429,20 @@ func (plan DeploymentTF) UpdateRequest(ctx context.Context, client *api.API, cur
 	// When the deployment template is changed, we need to skip the missing
 	// resource topologies to account for a new instance_configuration_id and
 	// a different default value.
-	skipEStopologies := plan.DeploymentTemplateId.Value != "" && plan.DeploymentTemplateId.Value != curState.DeploymentTemplateId.Value && curState.DeploymentTemplateId.Value != ""
+	skipEStopologies := plan.DeploymentTemplateId.Value != "" && plan.DeploymentTemplateId.Value != state.DeploymentTemplateId.Value && state.DeploymentTemplateId.Value != ""
 	// If the deployment_template_id is changed, then we skip updating the
 	// Elasticsearch topology to account for the case where the
 	// instance_configuration_id changes, i.e. Hot / Warm, etc.
 	// This might not be necessary going forward as we move to
 	// tiered Elasticsearch nodes.
 
-	useNodeRoles, err := v1.CompatibleWithNodeRoles(version)
-	if err != nil {
-		diagsnostics.AddError("Deployment parse error", err.Error())
-		return nil, diagsnostics
-	}
+	useNodeRoles, diags := utils.UseNodeRoles(state.Version, plan.Version)
 
-	convertLegacy, diags := plan.legacyToNodeRoles(ctx, curState)
 	if diags.HasError() {
 		return nil, diags
 	}
-	useNodeRoles = useNodeRoles && convertLegacy
 
-	elasticsearchPayload, diags := elasticsearchv2.ElasticsearchPayload(ctx, plan.Elasticsearch, template, dtID, version, useNodeRoles, skipEStopologies)
+	elasticsearchPayload, diags := elasticsearchv2.ElasticsearchPayload(ctx, plan.Elasticsearch, template, dtID, plan.Version.Value, useNodeRoles, skipEStopologies)
 
 	if diags.HasError() {
 		diagsnostics.Append(diags...)
@@ -497,7 +502,7 @@ func (plan DeploymentTF) UpdateRequest(ctx context.Context, client *api.API, cur
 	// In order to stop shipping logs and metrics, an empty Observability
 	// object must be passed, as opposed to a nil object when creating a
 	// deployment without observability settings.
-	if plan.Observability.IsNull() && !curState.Observability.IsNull() {
+	if plan.Observability.IsNull() && !state.Observability.IsNull() {
 		result.Settings.Observability = &models.DeploymentObservabilitySettings{}
 	}
 
@@ -507,58 +512,6 @@ func (plan DeploymentTF) UpdateRequest(ctx context.Context, client *api.API, cur
 	}
 
 	return &result, diagsnostics
-}
-
-// legacyToNodeRoles returns true when the legacy  "node_type_*" should be
-// migrated over to node_roles. Which will be true when:
-// * The version field doesn't change.
-// * The version field changes but:
-//   - The Elasticsearch.0.toplogy doesn't have any node_type_* set.
-func (plan DeploymentTF) legacyToNodeRoles(ctx context.Context, curState DeploymentTF) (bool, diag.Diagnostics) {
-	if curState.Version.Value == "" || curState.Version.Value == plan.Version.Value {
-		return true, nil
-	}
-
-	// If the previous version is empty, node_roles should be used.
-	if curState.Version.Value == "" {
-		return true, nil
-	}
-
-	var diags diag.Diagnostics
-	oldV, err := semver.Parse(curState.Version.Value)
-	if err != nil {
-		diags.AddError("failed to parse previous Elasticsearch version", err.Error())
-		return false, diags
-	}
-	newV, err := semver.Parse(plan.Version.Value)
-	if err != nil {
-		diags.AddError("failed to parse new Elasticsearch version", err.Error())
-		return false, diags
-	}
-
-	// if the version change moves from non-node_roles to one
-	// that supports node roles, do not migrate on that step.
-	if oldV.LT(v1.DataTiersVersion) && newV.GE(v1.DataTiersVersion) {
-		return false, nil
-	}
-
-	if plan.Elasticsearch.IsNull() || plan.Elasticsearch.IsUnknown() {
-		diags.AddError("Cannot migrate node types to node roles", "cannot find elasticsearch data")
-		return false, diags
-	}
-
-	var es *elasticsearchv2.ElasticsearchTF
-
-	if diags := tfsdk.ValueAs(ctx, plan.Elasticsearch, &es); diags.HasError() {
-		return false, diags
-	}
-
-	if es == nil {
-		diags.AddError("Cannot migrate node types to node roles", "cannot find elasticsearch data")
-		return false, diags
-	}
-
-	return true, nil
 }
 
 func ensurePartialSnapshotStrategy(es *models.ElasticsearchPayload) {
@@ -596,6 +549,12 @@ func ElasticsearchRemoteClustersPayload(ctx context.Context, client *api.API, de
 	diags := tfsdk.ValueAs(ctx, esObj, &es)
 
 	if diags.HasError() {
+		return nil, "", diags
+	}
+
+	if es == nil {
+		var diags diag.Diagnostics
+		diags.AddError("failed create remote clusters payload", "there is no elasticsearch")
 		return nil, "", diags
 	}
 

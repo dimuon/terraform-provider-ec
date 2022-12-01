@@ -53,31 +53,29 @@ func expandEssResources(ess []interface{}, tpl *models.EnterpriseSearchPayload) 
 func expandEssResource(raw interface{}, res *models.EnterpriseSearchPayload) (*models.EnterpriseSearchPayload, error) {
 	ess := raw.(map[string]interface{})
 
-	if esRefID, ok := ess["elasticsearch_cluster_ref_id"]; ok {
-		res.ElasticsearchClusterRefID = ec.String(esRefID.(string))
+	if esRefID, ok := ess["elasticsearch_cluster_ref_id"].(string); ok {
+		res.ElasticsearchClusterRefID = ec.String(esRefID)
 	}
 
-	if refID, ok := ess["ref_id"]; ok {
-		res.RefID = ec.String(refID.(string))
+	if refID, ok := ess["ref_id"].(string); ok {
+		res.RefID = ec.String(refID)
 	}
 
-	if version, ok := ess["version"]; ok {
-		res.Plan.EnterpriseSearch.Version = version.(string)
+	if version, ok := ess["version"].(string); ok {
+		res.Plan.EnterpriseSearch.Version = version
 	}
 
-	if region, ok := ess["region"]; ok {
-		if r := region.(string); r != "" {
-			res.Region = ec.String(r)
-		}
+	if region, ok := ess["region"].(string); ok && region != "" {
+		res.Region = ec.String(region)
 	}
 
-	if cfg, ok := ess["config"]; ok {
+	if cfg, ok := ess["config"].([]interface{}); ok {
 		if err := expandEssConfig(cfg, res.Plan.EnterpriseSearch); err != nil {
 			return nil, err
 		}
 	}
 
-	if rt, ok := ess["topology"]; ok && len(rt.([]interface{})) > 0 {
+	if rt, ok := ess["topology"].([]interface{}); ok && len(rt) > 0 {
 		topology, err := expandEssTopology(rt, res.Plan.ClusterTopology)
 		if err != nil {
 			return nil, err
@@ -90,20 +88,23 @@ func expandEssResource(raw interface{}, res *models.EnterpriseSearchPayload) (*m
 	return res, nil
 }
 
-func expandEssTopology(raw interface{}, topologies []*models.EnterpriseSearchTopologyElement) ([]*models.EnterpriseSearchTopologyElement, error) {
-	rawTopologies := raw.([]interface{})
+func expandEssTopology(rawTopologies []interface{}, topologies []*models.EnterpriseSearchTopologyElement) ([]*models.EnterpriseSearchTopologyElement, error) {
 	res := make([]*models.EnterpriseSearchTopologyElement, 0, len(rawTopologies))
 	for i, rawTop := range rawTopologies {
-		topology := rawTop.(map[string]interface{})
+		topology, ok := rawTop.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
 		var icID string
-		if id, ok := topology["instance_configuration_id"]; ok {
-			icID = id.(string)
+		if id, ok := topology["instance_configuration_id"].(string); ok {
+			icID = id
 		}
 
 		// When a topology element is set but no instance_configuration_id
 		// is set, then obtain the instance_configuration_id from the topology
 		// element.
-		if t := defaultEssTopology(topologies); icID == "" && len(t) >= i {
+		if t := defaultEssTopology(topologies); icID == "" && len(t) > i {
 			icID = t[i].InstanceConfigurationID
 		}
 		size, err := util.ParseTopologySize(topology)
@@ -129,10 +130,8 @@ func expandEssTopology(raw interface{}, topologies []*models.EnterpriseSearchTop
 			elem.Size = size
 		}
 
-		if zones, ok := topology["zone_count"]; ok {
-			if z := zones.(int); z > 0 {
-				elem.ZoneCount = int32(z)
-			}
+		if zones, ok := topology["zone_count"].(int); ok && zones > 0 {
+			elem.ZoneCount = int32(zones)
 		}
 
 		res = append(res, elem)
@@ -141,32 +140,32 @@ func expandEssTopology(raw interface{}, topologies []*models.EnterpriseSearchTop
 	return res, nil
 }
 
-func expandEssConfig(raw interface{}, res *models.EnterpriseSearchConfiguration) error {
-	for _, rawCfg := range raw.([]interface{}) {
-		cfg := rawCfg.(map[string]interface{})
-		if settings, ok := cfg["user_settings_json"]; ok && settings != nil {
-			if s, ok := settings.(string); ok && s != "" {
-				if err := json.Unmarshal([]byte(s), &res.UserSettingsJSON); err != nil {
-					return fmt.Errorf("failed expanding enterprise_search user_settings_json: %w", err)
-				}
-			}
-		}
-		if settings, ok := cfg["user_settings_override_json"]; ok && settings != nil {
-			if s, ok := settings.(string); ok && s != "" {
-				if err := json.Unmarshal([]byte(s), &res.UserSettingsOverrideJSON); err != nil {
-					return fmt.Errorf("failed expanding enterprise_search user_settings_override_json: %w", err)
-				}
-			}
-		}
-		if settings, ok := cfg["user_settings_yaml"]; ok {
-			res.UserSettingsYaml = settings.(string)
-		}
-		if settings, ok := cfg["user_settings_override_yaml"]; ok {
-			res.UserSettingsOverrideYaml = settings.(string)
+func expandEssConfig(raw []interface{}, res *models.EnterpriseSearchConfiguration) error {
+	for _, rawCfg := range raw {
+		cfg, ok := rawCfg.(map[string]interface{})
+		if !ok {
+			continue
 		}
 
-		if v, ok := cfg["docker_image"]; ok {
-			res.DockerImage = v.(string)
+		if settings, ok := cfg["user_settings_json"].(string); ok && settings != "" {
+			if err := json.Unmarshal([]byte(settings), &res.UserSettingsJSON); err != nil {
+				return fmt.Errorf("failed expanding enterprise_search user_settings_json: %w", err)
+			}
+		}
+		if settings, ok := cfg["user_settings_override_json"].(string); ok && settings != "" {
+			if err := json.Unmarshal([]byte(settings), &res.UserSettingsOverrideJSON); err != nil {
+				return fmt.Errorf("failed expanding enterprise_search user_settings_override_json: %w", err)
+			}
+		}
+		if settings, ok := cfg["user_settings_yaml"].(string); ok && settings != "" {
+			res.UserSettingsYaml = settings
+		}
+		if settings, ok := cfg["user_settings_override_yaml"].(string); ok && settings != "" {
+			res.UserSettingsOverrideYaml = settings
+		}
+
+		if v, ok := cfg["docker_image"].(string); ok {
+			res.DockerImage = v
 		}
 	}
 
@@ -208,4 +207,13 @@ func essResource(res *models.DeploymentTemplateInfoV2) *models.EnterpriseSearchP
 		return nil
 	}
 	return res.DeploymentTemplate.Resources.EnterpriseSearch[0]
+}
+
+// essResourceFromUpdate returns the EnterpriseSearchPayload from a deployment
+// update request or an empty version of the payload.
+func essResourceFromUpdate(res *models.DeploymentUpdateResources) *models.EnterpriseSearchPayload {
+	if len(res.EnterpriseSearch) == 0 {
+		return nil
+	}
+	return res.EnterpriseSearch[0]
 }

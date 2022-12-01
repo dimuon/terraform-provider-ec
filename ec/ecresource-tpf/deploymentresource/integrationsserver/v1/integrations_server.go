@@ -54,10 +54,6 @@ type IntegrationsServer struct {
 type IntegrationsServers []IntegrationsServer
 
 func ReadIntegrationsServers(in []*models.IntegrationsServerResourceInfo) (IntegrationsServers, error) {
-	if len(in) == 0 {
-		return nil, nil
-	}
-
 	for _, model := range in {
 		if util.IsCurrentIntegrationsServerPlanEmpty(model) || utils.IsIntegrationsServerResourceStopped(model) {
 			continue

@@ -58,27 +58,27 @@ type ElasticsearchTF struct {
 }
 
 type Elasticsearch struct {
-	Autoscale        *string                         `tfsdk:"autoscale"`
-	RefId            *string                         `tfsdk:"ref_id"`
-	ResourceId       *string                         `tfsdk:"resource_id"`
-	Region           *string                         `tfsdk:"region"`
-	CloudID          *string                         `tfsdk:"cloud_id"`
-	HttpEndpoint     *string                         `tfsdk:"http_endpoint"`
-	HttpsEndpoint    *string                         `tfsdk:"https_endpoint"`
-	HotTier          *ElasticsearchTopology          `tfsdk:"hot"`
-	CoordinatingTier *ElasticsearchTopology          `tfsdk:"coordinating"`
-	MasterTier       *ElasticsearchTopology          `tfsdk:"master"`
-	WarmTier         *ElasticsearchTopology          `tfsdk:"warm"`
-	ColdTier         *ElasticsearchTopology          `tfsdk:"cold"`
-	FrozenTier       *ElasticsearchTopology          `tfsdk:"frozen"`
-	MlTier           *ElasticsearchTopology          `tfsdk:"ml"`
-	Config           *v1.ElasticsearchConfig         `tfsdk:"config"`
-	RemoteCluster    ElasticsearchRemoteClusters     `tfsdk:"remote_cluster"`
-	SnapshotSource   *v1.ElasticsearchSnapshotSource `tfsdk:"snapshot_source"`
-	Extension        v1.ElasticsearchExtensions      `tfsdk:"extension"`
-	TrustAccount     v1.ElasticsearchTrustAccounts   `tfsdk:"trust_account"`
-	TrustExternal    v1.ElasticsearchTrustExternals  `tfsdk:"trust_external"`
-	Strategy         *string                         `tfsdk:"strategy"`
+	Autoscale        *string                      `tfsdk:"autoscale"`
+	RefId            *string                      `tfsdk:"ref_id"`
+	ResourceId       *string                      `tfsdk:"resource_id"`
+	Region           *string                      `tfsdk:"region"`
+	CloudID          *string                      `tfsdk:"cloud_id"`
+	HttpEndpoint     *string                      `tfsdk:"http_endpoint"`
+	HttpsEndpoint    *string                      `tfsdk:"https_endpoint"`
+	HotTier          *ElasticsearchTopology       `tfsdk:"hot"`
+	CoordinatingTier *ElasticsearchTopology       `tfsdk:"coordinating"`
+	MasterTier       *ElasticsearchTopology       `tfsdk:"master"`
+	WarmTier         *ElasticsearchTopology       `tfsdk:"warm"`
+	ColdTier         *ElasticsearchTopology       `tfsdk:"cold"`
+	FrozenTier       *ElasticsearchTopology       `tfsdk:"frozen"`
+	MlTier           *ElasticsearchTopology       `tfsdk:"ml"`
+	Config           *ElasticsearchConfig         `tfsdk:"config"`
+	RemoteCluster    ElasticsearchRemoteClusters  `tfsdk:"remote_cluster"`
+	SnapshotSource   *ElasticsearchSnapshotSource `tfsdk:"snapshot_source"`
+	Extension        ElasticsearchExtensions      `tfsdk:"extension"`
+	TrustAccount     ElasticsearchTrustAccounts   `tfsdk:"trust_account"`
+	TrustExternal    ElasticsearchTrustExternals  `tfsdk:"trust_external"`
+	Strategy         *string                      `tfsdk:"strategy"`
 }
 
 func ElasticsearchPayload(ctx context.Context, esObj types.Object, template *models.DeploymentTemplateInfoV2, dtID, version string, useNodeRoles bool, skipTopologies bool) (*models.ElasticsearchPayload, diag.Diagnostics) {
@@ -102,7 +102,7 @@ func ElasticsearchPayload(ctx context.Context, esObj types.Object, template *mod
 		return nil, diags
 	}
 
-	templatePayload := v1.EnrichElasticsearchTemplate(v1.EsResource(template), dtID, version, useNodeRoles)
+	templatePayload := utils.EnrichElasticsearchTemplate(utils.EsResource(template), dtID, version, useNodeRoles)
 
 	payload, diags := es.Payload(ctx, templatePayload, skipTopologies)
 	if diags.HasError() {
@@ -110,6 +110,21 @@ func ElasticsearchPayload(ctx context.Context, esObj types.Object, template *mod
 	}
 
 	return payload, nil
+}
+
+func ReadElasticsearches(in []*models.ElasticsearchResourceInfo, remotes *models.RemoteResources) (*Elasticsearch, error) {
+	for _, model := range in {
+		if util.IsCurrentEsPlanEmpty(model) || utils.IsEsResourceStopped(model) {
+			continue
+		}
+		es, err := ReadElasticsearch(model, remotes)
+		if err != nil {
+			return nil, err
+		}
+		return es, nil
+	}
+
+	return nil, nil
 }
 
 func ReadElasticsearch(in *models.ElasticsearchResourceInfo, remotes *models.RemoteResources) (*Elasticsearch, error) {
@@ -150,7 +165,7 @@ func ReadElasticsearch(in *models.ElasticsearchResourceInfo, remotes *models.Rem
 
 	es.HttpEndpoint, es.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
 
-	es.Config, err = v1.ReadElasticsearchConfig(plan.Elasticsearch)
+	es.Config, err = ReadElasticsearchConfig(plan.Elasticsearch)
 	if err != nil {
 		return nil, err
 	}
@@ -161,19 +176,19 @@ func ReadElasticsearch(in *models.ElasticsearchResourceInfo, remotes *models.Rem
 	}
 	es.RemoteCluster = clusters
 
-	extensions, err := v1.ReadElasticsearchExtensions(plan.Elasticsearch)
+	extensions, err := ReadElasticsearchExtensions(plan.Elasticsearch)
 	if err != nil {
 		return nil, err
 	}
 	es.Extension = extensions
 
-	accounts, err := v1.ReadElasticsearchTrustAccounts(in.Info.Settings)
+	accounts, err := ReadElasticsearchTrustAccounts(in.Info.Settings)
 	if err != nil {
 		return nil, err
 	}
 	es.TrustAccount = accounts
 
-	externals, err := v1.ReadElasticsearchTrustExternals(in.Info.Settings)
+	externals, err := ReadElasticsearchTrustExternals(in.Info.Settings)
 	if err != nil {
 		return nil, err
 	}
