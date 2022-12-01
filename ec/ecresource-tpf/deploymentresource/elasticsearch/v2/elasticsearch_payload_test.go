@@ -30,7 +30,6 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/api/mock"
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
-	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/elasticsearch/v1"
 	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/testutil"
 	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/utils"
 )
@@ -1568,7 +1567,7 @@ func Test_writeElasticsearch(t *testing.T) {
 					RefId:      ec.String("main-elasticsearch"),
 					ResourceId: ec.String(mock.ValidClusterID),
 					Region:     ec.String("some-region"),
-					SnapshotSource: &v1.ElasticsearchSnapshotSource{
+					SnapshotSource: &ElasticsearchSnapshotSource{
 						SnapshotName:                 "__latest_success__",
 						SourceElasticsearchClusterId: mock.ValidClusterID,
 					},
