@@ -28,7 +28,6 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
 
 	apmv2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/apm/v2"
-	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/deployment/v1"
 	elasticsearchv2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/elasticsearch/v2"
 	enterprisesearchv2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/enterprisesearch/v2"
 	integrationsserverv2 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/integrationsserver/v2"
@@ -189,7 +188,7 @@ func ReadDeployment(res *models.DeploymentGetResponse, remotes *models.RemoteRes
 		return nil, err
 	}
 
-	if dep.TrafficFilter, err = v1.ReadTrafficFilters(res.Settings); err != nil {
+	if dep.TrafficFilter, err = ReadTrafficFilters(res.Settings); err != nil {
 		return nil, err
 	}
 
