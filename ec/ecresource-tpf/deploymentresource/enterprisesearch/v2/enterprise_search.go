@@ -81,7 +81,7 @@ func ReadEnterpriseSearch(in *models.EnterpriseSearchResourceInfo) (*EnterpriseS
 
 	plan := in.Info.PlanInfo.Current.Plan
 
-	topologies, err := v1.ReadEnterpriseSearchTopologies(plan.ClusterTopology)
+	topologies, err := ReadEnterpriseSearchTopologies(plan.ClusterTopology)
 
 	if err != nil {
 		return nil, err
@@ -133,7 +133,7 @@ func (es *EnterpriseSearchTF) Payload(ctx context.Context, payload models.Enterp
 		diags.Append(ds...)
 
 		if !ds.HasError() && config != nil {
-			diags.Append(config.Payload(ctx, payload.Plan.EnterpriseSearch)...)
+			diags.Append(EnterpriseSearchConfigPayload(ctx, *config, payload.Plan.EnterpriseSearch)...)
 		}
 	}
 
@@ -147,7 +147,7 @@ func (es *EnterpriseSearchTF) Payload(ctx context.Context, payload models.Enterp
 		NodeTypeWorker:          es.NodeTypeWorker,
 	}
 
-	topology, ds := topologyTF.Payload(ctx, v1.DefaultEssTopology(payload.Plan.ClusterTopology), 0)
+	topology, ds := EnterpriseSearchTopologyPayload(ctx, topologyTF, DefaultEssTopology(payload.Plan.ClusterTopology), 0)
 
 	diags = append(diags, ds...)
 
@@ -188,7 +188,7 @@ func EnterpriseSearchesPayload(ctx context.Context, esObj types.Object, template
 		return nil, nil
 	}
 
-	templatePayload := v1.EssResource(template)
+	templatePayload := EssResource(template)
 
 	if templatePayload == nil {
 		diags.AddError(
@@ -205,4 +205,13 @@ func EnterpriseSearchesPayload(ctx context.Context, esObj types.Object, template
 	}
 
 	return payload, nil
+}
+
+// EssResource returns the EnterpriseSearchPayload from a deployment
+// template or an empty version of the payload.
+func EssResource(template *models.DeploymentTemplateInfoV2) *models.EnterpriseSearchPayload {
+	if template == nil || len(template.DeploymentTemplate.Resources.EnterpriseSearch) == 0 {
+		return nil
+	}
+	return template.DeploymentTemplate.Resources.EnterpriseSearch[0]
 }

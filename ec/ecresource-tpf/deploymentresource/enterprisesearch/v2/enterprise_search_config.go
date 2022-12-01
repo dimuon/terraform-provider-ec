@@ -19,11 +19,13 @@ package v2
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
 	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/enterprisesearch/v1"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 )
 
 type EnterpriseSearchConfig v1.EnterpriseSearchConfig
@@ -64,4 +66,31 @@ func ReadEnterpriseSearchConfig(in *models.EnterpriseSearchConfiguration) (*Ente
 	}
 
 	return &cfg, nil
+}
+
+func EnterpriseSearchConfigPayload(ctx context.Context, cfg v1.EnterpriseSearchConfigTF, res *models.EnterpriseSearchConfiguration) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	if cfg.UserSettingsJson.Value != "" {
+		if err := json.Unmarshal([]byte(cfg.UserSettingsJson.Value), &res.UserSettingsJSON); err != nil {
+			diags.AddError("failed expanding enterprise_search user_settings_json", err.Error())
+		}
+	}
+	if cfg.UserSettingsOverrideJson.Value != "" {
+		if err := json.Unmarshal([]byte(cfg.UserSettingsOverrideJson.Value), &res.UserSettingsOverrideJSON); err != nil {
+			diags.AddError("failed expanding enterprise_search user_settings_override_json", err.Error())
+		}
+	}
+	if !cfg.UserSettingsYaml.IsNull() {
+		res.UserSettingsYaml = cfg.UserSettingsYaml.Value
+	}
+	if !cfg.UserSettingsOverrideYaml.IsNull() {
+		res.UserSettingsOverrideYaml = cfg.UserSettingsOverrideYaml.Value
+	}
+
+	if !cfg.DockerImage.IsNull() {
+		res.DockerImage = cfg.DockerImage.Value
+	}
+
+	return diags
 }

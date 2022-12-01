@@ -18,13 +18,6 @@
 package v1
 
 import (
-	"bytes"
-	"context"
-	"encoding/json"
-
-	"github.com/elastic/cloud-sdk-go/pkg/models"
-	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -45,82 +38,3 @@ type EnterpriseSearchConfig struct {
 }
 
 type EnterpriseSearchConfigs []EnterpriseSearchConfig
-
-func ReadEnterpriseSearchConfigs(in *models.EnterpriseSearchConfiguration) (EnterpriseSearchConfigs, error) {
-	cfg, err := ReadEnterpriseSearchConfig(in)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if cfg == nil {
-		return nil, nil
-	}
-
-	return EnterpriseSearchConfigs{*cfg}, nil
-}
-
-func ReadEnterpriseSearchConfig(in *models.EnterpriseSearchConfiguration) (*EnterpriseSearchConfig, error) {
-	var cfg EnterpriseSearchConfig
-
-	if in == nil {
-		return nil, nil
-	}
-
-	if in.UserSettingsYaml != "" {
-		cfg.UserSettingsYaml = &in.UserSettingsYaml
-	}
-
-	if in.UserSettingsOverrideYaml != "" {
-		cfg.UserSettingsOverrideYaml = &in.UserSettingsOverrideYaml
-	}
-
-	if o := in.UserSettingsJSON; o != nil {
-		if b, _ := json.Marshal(o); len(b) > 0 && !bytes.Equal([]byte("{}"), b) {
-			cfg.UserSettingsJson = ec.String(string(b))
-		}
-	}
-
-	if o := in.UserSettingsOverrideJSON; o != nil {
-		if b, _ := json.Marshal(o); len(b) > 0 && !bytes.Equal([]byte("{}"), b) {
-			cfg.UserSettingsOverrideJson = ec.String(string(b))
-		}
-	}
-
-	if in.DockerImage != "" {
-		cfg.DockerImage = &in.DockerImage
-	}
-
-	if cfg == (EnterpriseSearchConfig{}) {
-		return nil, nil
-	}
-
-	return &cfg, nil
-}
-
-func (cfg EnterpriseSearchConfigTF) Payload(ctx context.Context, res *models.EnterpriseSearchConfiguration) diag.Diagnostics {
-	var diags diag.Diagnostics
-
-	if cfg.UserSettingsJson.Value != "" {
-		if err := json.Unmarshal([]byte(cfg.UserSettingsJson.Value), &res.UserSettingsJSON); err != nil {
-			diags.AddError("failed expanding enterprise_search user_settings_json", err.Error())
-		}
-	}
-	if cfg.UserSettingsOverrideJson.Value != "" {
-		if err := json.Unmarshal([]byte(cfg.UserSettingsOverrideJson.Value), &res.UserSettingsOverrideJSON); err != nil {
-			diags.AddError("failed expanding enterprise_search user_settings_override_json", err.Error())
-		}
-	}
-	if !cfg.UserSettingsYaml.IsNull() {
-		res.UserSettingsYaml = cfg.UserSettingsYaml.Value
-	}
-	if !cfg.UserSettingsOverrideYaml.IsNull() {
-		res.UserSettingsOverrideYaml = cfg.UserSettingsOverrideYaml.Value
-	}
-
-	if !cfg.DockerImage.IsNull() {
-		res.DockerImage = cfg.DockerImage.Value
-	}
-
-	return diags
-}
