@@ -29,7 +29,6 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/api/mock"
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
-	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/integrationsserver/v1"
 	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/testutil"
 )
 
@@ -171,7 +170,7 @@ func Test_IntegrationsServerPayload(t *testing.T) {
 					ResourceId:                &mock.ValidClusterID,
 					Region:                    ec.String("some-region"),
 					ElasticsearchClusterRefId: ec.String("somerefid"),
-					Config: &v1.IntegrationsServerConfig{
+					Config: &IntegrationsServerConfig{
 						UserSettingsYaml:         ec.String("some.setting: value"),
 						UserSettingsOverrideYaml: ec.String("some.setting: value2"),
 						UserSettingsJson:         ec.String("{\"some.setting\": \"value\"}"),
@@ -222,7 +221,7 @@ func Test_IntegrationsServerPayload(t *testing.T) {
 					ResourceId:                &mock.ValidClusterID,
 					Region:                    ec.String("some-region"),
 					ElasticsearchClusterRefId: ec.String("somerefid"),
-					Config: &v1.IntegrationsServerConfig{
+					Config: &IntegrationsServerConfig{
 						DebugEnabled: ec.Bool(true),
 					},
 					InstanceConfigurationId: ec.String("integrations.server"),

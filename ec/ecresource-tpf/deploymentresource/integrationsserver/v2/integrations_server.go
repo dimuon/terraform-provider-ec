@@ -46,17 +46,17 @@ type IntegrationsServerTF struct {
 }
 
 type IntegrationsServer struct {
-	ElasticsearchClusterRefId *string                      `tfsdk:"elasticsearch_cluster_ref_id"`
-	RefId                     *string                      `tfsdk:"ref_id"`
-	ResourceId                *string                      `tfsdk:"resource_id"`
-	Region                    *string                      `tfsdk:"region"`
-	HttpEndpoint              *string                      `tfsdk:"http_endpoint"`
-	HttpsEndpoint             *string                      `tfsdk:"https_endpoint"`
-	InstanceConfigurationId   *string                      `tfsdk:"instance_configuration_id"`
-	Size                      *string                      `tfsdk:"size"`
-	SizeResource              *string                      `tfsdk:"size_resource"`
-	ZoneCount                 int                          `tfsdk:"zone_count"`
-	Config                    *v1.IntegrationsServerConfig `tfsdk:"config"`
+	ElasticsearchClusterRefId *string                   `tfsdk:"elasticsearch_cluster_ref_id"`
+	RefId                     *string                   `tfsdk:"ref_id"`
+	ResourceId                *string                   `tfsdk:"resource_id"`
+	Region                    *string                   `tfsdk:"region"`
+	HttpEndpoint              *string                   `tfsdk:"http_endpoint"`
+	HttpsEndpoint             *string                   `tfsdk:"https_endpoint"`
+	InstanceConfigurationId   *string                   `tfsdk:"instance_configuration_id"`
+	Size                      *string                   `tfsdk:"size"`
+	SizeResource              *string                   `tfsdk:"size_resource"`
+	ZoneCount                 int                       `tfsdk:"zone_count"`
+	Config                    *IntegrationsServerConfig `tfsdk:"config"`
 }
 
 func ReadIntegrationsServers(in []*models.IntegrationsServerResourceInfo) (*IntegrationsServer, error) {
@@ -88,7 +88,7 @@ func readIntegrationsServer(in *models.IntegrationsServerResourceInfo) (*Integra
 
 	plan := in.Info.PlanInfo.Current.Plan
 
-	topologies, err := v1.ReadIntegrationsServerTopologies(plan.ClusterTopology)
+	topologies, err := readIntegrationsServerTopologies(plan.ClusterTopology)
 
 	if err != nil {
 		return nil, err
@@ -105,15 +105,13 @@ func readIntegrationsServer(in *models.IntegrationsServerResourceInfo) (*Integra
 
 	srv.HttpEndpoint, srv.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
 
-	cfgs, err := v1.ReadIntegrationsServerConfigs(plan.IntegrationsServer)
+	cfg, err := ReadIntegrationsServerConfigs(plan.IntegrationsServer)
 
 	if err != nil {
 		return nil, err
 	}
 
-	if len(cfgs) > 0 {
-		srv.Config = &cfgs[0]
-	}
+	srv.Config = cfg
 
 	return &srv, nil
 }
@@ -143,7 +141,7 @@ func (srv IntegrationsServerTF) Payload(ctx context.Context, payload models.Inte
 		ZoneCount:               srv.ZoneCount,
 	}
 
-	toplogyPayload, ds := topologyTF.IntegrationsServerTopologyPayload(ctx, v1.DefaultIntegrationsServerTopology(payload.Plan.ClusterTopology), 0)
+	toplogyPayload, ds := integrationsServerTopologyPayload(ctx, topologyTF, defaultIntegrationsServerTopology(payload.Plan.ClusterTopology), 0)
 
 	diags.Append(ds...)
 

@@ -88,7 +88,7 @@ func ReadEnterpriseSearchTopologies(in []*models.EnterpriseSearchTopologyElement
 	return topologies, nil
 }
 
-func EnterpriseSearchTopologyPayload(ctx context.Context, topology v1.EnterpriseSearchTopologyTF, planModels []*models.EnterpriseSearchTopologyElement, index int) (*models.EnterpriseSearchTopologyElement, diag.Diagnostics) {
+func enterpriseSearchTopologyPayload(ctx context.Context, topology v1.EnterpriseSearchTopologyTF, planModels []*models.EnterpriseSearchTopologyElement, index int) (*models.EnterpriseSearchTopologyElement, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	icID := topology.InstanceConfigurationId.Value
@@ -135,7 +135,7 @@ func EnterpriseSearchTopologyPayload(ctx context.Context, topology v1.Enterprise
 // defaultApmTopology iterates over all the templated topology elements and
 // sets the size to the default when the template size is smaller than the
 // deployment template default, the same is done on the ZoneCount.
-func DefaultEssTopology(topology []*models.EnterpriseSearchTopologyElement) []*models.EnterpriseSearchTopologyElement {
+func defaultEssTopology(topology []*models.EnterpriseSearchTopologyElement) []*models.EnterpriseSearchTopologyElement {
 	for _, t := range topology {
 		if *t.Size.Value < minimumEnterpriseSearchSize || *t.Size.Value == 0 {
 			t.Size.Value = ec.Int32(minimumEnterpriseSearchSize)

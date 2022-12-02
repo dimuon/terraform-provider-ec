@@ -149,7 +149,7 @@ func (apm ApmTF) Payload(ctx context.Context, payload models.ApmPayload) (*model
 		ZoneCount:               apm.ZoneCount,
 	}
 
-	topologyPayload, ds := topology.ApmTopologyPayload(ctx, defaultApmTopology(payload.Plan.ClusterTopology), 0)
+	topologyPayload, ds := apmTopologyPayload(ctx, topology, defaultApmTopology(payload.Plan.ClusterTopology), 0)
 
 	diags.Append(ds...)
 

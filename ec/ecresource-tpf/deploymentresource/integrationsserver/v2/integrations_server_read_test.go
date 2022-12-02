@@ -28,7 +28,6 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/api/mock"
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
-	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/integrationsserver/v1"
 )
 
 func Test_readIntegrationsServer(t *testing.T) {
@@ -213,7 +212,7 @@ func Test_readIntegrationsServer(t *testing.T) {
 				Size:                      ec.String("1g"),
 				SizeResource:              ec.String("memory"),
 				ZoneCount:                 1,
-				Config: &v1.IntegrationsServerConfig{
+				Config: &IntegrationsServerConfig{
 					UserSettingsYaml:         ec.String("some.setting: value"),
 					UserSettingsOverrideYaml: ec.String("some.setting: value2"),
 					UserSettingsJson:         ec.String("{\"some.setting\":\"value\"}"),
@@ -282,7 +281,7 @@ func Test_readIntegrationsServer(t *testing.T) {
 				Size:                      ec.String("1g"),
 				SizeResource:              ec.String("memory"),
 				ZoneCount:                 1,
-				Config: &v1.IntegrationsServerConfig{
+				Config: &IntegrationsServerConfig{
 					UserSettingsYaml:         ec.String("some.setting: value"),
 					UserSettingsOverrideYaml: ec.String("some.setting: value2"),
 					UserSettingsJson:         ec.String("{\"some.setting\":\"value\"}"),

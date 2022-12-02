@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package v1
+package v2
 
 import (
 	"bytes"
@@ -24,33 +24,15 @@ import (
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
+	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/integrationsserver/v1"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type IntegrationsServerConfigTF struct {
-	DockerImage              types.String `tfsdk:"docker_image"`
-	DebugEnabled             types.Bool   `tfsdk:"debug_enabled"`
-	UserSettingsJson         types.String `tfsdk:"user_settings_json"`
-	UserSettingsOverrideJson types.String `tfsdk:"user_settings_override_json"`
-	UserSettingsYaml         types.String `tfsdk:"user_settings_yaml"`
-	UserSettingsOverrideYaml types.String `tfsdk:"user_settings_override_yaml"`
-}
+type IntegrationsServerConfig v1.IntegrationsServerConfig
 
-type IntegrationsServerConfig struct {
-	DockerImage              *string `tfsdk:"docker_image"`
-	DebugEnabled             *bool   `tfsdk:"debug_enabled"`
-	UserSettingsJson         *string `tfsdk:"user_settings_json"`
-	UserSettingsOverrideJson *string `tfsdk:"user_settings_override_json"`
-	UserSettingsYaml         *string `tfsdk:"user_settings_yaml"`
-	UserSettingsOverrideYaml *string `tfsdk:"user_settings_override_yaml"`
-}
-
-type IntegrationsServerConfigs []IntegrationsServerConfig
-
-func ReadIntegrationsServerConfigs(in *models.IntegrationsServerConfiguration) (IntegrationsServerConfigs, error) {
+func ReadIntegrationsServerConfigs(in *models.IntegrationsServerConfiguration) (*IntegrationsServerConfig, error) {
 	var cfg IntegrationsServerConfig
 
 	if in.UserSettingsYaml != "" {
@@ -87,7 +69,7 @@ func ReadIntegrationsServerConfigs(in *models.IntegrationsServerConfiguration) (
 		return nil, nil
 	}
 
-	return IntegrationsServerConfigs{cfg}, nil
+	return &cfg, nil
 }
 
 func IntegrationsServerConfigPayload(ctx context.Context, cfgObj attr.Value, res *models.IntegrationsServerConfiguration) diag.Diagnostics {
@@ -97,7 +79,7 @@ func IntegrationsServerConfigPayload(ctx context.Context, cfgObj attr.Value, res
 		return nil
 	}
 
-	var cfg *IntegrationsServerConfigTF
+	var cfg *v1.IntegrationsServerConfigTF
 
 	if diags = tfsdk.ValueAs(ctx, cfgObj, &cfg); diags.HasError() {
 		return nil
