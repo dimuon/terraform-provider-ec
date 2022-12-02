@@ -36,7 +36,7 @@ import (
 	"github.com/elastic/terraform-provider-ec/ec/ecdatasource/deploymentdatasource"
 	"github.com/elastic/terraform-provider-ec/ec/ecdatasource/deploymentsdatasource"
 	"github.com/elastic/terraform-provider-ec/ec/ecdatasource/stackdatasource"
-	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource"
+	"github.com/elastic/terraform-provider-ec/ec/ecresource/deploymentresource"
 	"github.com/elastic/terraform-provider-ec/ec/ecresource/elasticsearchkeystoreresource"
 	"github.com/elastic/terraform-provider-ec/ec/ecresource/extensionresource"
 	"github.com/elastic/terraform-provider-ec/ec/ecresource/trafficfilterassocresource"
