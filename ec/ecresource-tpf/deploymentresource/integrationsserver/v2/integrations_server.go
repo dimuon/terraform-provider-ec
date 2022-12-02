@@ -65,7 +65,7 @@ func ReadIntegrationsServers(in []*models.IntegrationsServerResourceInfo) (*Inte
 			continue
 		}
 
-		srv, err := ReadIntegrationsServer(model)
+		srv, err := readIntegrationsServer(model)
 		if err != nil {
 			return nil, err
 		}
@@ -76,7 +76,7 @@ func ReadIntegrationsServers(in []*models.IntegrationsServerResourceInfo) (*Inte
 	return nil, nil
 }
 
-func ReadIntegrationsServer(in *models.IntegrationsServerResourceInfo) (*IntegrationsServer, error) {
+func readIntegrationsServer(in *models.IntegrationsServerResourceInfo) (*IntegrationsServer, error) {
 
 	var srv IntegrationsServer
 
@@ -167,7 +167,7 @@ func IntegrationsServerPayload(ctx context.Context, srvObj types.Object, templat
 		return nil, nil
 	}
 
-	templatePayload := v1.IntegrationsServerResource(template)
+	templatePayload := integrationsServerResource(template)
 
 	if templatePayload == nil {
 		diags.AddError("integrations_server payload error", "integrations_server specified but deployment template is not configured for it. Use a different template if you wish to add integrations_server")
@@ -181,4 +181,13 @@ func IntegrationsServerPayload(ctx context.Context, srvObj types.Object, templat
 	}
 
 	return payload, nil
+}
+
+// integrationsServerResource returns the IntegrationsServerPayload from a deployment
+// template or an empty version of the payload.
+func integrationsServerResource(template *models.DeploymentTemplateInfoV2) *models.IntegrationsServerPayload {
+	if template == nil || len(template.DeploymentTemplate.Resources.IntegrationsServer) == 0 {
+		return nil
+	}
+	return template.DeploymentTemplate.Resources.IntegrationsServer[0]
 }
