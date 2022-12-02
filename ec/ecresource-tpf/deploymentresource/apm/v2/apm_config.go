@@ -30,7 +30,7 @@ import (
 
 type ApmConfig = v1.ApmConfig
 
-func ReadApmConfigs(in *models.ApmConfiguration) (v1.ApmConfigs, error) {
+func readApmConfigs(in *models.ApmConfiguration) (v1.ApmConfigs, error) {
 	var cfg ApmConfig
 
 	if in.UserSettingsYaml != "" {
@@ -70,7 +70,7 @@ func ReadApmConfigs(in *models.ApmConfiguration) (v1.ApmConfigs, error) {
 	return v1.ApmConfigs{cfg}, nil
 }
 
-func ApmConfigPayload(ctx context.Context, cfg v1.ApmConfigTF, model *models.ApmConfiguration) diag.Diagnostics {
+func apmConfigPayload(ctx context.Context, cfg v1.ApmConfigTF, model *models.ApmConfiguration) diag.Diagnostics {
 	if !cfg.DebugEnabled.IsNull() {
 		if model.SystemSettings == nil {
 			model.SystemSettings = &models.ApmSystemSettings{}

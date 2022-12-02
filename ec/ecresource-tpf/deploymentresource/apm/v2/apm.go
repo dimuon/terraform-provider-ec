@@ -103,7 +103,7 @@ func ReadApm(in *models.ApmResourceInfo) (*Apm, error) {
 
 	apm.HttpEndpoint, apm.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
 
-	configs, err := ReadApmConfigs(plan.Apm)
+	configs, err := readApmConfigs(plan.Apm)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +138,7 @@ func (apm ApmTF) Payload(ctx context.Context, payload models.ApmPayload) (*model
 		diags.Append(ds...)
 
 		if !ds.HasError() {
-			diags.Append(ApmConfigPayload(ctx, cfg, payload.Plan.Apm)...)
+			diags.Append(apmConfigPayload(ctx, cfg, payload.Plan.Apm)...)
 		}
 	}
 
@@ -149,7 +149,7 @@ func (apm ApmTF) Payload(ctx context.Context, payload models.ApmPayload) (*model
 		ZoneCount:               apm.ZoneCount,
 	}
 
-	topologyPayload, ds := topology.ApmTopologyPayload(ctx, payload.Plan.ClusterTopology, 0)
+	topologyPayload, ds := topology.ApmTopologyPayload(ctx, defaultApmTopology(payload.Plan.ClusterTopology), 0)
 
 	diags.Append(ds...)
 
