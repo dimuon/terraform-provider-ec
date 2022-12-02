@@ -97,5 +97,34 @@ func ObservabilityPayload(ctx context.Context, obsObj types.Object, client *api.
 }
 
 func ReadObservability(in *models.DeploymentSettings) (*Observability, error) {
-	return v1.ReadObservability(in)
+	if in == nil || in.Observability == nil {
+		return nil, nil
+	}
+
+	var obs Observability
+
+	// We are only accepting a single deployment ID and refID for both logs and metrics.
+	// If either of them is not nil the deployment ID and refID will be filled.
+	if in.Observability.Metrics != nil {
+		if in.Observability.Metrics.Destination.DeploymentID != nil {
+			obs.DeploymentId = in.Observability.Metrics.Destination.DeploymentID
+		}
+
+		obs.RefId = &in.Observability.Metrics.Destination.RefID
+		obs.Metrics = true
+	}
+
+	if in.Observability.Logging != nil {
+		if in.Observability.Logging.Destination.DeploymentID != nil {
+			obs.DeploymentId = in.Observability.Logging.Destination.DeploymentID
+		}
+		obs.RefId = &in.Observability.Logging.Destination.RefID
+		obs.Logs = true
+	}
+
+	if obs == (Observability{}) {
+		return nil, nil
+	}
+
+	return &obs, nil
 }
