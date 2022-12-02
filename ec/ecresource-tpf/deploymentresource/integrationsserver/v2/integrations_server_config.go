@@ -32,7 +32,7 @@ import (
 
 type IntegrationsServerConfig v1.IntegrationsServerConfig
 
-func ReadIntegrationsServerConfigs(in *models.IntegrationsServerConfiguration) (*IntegrationsServerConfig, error) {
+func readIntegrationsServerConfigs(in *models.IntegrationsServerConfiguration) (*IntegrationsServerConfig, error) {
 	var cfg IntegrationsServerConfig
 
 	if in.UserSettingsYaml != "" {
@@ -72,7 +72,7 @@ func ReadIntegrationsServerConfigs(in *models.IntegrationsServerConfiguration) (
 	return &cfg, nil
 }
 
-func IntegrationsServerConfigPayload(ctx context.Context, cfgObj attr.Value, res *models.IntegrationsServerConfiguration) diag.Diagnostics {
+func integrationsServerConfigPayload(ctx context.Context, cfgObj attr.Value, res *models.IntegrationsServerConfiguration) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	if cfgObj.IsNull() || cfgObj.IsUnknown() {

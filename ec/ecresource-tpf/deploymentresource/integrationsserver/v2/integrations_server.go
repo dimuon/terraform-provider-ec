@@ -21,7 +21,6 @@ import (
 	"context"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
-	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/integrationsserver/v1"
 	topologyv1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/topology/v1"
 	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/utils"
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
@@ -105,7 +104,7 @@ func readIntegrationsServer(in *models.IntegrationsServerResourceInfo) (*Integra
 
 	srv.HttpEndpoint, srv.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
 
-	cfg, err := ReadIntegrationsServerConfigs(plan.IntegrationsServer)
+	cfg, err := readIntegrationsServerConfigs(plan.IntegrationsServer)
 
 	if err != nil {
 		return nil, err
@@ -131,7 +130,7 @@ func (srv IntegrationsServerTF) Payload(ctx context.Context, payload models.Inte
 		payload.Region = &srv.Region.Value
 	}
 
-	ds := v1.IntegrationsServerConfigPayload(ctx, srv.Config, payload.Plan.IntegrationsServer)
+	ds := integrationsServerConfigPayload(ctx, srv.Config, payload.Plan.IntegrationsServer)
 	diags.Append(ds...)
 
 	topologyTF := topologyv1.TopologyTF{
