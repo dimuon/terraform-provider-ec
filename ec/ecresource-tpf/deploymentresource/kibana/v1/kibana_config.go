@@ -18,14 +18,6 @@
 package v1
 
 import (
-	"bytes"
-	"context"
-	"encoding/json"
-
-	"github.com/elastic/cloud-sdk-go/pkg/models"
-	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
-	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/utils"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -46,85 +38,3 @@ type KibanaConfig struct {
 }
 
 type KibanaConfigs []KibanaConfig
-
-func ReadKibanaConfig(in *models.KibanaConfiguration) (KibanaConfigs, error) {
-	var cfg KibanaConfig
-
-	if in.UserSettingsYaml != "" {
-		cfg.UserSettingsYaml = &in.UserSettingsYaml
-	}
-
-	if in.UserSettingsOverrideYaml != "" {
-		cfg.UserSettingsOverrideYaml = &in.UserSettingsOverrideYaml
-	}
-
-	if o := in.UserSettingsJSON; o != nil {
-		if b, _ := json.Marshal(o); len(b) > 0 && !bytes.Equal([]byte("{}"), b) {
-			cfg.UserSettingsJson = ec.String(string(b))
-		}
-	}
-
-	if o := in.UserSettingsOverrideJSON; o != nil {
-		if b, _ := json.Marshal(o); len(b) > 0 && !bytes.Equal([]byte("{}"), b) {
-			cfg.UserSettingsOverrideJson = ec.String(string(b))
-		}
-	}
-
-	if in.DockerImage != "" {
-		cfg.DockerImage = &in.DockerImage
-	}
-
-	if cfg == (KibanaConfig{}) {
-		return nil, nil
-	}
-
-	return KibanaConfigs{cfg}, nil
-}
-
-func KibanaConfigPayload(ctx context.Context, list types.List, model *models.KibanaConfiguration) diag.Diagnostics {
-	var cfg *KibanaConfigTF
-
-	if diags := utils.GetFirst(ctx, list, &cfg); diags.HasError() {
-		return diags
-	}
-
-	if cfg == nil {
-		return nil
-	}
-
-	return cfg.Payload(model)
-}
-
-func (cfg *KibanaConfigTF) Payload(model *models.KibanaConfiguration) diag.Diagnostics {
-	var diags diag.Diagnostics
-
-	if cfg == nil {
-		return nil
-	}
-
-	if cfg.UserSettingsJson.Value != "" {
-		if err := json.Unmarshal([]byte(cfg.UserSettingsJson.Value), &model.UserSettingsJSON); err != nil {
-			diags.AddError("failed expanding kibana user_settings_json", err.Error())
-		}
-	}
-
-	if cfg.UserSettingsOverrideJson.Value != "" {
-		if err := json.Unmarshal([]byte(cfg.UserSettingsOverrideJson.Value), &model.UserSettingsOverrideJSON); err != nil {
-			diags.AddError("failed expanding kibana user_settings_override_json", err.Error())
-		}
-	}
-
-	if !cfg.UserSettingsYaml.IsNull() {
-		model.UserSettingsYaml = cfg.UserSettingsYaml.Value
-	}
-
-	if !cfg.UserSettingsOverrideYaml.IsNull() {
-		model.UserSettingsOverrideYaml = cfg.UserSettingsOverrideYaml.Value
-	}
-
-	if !cfg.DockerImage.IsNull() {
-		model.DockerImage = cfg.DockerImage.Value
-	}
-
-	return diags
-}

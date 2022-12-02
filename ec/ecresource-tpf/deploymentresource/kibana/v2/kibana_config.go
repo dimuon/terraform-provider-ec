@@ -24,11 +24,12 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
 	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/kibana/v1"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 )
 
 type KibanaConfig v1.KibanaConfig
 
-func ReadKibanaConfig(in *models.KibanaConfiguration) (*KibanaConfig, error) {
+func readKibanaConfig(in *models.KibanaConfiguration) (*KibanaConfig, error) {
 	var cfg KibanaConfig
 
 	if in.UserSettingsYaml != "" {
@@ -60,4 +61,38 @@ func ReadKibanaConfig(in *models.KibanaConfiguration) (*KibanaConfig, error) {
 	}
 
 	return &cfg, nil
+}
+
+func kibanaConfigPayload(cfg *v1.KibanaConfigTF, model *models.KibanaConfiguration) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	if cfg == nil {
+		return nil
+	}
+
+	if cfg.UserSettingsJson.Value != "" {
+		if err := json.Unmarshal([]byte(cfg.UserSettingsJson.Value), &model.UserSettingsJSON); err != nil {
+			diags.AddError("failed expanding kibana user_settings_json", err.Error())
+		}
+	}
+
+	if cfg.UserSettingsOverrideJson.Value != "" {
+		if err := json.Unmarshal([]byte(cfg.UserSettingsOverrideJson.Value), &model.UserSettingsOverrideJSON); err != nil {
+			diags.AddError("failed expanding kibana user_settings_override_json", err.Error())
+		}
+	}
+
+	if !cfg.UserSettingsYaml.IsNull() {
+		model.UserSettingsYaml = cfg.UserSettingsYaml.Value
+	}
+
+	if !cfg.UserSettingsOverrideYaml.IsNull() {
+		model.UserSettingsOverrideYaml = cfg.UserSettingsOverrideYaml.Value
+	}
+
+	if !cfg.DockerImage.IsNull() {
+		model.DockerImage = cfg.DockerImage.Value
+	}
+
+	return diags
 }

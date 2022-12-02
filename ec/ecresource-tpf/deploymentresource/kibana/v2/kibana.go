@@ -88,7 +88,7 @@ func ReadKibana(in *models.KibanaResourceInfo) (*Kibana, error) {
 	plan := in.Info.PlanInfo.Current.Plan
 	var err error
 
-	topologies, err := v1.ReadKibanaTopologies(plan.ClusterTopology)
+	topologies, err := readKibanaTopologies(plan.ClusterTopology)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func ReadKibana(in *models.KibanaResourceInfo) (*Kibana, error) {
 
 	kibana.HttpEndpoint, kibana.HttpsEndpoint = converters.ExtractEndpoints(in.Info.Metadata)
 
-	config, err := ReadKibanaConfig(plan.Kibana)
+	config, err := readKibanaConfig(plan.Kibana)
 	if err != nil {
 		return nil, err
 	}
@@ -130,14 +130,14 @@ func (kibana KibanaTF) Payload(ctx context.Context, payload models.KibanaPayload
 	}
 
 	if !kibana.Config.IsNull() && !kibana.Config.IsUnknown() {
-		var config v1.KibanaConfigTF
+		var config *v1.KibanaConfigTF
 
 		ds := tfsdk.ValueAs(ctx, kibana.Config, &config)
 
 		diags.Append(ds...)
 
 		if !ds.HasError() {
-			diags.Append(config.Payload(payload.Plan.Kibana)...)
+			diags.Append(kibanaConfigPayload(config, payload.Plan.Kibana)...)
 		}
 	}
 
@@ -148,7 +148,7 @@ func (kibana KibanaTF) Payload(ctx context.Context, payload models.KibanaPayload
 		ZoneCount:               kibana.ZoneCount,
 	}
 
-	topologyPayload, ds := topologyTF.KibanaTopologyPayload(ctx, v1.DefaultKibanaTopology(payload.Plan.ClusterTopology), 0)
+	topologyPayload, ds := topologyTF.KibanaTopologyPayload(ctx, defaultKibanaTopology(payload.Plan.ClusterTopology), 0)
 
 	diags.Append(ds...)
 
@@ -172,7 +172,7 @@ func KibanaPayload(ctx context.Context, kibanaObj types.Object, template *models
 		return nil, nil
 	}
 
-	templatePlayload := v1.KibanaResource(template)
+	templatePlayload := kibanaResource(template)
 
 	if templatePlayload == nil {
 		diags.AddError("kibana payload error", "kibana specified but deployment template is not configured for it. Use a different template if you wish to add kibana")
@@ -186,4 +186,13 @@ func KibanaPayload(ctx context.Context, kibanaObj types.Object, template *models
 	}
 
 	return payload, nil
+}
+
+// kibanaResource returns the KibanaPayload from a deployment
+// template or an empty version of the payload.
+func kibanaResource(res *models.DeploymentTemplateInfoV2) *models.KibanaPayload {
+	if res == nil || len(res.DeploymentTemplate.Resources.Kibana) == 0 {
+		return nil
+	}
+	return res.DeploymentTemplate.Resources.Kibana[0]
 }
