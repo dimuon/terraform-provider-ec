@@ -21,13 +21,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strconv"
+	"strings"
 
+	"github.com/elastic/cloud-sdk-go/pkg/api/deploymentapi/deploymentsize"
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
 	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/elasticsearch/v1"
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -71,7 +75,7 @@ type ElasticsearchTopologyAutoscaling v1.ElasticsearchTopologyAutoscaling
 func (topology ElasticsearchTopologyTF) Payload(ctx context.Context, topologyID string, planTopologies []*models.ElasticsearchClusterTopologyElement) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	topologyElem, err := v1.MatchEsTopologyID(topologyID, planTopologies)
+	topologyElem, err := matchEsTopologyID(topologyID, planTopologies)
 	if err != nil {
 		diags.AddError("topology matching error", err.Error())
 		return diags
@@ -103,7 +107,7 @@ func (topology ElasticsearchTopologyTF) Payload(ctx context.Context, topologyID 
 		topologyElem.NodeType = nil
 	}
 
-	diags.Append(v1.ElasticsearchTopologyAutoscalingPayload(ctx, topology.Autoscaling, topologyID, topologyElem)...)
+	diags.Append(ElasticsearchTopologyAutoscalingPayload(ctx, topology.Autoscaling, topologyID, topologyElem)...)
 
 	diags = append(diags, ds...)
 
@@ -272,4 +276,119 @@ func (tops ElasticsearchTopologies) Set() map[string]ElasticsearchTopology {
 	}
 
 	return set
+}
+
+func matchEsTopologyID(id string, topologies []*models.ElasticsearchClusterTopologyElement) (*models.ElasticsearchClusterTopologyElement, error) {
+	for _, t := range topologies {
+		if t.ID == id {
+			return t, nil
+		}
+	}
+
+	topIDs := topologyIDs(topologies)
+	for i, id := range topIDs {
+		topIDs[i] = "\"" + id + "\""
+	}
+
+	return nil, fmt.Errorf(`invalid id ('%s'): valid topology IDs are %s`, id, strings.Join(topIDs, ", "))
+}
+
+func topologyIDs(topologies []*models.ElasticsearchClusterTopologyElement) []string {
+	var result []string
+
+	for _, topology := range topologies {
+		result = append(result, topology.ID)
+	}
+
+	if len(result) == 0 {
+		return nil
+	}
+	return result
+}
+
+func ElasticsearchTopologyAutoscalingPayload(ctx context.Context, autoObj attr.Value, topologyID string, payload *models.ElasticsearchClusterTopologyElement) diag.Diagnostics {
+	var diag diag.Diagnostics
+
+	if autoObj.IsNull() || autoObj.IsUnknown() {
+		return nil
+	}
+
+	// it should be only one element if any
+	var autoscale v1.ElasticsearchTopologyAutoscalingTF
+
+	if diags := tfsdk.ValueAs(ctx, autoObj, &autoscale); diags.HasError() {
+		return diags
+	}
+
+	if autoscale == (v1.ElasticsearchTopologyAutoscalingTF{}) {
+		return nil
+	}
+
+	if !autoscale.MinSize.IsNull() && !autoscale.MinSize.IsUnknown() {
+		if payload.AutoscalingMin == nil {
+			payload.AutoscalingMin = new(models.TopologySize)
+		}
+
+		err := expandAutoscalingDimension(autoscale, payload.AutoscalingMin, autoscale.MinSize, autoscale.MinSizeResource)
+		if err != nil {
+			diag.AddError("fail to parse autoscale min size", err.Error())
+			return diag
+		}
+
+		if reflect.DeepEqual(payload.AutoscalingMin, new(models.TopologySize)) {
+			payload.AutoscalingMin = nil
+		}
+	}
+
+	if !autoscale.MaxSize.IsNull() && !autoscale.MaxSize.IsUnknown() {
+		if payload.AutoscalingMax == nil {
+			payload.AutoscalingMax = new(models.TopologySize)
+		}
+
+		err := expandAutoscalingDimension(autoscale, payload.AutoscalingMax, autoscale.MaxSize, autoscale.MaxSizeResource)
+		if err != nil {
+			diag.AddError("fail to parse autoscale max size", err.Error())
+			return diag
+		}
+
+		if reflect.DeepEqual(payload.AutoscalingMax, new(models.TopologySize)) {
+			payload.AutoscalingMax = nil
+		}
+	}
+
+	if autoscale.PolicyOverrideJson.Value != "" {
+		if err := json.Unmarshal([]byte(autoscale.PolicyOverrideJson.Value),
+			&payload.AutoscalingPolicyOverrideJSON,
+		); err != nil {
+			diag.AddError(fmt.Sprintf("elasticsearch topology %s: unable to load policy_override_json", topologyID), err.Error())
+			return diag
+		}
+	}
+
+	return diag
+}
+
+// expandAutoscalingDimension centralises processing of %_size and %_size_resource attributes
+// Due to limitations in the Terraform SDK, it's not possible to specify a Default on a Computed schema member
+// to work around this limitation, this function will default the %_size_resource attribute to `memory`.
+// Without this default, setting autoscaling limits on tiers which do not have those limits in the deployment
+// template leads to an API error due to the empty resource field on the TopologySize model.
+func expandAutoscalingDimension(autoscale v1.ElasticsearchTopologyAutoscalingTF, model *models.TopologySize, size, sizeResource types.String) error {
+	if size.Value != "" {
+		val, err := deploymentsize.ParseGb(size.Value)
+		if err != nil {
+			return err
+		}
+		model.Value = &val
+
+		if model.Resource == nil {
+			model.Resource = ec.String("memory")
+		}
+	}
+
+	if sizeResource.Value != "" {
+		model.Resource = &sizeResource.Value
+	}
+
+	return nil
 }

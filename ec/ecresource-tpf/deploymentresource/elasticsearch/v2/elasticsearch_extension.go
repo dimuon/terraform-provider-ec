@@ -18,8 +18,14 @@
 package v2
 
 import (
+	"context"
+
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/elasticsearch/v1"
+	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/utils"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 type ElasticsearchExtensions v1.ElasticsearchExtensions
@@ -32,7 +38,7 @@ func ReadElasticsearchExtensions(in *models.ElasticsearchConfiguration) (Elastic
 	extensions := make(ElasticsearchExtensions, 0, len(in.UserBundles)+len(in.UserPlugins))
 
 	for _, model := range in.UserBundles {
-		extension, err := v1.ReadFromUserBundle(model)
+		extension, err := ReadFromUserBundle(model)
 		if err != nil {
 			return nil, err
 		}
@@ -41,7 +47,7 @@ func ReadElasticsearchExtensions(in *models.ElasticsearchConfiguration) (Elastic
 	}
 
 	for _, model := range in.UserPlugins {
-		extension, err := v1.ReadFromUserPlugin(model)
+		extension, err := ReadFromUserPlugin(model)
 		if err != nil {
 			return nil, err
 		}
@@ -50,4 +56,81 @@ func ReadElasticsearchExtensions(in *models.ElasticsearchConfiguration) (Elastic
 	}
 
 	return extensions, nil
+}
+
+func elasticsearchExtensionPayload(ctx context.Context, extensions types.Set, es *models.ElasticsearchConfiguration) diag.Diagnostics {
+	for _, elem := range extensions.Elems {
+		var extension v1.ElasticsearchExtensionTF
+
+		if diags := tfsdk.ValueAs(ctx, elem, &extension); diags.HasError() {
+			return diags
+		}
+
+		version := extension.Version.Value
+		url := extension.Url.Value
+		name := extension.Name.Value
+
+		if extension.Type.Value == "bundle" {
+			es.UserBundles = append(es.UserBundles, &models.ElasticsearchUserBundle{
+				Name:                 &name,
+				ElasticsearchVersion: &version,
+				URL:                  &url,
+			})
+		}
+
+		if extension.Type.Value == "plugin" {
+			es.UserPlugins = append(es.UserPlugins, &models.ElasticsearchUserPlugin{
+				Name:                 &name,
+				ElasticsearchVersion: &version,
+				URL:                  &url,
+			})
+		}
+	}
+	return nil
+}
+
+func ReadFromUserBundle(in *models.ElasticsearchUserBundle) (*v1.ElasticsearchExtension, error) {
+	var ext v1.ElasticsearchExtension
+
+	ext.Type = "bundle"
+
+	if in.ElasticsearchVersion == nil {
+		return nil, utils.MissingField("ElasticsearchUserBundle.ElasticsearchVersion")
+	}
+	ext.Version = *in.ElasticsearchVersion
+
+	if in.URL == nil {
+		return nil, utils.MissingField("ElasticsearchUserBundle.URL")
+	}
+	ext.Url = *in.URL
+
+	if in.Name == nil {
+		return nil, utils.MissingField("ElasticsearchUserBundle.Name")
+	}
+	ext.Name = *in.Name
+
+	return &ext, nil
+}
+
+func ReadFromUserPlugin(in *models.ElasticsearchUserPlugin) (*v1.ElasticsearchExtension, error) {
+	var ext v1.ElasticsearchExtension
+
+	ext.Type = "plugin"
+
+	if in.ElasticsearchVersion == nil {
+		return nil, utils.MissingField("ElasticsearchUserPlugin.ElasticsearchVersion")
+	}
+	ext.Version = *in.ElasticsearchVersion
+
+	if in.URL == nil {
+		return nil, utils.MissingField("ElasticsearchUserPlugin.URL")
+	}
+	ext.Url = *in.URL
+
+	if in.Name == nil {
+		return nil, utils.MissingField("ElasticsearchUserPlugin.Name")
+	}
+	ext.Name = *in.Name
+
+	return &ext, nil
 }

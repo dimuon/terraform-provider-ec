@@ -18,11 +18,6 @@
 package v1
 
 import (
-	"context"
-
-	"github.com/elastic/cloud-sdk-go/pkg/models"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -36,47 +31,4 @@ type ElasticsearchStrategy struct {
 	Type string `tfsdk:"type"`
 }
 
-type ElasticsearchStrategiesV1 []ElasticsearchStrategy
-
-func ElasticsearchStrategiesPayload(ctx context.Context, strategies types.List, payload *models.ElasticsearchClusterPlan) diag.Diagnostics {
-	if len(strategies.Elems) == 0 {
-		return nil
-	}
-
-	for _, elem := range strategies.Elems {
-		var strategy ElasticsearchStrategyTF
-		if diags := tfsdk.ValueAs(ctx, elem, &strategy); diags.HasError() {
-			return diags
-		}
-		ElasticsearchStrategyPayload(strategy.Type, payload)
-	}
-
-	return nil
-}
-
-func ElasticsearchStrategyPayload(strategy types.String, payload *models.ElasticsearchClusterPlan) {
-	createModelIfNeeded := func() {
-		if payload.Transient == nil {
-			payload.Transient = &models.TransientElasticsearchPlanConfiguration{
-				Strategy: &models.PlanStrategy{},
-			}
-		}
-	}
-
-	switch strategy.Value {
-	case autodetect:
-		createModelIfNeeded()
-		payload.Transient.Strategy.Autodetect = new(models.AutodetectStrategyConfig)
-	case growAndShrink:
-		createModelIfNeeded()
-		payload.Transient.Strategy.GrowAndShrink = new(models.GrowShrinkStrategyConfig)
-	case rollingGrowAndShrink:
-		createModelIfNeeded()
-		payload.Transient.Strategy.RollingGrowAndShrink = new(models.RollingGrowShrinkStrategyConfig)
-	case rollingAll:
-		createModelIfNeeded()
-		payload.Transient.Strategy.Rolling = &models.RollingStrategyConfig{
-			GroupBy: "__all__",
-		}
-	}
-}
+type ElasticsearchStrategies []ElasticsearchStrategy

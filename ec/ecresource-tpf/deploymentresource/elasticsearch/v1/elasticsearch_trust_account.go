@@ -18,11 +18,6 @@
 package v1
 
 import (
-	"context"
-
-	"github.com/elastic/cloud-sdk-go/pkg/models"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -41,89 +36,3 @@ type ElasticsearchTrustAccount struct {
 }
 
 type ElasticsearchTrustAccounts []ElasticsearchTrustAccount
-
-func ReadElasticsearchTrustAccounts(in *models.ElasticsearchClusterSettings) (ElasticsearchTrustAccounts, error) {
-	if in == nil || in.Trust == nil {
-		return nil, nil
-	}
-
-	accounts := make(ElasticsearchTrustAccounts, 0, len(in.Trust.Accounts))
-
-	for _, model := range in.Trust.Accounts {
-		account, err := ReadElasticsearchTrustAccount(model)
-		if err != nil {
-			return nil, err
-		}
-		accounts = append(accounts, *account)
-	}
-
-	return accounts, nil
-}
-
-func ElasticsearchTrustAccountPayload(ctx context.Context, accounts types.Set, model *models.ElasticsearchClusterSettings) (*models.ElasticsearchClusterSettings, diag.Diagnostics) {
-	var diags diag.Diagnostics
-
-	payloads := make([]*models.AccountTrustRelationship, 0, len(accounts.Elems))
-
-	for _, elem := range accounts.Elems {
-		var account ElasticsearchTrustAccountTF
-
-		ds := tfsdk.ValueAs(ctx, elem, &account)
-
-		diags = append(diags, ds...)
-
-		if ds.HasError() {
-			continue
-		}
-
-		id := account.AccountId.Value
-		all := account.TrustAll.Value
-
-		payload := &models.AccountTrustRelationship{
-			AccountID: &id,
-			TrustAll:  &all,
-		}
-
-		ds = account.TrustAllowlist.ElementsAs(ctx, &payload.TrustAllowlist, true)
-
-		diags = append(diags, ds...)
-
-		if ds.HasError() {
-			continue
-		}
-
-		payloads = append(payloads, payload)
-	}
-
-	if len(payloads) == 0 {
-		return model, nil
-	}
-
-	if model == nil {
-		model = &models.ElasticsearchClusterSettings{}
-	}
-
-	if model.Trust == nil {
-		model.Trust = &models.ElasticsearchClusterTrustSettings{}
-	}
-
-	model.Trust.Accounts = append(model.Trust.Accounts, payloads...)
-
-	return model, nil
-}
-
-func ReadElasticsearchTrustAccount(in *models.AccountTrustRelationship) (*ElasticsearchTrustAccount, error) {
-	var acc ElasticsearchTrustAccount
-
-	if in.AccountID != nil {
-		acc.AccountId = in.AccountID
-	}
-
-	if in.TrustAll != nil {
-		acc.TrustAll = in.TrustAll
-	}
-
-	acc.TrustAllowlist = in.TrustAllowlist
-
-	return &acc, nil
-}

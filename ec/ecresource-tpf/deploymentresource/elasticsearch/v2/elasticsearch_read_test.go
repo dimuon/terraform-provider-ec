@@ -30,7 +30,6 @@ import (
 	"github.com/elastic/cloud-sdk-go/pkg/api/mock"
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
-	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/elasticsearch/v1"
 )
 
 func Test_readElasticsearch(t *testing.T) {
@@ -408,21 +407,21 @@ func Test_readElasticsearchConfig(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *v1.ElasticsearchConfig
+		want *ElasticsearchConfig
 	}{
 		{
 			name: "read plugins allowlist",
 			args: args{cfg: &models.ElasticsearchConfiguration{
 				EnabledBuiltInPlugins: []string{"some-allowed-plugin"},
 			}},
-			want: &v1.ElasticsearchConfig{
+			want: &ElasticsearchConfig{
 				Plugins: []string{"some-allowed-plugin"},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := v1.ReadElasticsearchConfig(tt.args.cfg)
+			got, err := ReadElasticsearchConfig(tt.args.cfg)
 			assert.Nil(t, err)
 			assert.Equal(t, tt.want, got)
 

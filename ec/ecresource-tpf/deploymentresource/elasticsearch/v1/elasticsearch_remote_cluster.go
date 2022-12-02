@@ -18,11 +18,6 @@
 package v1
 
 import (
-	"context"
-
-	"github.com/elastic/cloud-sdk-go/pkg/models"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -41,77 +36,3 @@ type ElasticsearchRemoteCluster struct {
 }
 
 type ElasticsearchRemoteClusters []ElasticsearchRemoteCluster
-
-func ReadElasticsearchRemoteClusters(in []*models.RemoteResourceRef) (ElasticsearchRemoteClusters, error) {
-	if len(in) == 0 {
-		return nil, nil
-	}
-
-	clusters := make([]ElasticsearchRemoteCluster, 0, len(in))
-
-	for _, model := range in {
-		cluster, err := ReadElasticsearchRemoteCluster(model)
-		if err != nil {
-			return nil, err
-		}
-		clusters = append(clusters, *cluster)
-	}
-
-	return clusters, nil
-}
-
-func ElasticsearchRemoteClustersPayload(ctx context.Context, clusters types.Set) (*models.RemoteResources, diag.Diagnostics) {
-	payloads := models.RemoteResources{Resources: []*models.RemoteResourceRef{}}
-
-	for _, elem := range clusters.Elems {
-		var cluster ElasticsearchRemoteClusterTF
-		diags := tfsdk.ValueAs(ctx, elem, &cluster)
-
-		if diags.HasError() {
-			return nil, diags
-		}
-		var payload models.RemoteResourceRef
-
-		if !cluster.DeploymentId.IsNull() {
-			payload.DeploymentID = &cluster.DeploymentId.Value
-		}
-
-		if !cluster.RefId.IsNull() {
-			payload.ElasticsearchRefID = &cluster.RefId.Value
-		}
-
-		if !cluster.Alias.IsNull() {
-			payload.Alias = &cluster.Alias.Value
-		}
-
-		if !cluster.SkipUnavailable.IsNull() {
-			payload.SkipUnavailable = &cluster.SkipUnavailable.Value
-		}
-
-		payloads.Resources = append(payloads.Resources, &payload)
-	}
-
-	return &payloads, nil
-}
-
-func ReadElasticsearchRemoteCluster(in *models.RemoteResourceRef) (*ElasticsearchRemoteCluster, error) {
-	var cluster ElasticsearchRemoteCluster
-
-	if in.DeploymentID != nil && *in.DeploymentID != "" {
-		cluster.DeploymentId = in.DeploymentID
-	}
-
-	if in.ElasticsearchRefID != nil && *in.ElasticsearchRefID != "" {
-		cluster.RefId = in.ElasticsearchRefID
-	}
-
-	if in.Alias != nil && *in.Alias != "" {
-		cluster.Alias = in.Alias
-	}
-
-	if in.SkipUnavailable != nil {
-		cluster.SkipUnavailable = in.SkipUnavailable
-	}
-
-	return &cluster, nil
-}

@@ -19,17 +19,22 @@ package v2
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"reflect"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
 	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/elasticsearch/v1"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 )
 
 type ElasticsearchConfig v1.ElasticsearchConfig
 
 func (c *ElasticsearchConfig) IsEmpty() bool {
-	return (*v1.ElasticsearchConfig)(c).IsEmpty()
+	return c == nil || reflect.ValueOf(*c).IsZero()
 }
 
 func ReadElasticsearchConfig(in *models.ElasticsearchConfiguration) (*ElasticsearchConfig, error) {
@@ -68,4 +73,48 @@ func ReadElasticsearchConfig(in *models.ElasticsearchConfiguration) (*Elasticsea
 	}
 
 	return &config, nil
+}
+
+func ElasticsearchConfigPayload(ctx context.Context, cfgObj attr.Value, model *models.ElasticsearchConfiguration) (*models.ElasticsearchConfiguration, diag.Diagnostics) {
+	if cfgObj.IsNull() || cfgObj.IsUnknown() {
+		return model, nil
+	}
+
+	var cfg v1.ElasticsearchConfigTF
+
+	diags := tfsdk.ValueAs(ctx, cfgObj, &cfg)
+
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	if cfg.UserSettingsJson.Value != "" {
+		if err := json.Unmarshal([]byte(cfg.UserSettingsJson.Value), &model.UserSettingsJSON); err != nil {
+			diags.AddError("failed expanding elasticsearch user_settings_json", err.Error())
+		}
+	}
+
+	if cfg.UserSettingsOverrideJson.Value != "" {
+		if err := json.Unmarshal([]byte(cfg.UserSettingsOverrideJson.Value), &model.UserSettingsOverrideJSON); err != nil {
+			diags.AddError("failed expanding elasticsearch user_settings_override_json", err.Error())
+		}
+	}
+
+	if !cfg.UserSettingsYaml.IsNull() {
+		model.UserSettingsYaml = cfg.UserSettingsYaml.Value
+	}
+
+	if !cfg.UserSettingsOverrideYaml.IsNull() {
+		model.UserSettingsOverrideYaml = cfg.UserSettingsOverrideYaml.Value
+	}
+
+	ds := cfg.Plugins.ElementsAs(ctx, &model.EnabledBuiltInPlugins, true)
+
+	diags = append(diags, ds...)
+
+	if !cfg.DockerImage.IsNull() {
+		model.DockerImage = cfg.DockerImage.Value
+	}
+
+	return model, diags
 }

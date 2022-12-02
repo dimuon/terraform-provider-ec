@@ -20,6 +20,7 @@ package v2
 import (
 	"context"
 	"strconv"
+	"strings"
 
 	"github.com/elastic/cloud-sdk-go/pkg/models"
 	"github.com/elastic/cloud-sdk-go/pkg/util/ec"
@@ -27,7 +28,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/elasticsearch/v1"
 	"github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/utils"
 	"github.com/elastic/terraform-provider-ec/ec/internal/converters"
 	"github.com/elastic/terraform-provider-ec/ec/internal/util"
@@ -210,7 +210,7 @@ func (es *ElasticsearchTF) Payload(ctx context.Context, res *models.Elasticsearc
 
 	// Unsetting the curation properties is since they're deprecated since
 	// >= 6.6.0 which is when ILM is introduced in Elasticsearch.
-	v1.UnsetElasticsearchCuration(res)
+	unsetElasticsearchCuration(res)
 
 	var ds diag.Diagnostics
 
@@ -220,14 +220,14 @@ func (es *ElasticsearchTF) Payload(ctx context.Context, res *models.Elasticsearc
 
 	// Fixes the node_roles field to remove the dedicated tier roles from the
 	// list when these are set as a dedicated tier as a topology element.
-	v1.UpdateNodeRolesOnDedicatedTiers(res.Plan.ClusterTopology)
+	UpdateNodeRolesOnDedicatedTiers(res.Plan.ClusterTopology)
 
-	res.Plan.Elasticsearch, ds = v1.ElasticsearchConfigPayload(ctx, es.Config, res.Plan.Elasticsearch)
+	res.Plan.Elasticsearch, ds = ElasticsearchConfigPayload(ctx, es.Config, res.Plan.Elasticsearch)
 	diags.Append(ds...)
 
-	diags.Append(v1.ElasticsearchSnapshotSourcePayload(ctx, es.SnapshotSource, res.Plan)...)
+	diags.Append(elasticsearchSnapshotSourcePayload(ctx, es.SnapshotSource, res.Plan)...)
 
-	diags.Append(v1.ElasticsearchExtensionPayload(ctx, es.Extension, res.Plan.Elasticsearch)...)
+	diags.Append(elasticsearchExtensionPayload(ctx, es.Extension, res.Plan.Elasticsearch)...)
 
 	if es.Autoscale.Value != "" {
 		autoscaleBool, err := strconv.ParseBool(es.Autoscale.Value)
@@ -238,13 +238,13 @@ func (es *ElasticsearchTF) Payload(ctx context.Context, res *models.Elasticsearc
 		}
 	}
 
-	res.Settings, ds = v1.ElasticsearchTrustAccountPayload(ctx, es.TrustAccount, res.Settings)
+	res.Settings, ds = ElasticsearchTrustAccountPayload(ctx, es.TrustAccount, res.Settings)
 	diags.Append(ds...)
 
-	res.Settings, ds = v1.ElasticsearchTrustExternalPayload(ctx, es.TrustExternal, res.Settings)
+	res.Settings, ds = ElasticsearchTrustExternalPayload(ctx, es.TrustExternal, res.Settings)
 	diags.Append(ds...)
 
-	v1.ElasticsearchStrategyPayload(es.Strategy, res.Plan)
+	elasticsearchStrategyPayload(es.Strategy, res.Plan)
 
 	return res, diags
 }
@@ -300,6 +300,114 @@ func (es *Elasticsearch) setTopology(topologies ElasticsearchTopologies) {
 			es.FrozenTier = &topology
 		case "ml":
 			es.MlTier = &topology
+		}
+	}
+}
+
+func unsetElasticsearchCuration(payload *models.ElasticsearchPayload) {
+	if payload.Plan.Elasticsearch != nil {
+		payload.Plan.Elasticsearch.Curation = nil
+	}
+
+	if payload.Settings != nil {
+		payload.Settings.Curation = nil
+	}
+}
+
+func UpdateNodeRolesOnDedicatedTiers(topologies []*models.ElasticsearchClusterTopologyElement) {
+	dataTier, hasMasterTier, hasIngestTier := dedicatedTopoogies(topologies)
+	// This case is not very likely since all deployments will have a data tier.
+	// It's here because the code path is technically possible and it's better
+	// than a straight panic.
+	if dataTier == nil {
+		return
+	}
+
+	if hasIngestTier {
+		dataTier.NodeRoles = removeItemFromSlice(
+			dataTier.NodeRoles, ingestDataTierRole,
+		)
+	}
+	if hasMasterTier {
+		dataTier.NodeRoles = removeItemFromSlice(
+			dataTier.NodeRoles, masterDataTierRole,
+		)
+	}
+}
+
+func removeItemFromSlice(slice []string, item string) []string {
+	var hasItem bool
+	var itemIndex int
+	for i, str := range slice {
+		if str == item {
+			hasItem = true
+			itemIndex = i
+		}
+	}
+	if hasItem {
+		copy(slice[itemIndex:], slice[itemIndex+1:])
+		return slice[:len(slice)-1]
+	}
+	return slice
+}
+
+func dedicatedTopoogies(topologies []*models.ElasticsearchClusterTopologyElement) (dataTier *models.ElasticsearchClusterTopologyElement, hasMasterTier, hasIngestTier bool) {
+	for _, topology := range topologies {
+		var hasSomeDataRole bool
+		var hasMasterRole bool
+		var hasIngestRole bool
+		for _, role := range topology.NodeRoles {
+			sizeNonZero := *topology.Size.Value > 0
+			if strings.HasPrefix(role, dataTierRolePrefix) && sizeNonZero {
+				hasSomeDataRole = true
+			}
+			if role == ingestDataTierRole && sizeNonZero {
+				hasIngestRole = true
+			}
+			if role == masterDataTierRole && sizeNonZero {
+				hasMasterRole = true
+			}
+		}
+
+		if !hasSomeDataRole && hasMasterRole {
+			hasMasterTier = true
+		}
+
+		if !hasSomeDataRole && hasIngestRole {
+			hasIngestTier = true
+		}
+
+		if hasSomeDataRole && hasMasterRole {
+			dataTier = topology
+		}
+	}
+
+	return dataTier, hasMasterTier, hasIngestTier
+}
+
+func elasticsearchStrategyPayload(strategy types.String, payload *models.ElasticsearchClusterPlan) {
+	createModelIfNeeded := func() {
+		if payload.Transient == nil {
+			payload.Transient = &models.TransientElasticsearchPlanConfiguration{
+				Strategy: &models.PlanStrategy{},
+			}
+		}
+	}
+
+	switch strategy.Value {
+	case autodetect:
+		createModelIfNeeded()
+		payload.Transient.Strategy.Autodetect = new(models.AutodetectStrategyConfig)
+	case growAndShrink:
+		createModelIfNeeded()
+		payload.Transient.Strategy.GrowAndShrink = new(models.GrowShrinkStrategyConfig)
+	case rollingGrowAndShrink:
+		createModelIfNeeded()
+		payload.Transient.Strategy.RollingGrowAndShrink = new(models.RollingGrowShrinkStrategyConfig)
+	case rollingAll:
+		createModelIfNeeded()
+		payload.Transient.Strategy.Rolling = &models.RollingStrategyConfig{
+			GroupBy: "__all__",
 		}
 	}
 }

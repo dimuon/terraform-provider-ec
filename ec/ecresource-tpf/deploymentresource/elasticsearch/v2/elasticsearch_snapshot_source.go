@@ -18,7 +18,45 @@
 package v2
 
 import (
+	"context"
+
+	"github.com/elastic/cloud-sdk-go/pkg/models"
 	v1 "github.com/elastic/terraform-provider-ec/ec/ecresource-tpf/deploymentresource/elasticsearch/v1"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 )
 
 type ElasticsearchSnapshotSource v1.ElasticsearchSnapshotSource
+
+func elasticsearchSnapshotSourcePayload(ctx context.Context, srcObj attr.Value, payload *models.ElasticsearchClusterPlan) diag.Diagnostics {
+	var snapshot *v1.ElasticsearchSnapshotSourceTF
+
+	if srcObj.IsNull() || srcObj.IsUnknown() {
+		return nil
+	}
+
+	if diags := tfsdk.ValueAs(ctx, srcObj, &snapshot); diags.HasError() {
+		return diags
+	}
+
+	if snapshot == nil {
+		return nil
+	}
+
+	if payload.Transient == nil {
+		payload.Transient = &models.TransientElasticsearchPlanConfiguration{
+			RestoreSnapshot: &models.RestoreSnapshotConfiguration{},
+		}
+	}
+
+	if !snapshot.SourceElasticsearchClusterId.IsNull() {
+		payload.Transient.RestoreSnapshot.SourceClusterID = snapshot.SourceElasticsearchClusterId.Value
+	}
+
+	if !snapshot.SnapshotName.IsNull() {
+		payload.Transient.RestoreSnapshot.SnapshotName = &snapshot.SnapshotName.Value
+	}
+
+	return nil
+}
