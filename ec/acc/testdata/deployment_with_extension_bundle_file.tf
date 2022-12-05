@@ -6,7 +6,6 @@ locals {
   file_path           = "%s"
 }
 
-
 data "ec_stack" "latest" {
   version_regex = "latest"
   region        = local.region
