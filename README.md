@@ -226,4 +226,4 @@ There are 2 ways to tackle this
 - import existing resource using deployment ID, e.g `terraform import 'ec_deployment.test' <deployment_id>`
 - state upgrade that is performed by TF by calling the provider's API so no action is required from user perspective
 
-Currently the state upgrade functioanlity is still in development so importing existing resources is the recommended way to deal with existing TF states.
+Currently the state upgrade functionality is still in development so importing existing resources is the recommended way to deal with existing TF states.

@@ -16,13 +16,13 @@ resource "ec_deployment" "autoscaling" {
       size        = "0g"
       zone_count  = 1
       autoscaling = {}
-    },
+    }
 
     frozen = {
       size        = "0g"
       zone_count  = 1
       autoscaling = {}
-    },
+    }
 
     hot = {
       size       = "1g"
@@ -30,7 +30,7 @@ resource "ec_deployment" "autoscaling" {
       autoscaling = {
         max_size = "8g"
       }
-    },
+    }
 
     ml = {
       size       = "0g"
@@ -39,7 +39,7 @@ resource "ec_deployment" "autoscaling" {
         min_size = "0g"
         max_size = "4g"
       }
-    },
+    }
 
     warm = {
       size       = "2g"

@@ -81,9 +81,6 @@ func TestAccDeployment_autoscaling(t *testing.T) {
 			// also disables ML
 			{
 				Config: cfgF(disableAutoscale),
-				// When disabling a tier the plan will be non empty on refresh
-				// since the topology block is present with size = "0g".
-				// ExpectNonEmptyPlan: true,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resName, "elasticsearch.autoscale", "false"),
 					resource.TestCheckResourceAttrSet(resName, "elasticsearch.hot.instance_configuration_id"),
