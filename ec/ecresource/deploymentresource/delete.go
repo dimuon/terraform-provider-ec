@@ -59,17 +59,6 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 		return
 	}
 
-	var rules []string
-	// diags = state.TrafficFilter.ElementsAs(ctx, &rules, true)
-	resp.Diagnostics.Append(diags...)
-	if !diags.HasError() {
-		for _, rule := range rules {
-			if err := removeRule(rule, state.Id.Value, r.client); err != nil {
-				resp.Diagnostics.AddError("traffic rule deletion error", err.Error())
-			}
-		}
-	}
-
 	// We don't particularly care if delete succeeds or not. It's better to
 	// remove it, but it might fail on ESS. For example, when user's aren't
 	// allowed to delete deployments, or on ECE when the cluster is "still
