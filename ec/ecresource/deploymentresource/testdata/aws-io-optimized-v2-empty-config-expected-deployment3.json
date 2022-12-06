@@ -644,7 +644,7 @@
                             "http": 9200, 
                             "https": 443
                         }, 
-                        "cloud_id": "my_deployment_name:dXMtZWFzdC0xLmF3cy5mb3VuZC5pbzo0NDMkMDU4OWRkYjNhY2VlNDY0MWI5NTgzMzAyMmJmMDRkMmIk"
+                        "cloud_id": "my_deployment_name:someCloudID"
                     }
                 }, 
                 "region": "us-east-1", 
