@@ -79,7 +79,9 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 
 	resp.Diagnostics.Append(diags...)
 
-	if diags.HasError() {
+	if deployment == nil {
+		resp.Diagnostics.AddError("cannot read just updated resource", "")
+		resp.State.RemoveResource(ctx)
 		return
 	}
 

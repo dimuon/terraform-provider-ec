@@ -82,13 +82,11 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 
 	deployment, diags := r.read(ctx, *res.ID, nil, plan, res.Resources)
 
-	if diags.HasError() {
-		resp.Diagnostics.Append(diags...)
-	}
+	resp.Diagnostics.Append(diags...)
 
 	if deployment == nil {
-		resp.State.RemoveResource(ctx)
 		resp.Diagnostics.AddError("cannot read just created resource", "")
+		resp.State.RemoveResource(ctx)
 		return
 	}
 
