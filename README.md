@@ -227,3 +227,12 @@ There are 2 ways to tackle this
 - state upgrade that is performed by TF by calling the provider's API so no action is required from user perspective
 
 Currently the state upgrade functionality is still in development so importing existing resources is the recommended way to deal with existing TF states.
+
+#### Known issues.
+
+For the migrated version (0.6.0 or higher), `terraform plan` output can contain more changes comparing to the older versions of the provider (that use TF SDK). 
+This happens because TF Framework treats all `computed` attributes as `unknown` (known after apply) once configuration changes.
+`ec_deployment` schema contains quite a few of such attributes, so `terraform plan`'s output can be quite big for the resource due to the mentioned reason.
+However, it doesn't mean that all attributes that marked as `unknown` in the plan will get new values after apply.
+To mitigitate the problem, the provider uses plan modifiers that is a recommended way to reduce plan output. 
+However, currently plan modifiers don't cover the all `computed` attributes.
