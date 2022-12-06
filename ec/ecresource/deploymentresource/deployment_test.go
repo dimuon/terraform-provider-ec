@@ -98,6 +98,7 @@ func Test_createDeploymentWithEmptyFields(t *testing.T) {
 				readRemoteClusters(t),
 				mock.New200Response(readTestData(t, "testdata/aws-io-optimized-v2-empty-config-expected-deployment3.json")),
 				readRemoteClusters(t),
+				shutdownDeployment(t),
 			),
 		),
 		Steps: []r.TestStep{
@@ -163,6 +164,22 @@ func createDeployment(t *testing.T, expectedRequestJson, responseJson []byte, re
 			Body:   mock.NewStructBody(expectedRequest),
 		},
 		mock.NewStructBody(response),
+	)
+}
+
+func shutdownDeployment(t *testing.T) mock.Response {
+	t.Helper()
+
+	return mock.New201ResponseAssertion(
+		&mock.RequestAssertion{
+			Host:   api.DefaultMockHost,
+			Header: api.DefaultWriteMockHeaders,
+			Method: "POST",
+			Path:   "/api/v1/deployments/accd2e61fa835a5a32bb6b2938ce91f3/_shutdown",
+			Query:  url.Values{"skip_snapshot": {"false"}},
+			Body:   io.NopCloser(strings.NewReader("")),
+		},
+		io.NopCloser(strings.NewReader("")),
 	)
 }
 
