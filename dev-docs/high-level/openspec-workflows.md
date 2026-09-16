@@ -44,7 +44,6 @@ flowchart LR
   subgraph B[Implement]
     LOOP[openspec-implementation-loop]
     APP[openspec-apply-change]
-    LOOP --> APP
   end
   B --> C
   subgraph C[Verify]
@@ -79,6 +78,8 @@ proposal can be a PR that contains only `openspec/changes/<id>/`.
 | [`openspec-apply-change`](../../.agents/skills/openspec-apply-change/SKILL.md) | Work the task list by hand or with light agent help; tick checkboxes, keep code changes scoped to each task |
 | [`openspec-implementation-loop`](../../.agents/skills/openspec-implementation-loop/SKILL.md) | Automated end-to-end loop around a single approved change: implement, review, push, watch GitHub Actions, optionally drive a PR |
 
+They are **alternatives**. The loop does not open `openspec-apply-change` as a workflow; it ticks task checkboxes itself.
+
 The implementation loop triages the change into one of three execution strategies (inline,
 single-implementor, per-task) and asks up front for a **delivery mode**:
 
@@ -98,13 +99,13 @@ The loop **always** runs:
 - `env -u TF_ACC make lint`
 - `env -u TF_ACC make build`
 - `env -u TF_ACC make unit TEST=./... TESTARGS= TESTUNITARGS='-timeout 10m -race -cover -coverprofile=reports/c.out'`
-- `env -u TF_ACC make check-openspec` when `openspec/` changed (it is not part of `make lint`)
+- `env -u TF_ACC make check-openspec` when `openspec/` changed (it is not part of `make lint`). If the user named a `--store` id, also run store-aware `openspec validate --all --store <id>` — additive, not a replacement
 - `env -u TF_ACC make install validate-examples` when this is a Terraform entity change **or** examples/provider schemas changed
 - `openspec-verify-change` (the orchestrator may run it inline; per-task defers it until every top-level task is complete)
 
 The loop **never auto-runs** `make testacc` / `TF_ACC`. After the **full** 7b make battery **and**
 that cadence's verify/review pass, if one or two existing `TestAcc…` names cover the change, the
-orchestrator may ask **at most twice** (initial + post-fix) to run them
+orchestrator may ask **at most twice per loop invocation** (initial + one shared post-fix) to run them
 (`make testacc TEST_NAME='^TestAccMyThing$'` — anchored; `go test -run` is otherwise an unanchored
 regexp. `TEST_NAME=TestAcc` is the full suite). If none exist, skip without asking. Default is skip
 (human / Buildkite). It never
@@ -121,7 +122,7 @@ loop does not wait for `OpenSpec CI`; the local `make check-openspec` is the str
 - It never force-pushes unless you ask.
 - It never starts a second change in the same run.
 - It never **auto-runs** acceptance tests, never runs the full acc suite, and never auto-retries
-  acc on failure. Targeted `TestAcc…` is opt-in only (at most two asks: initial + post-fix, default skip).
+  acc on failure. Targeted `TestAcc…` is opt-in only (at most two asks per loop invocation: initial + one shared post-fix, default skip).
 
 If the implementor blocks or the loop stalls, it pauses and asks rather than guessing.
 

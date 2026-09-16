@@ -72,7 +72,7 @@ Each resource and data-source package follows the same Schema / Model / CRUD spl
 
 Live-cloud acceptance tests plus `ec/acc/testdata/`. These provision real deployments. Humans run
 targeted cases locally; agents never **auto-run** them — the implementation loop may ask at most
-twice (initial + post-fix) after an explicit yes (default skip). See [`testing.md`](./testing.md).
+twice per loop invocation (initial + one shared post-fix) after an explicit yes (default skip). See [`testing.md`](./testing.md).
 
 ## Two API clients (don't confuse them)
 

@@ -24,8 +24,8 @@ and related resources through the Elastic Cloud API.
 - Acceptance tests (`make testacc`, and anything gated by `TF_ACC=1`) create and destroy **real
   deployments** against the live Elastic Cloud API (`EC_API_KEY`) and cost real money. **Never
   auto-run** acceptance tests from an agentic workflow — no live-cloud credentials are exposed to
-  agents by default. The `openspec-implementation-loop` may ask **at most twice** (initial + post-fix)
-  to run named `TestAcc…` cases after an explicit yes (default skip);
+  agents by default. The `openspec-implementation-loop` may ask **at most twice per loop invocation**
+  (initial + one shared post-fix) to run named `TestAcc…` cases after an explicit yes (default skip);
   implementors, `openspec-verify-change`, and CI reuse stay acc-free. The full suite runs on
   Buildkite per PR and is a **required** status check on
   `master` (`buildkite/terraform-provider-ec-acceptance`); a human working on a change should run
@@ -39,8 +39,10 @@ and related resources through the Elastic Cloud API.
 - If you changed resource/data-source schemas, templates, or examples, regenerate docs with `env -u TF_ACC make docs-generate`
   and verify with `make tfproviderdocs`. See [`documentation.md`](./dev-docs/high-level/documentation.md).
 - Lint: `env -u TF_ACC make lint`
+- `env -u TF_ACC make notice` (commit if `NOTICE` is dirty; Go CI fails on a dirty NOTICE)
 - If you changed `openspec/`: `env -u TF_ACC make check-openspec`
 - Unit tests (no cloud, always safe): `env -u TF_ACC make unit`
+- If this is a Terraform entity change, or examples/provider schemas changed: `env -u TF_ACC make install validate-examples`
 - If you changed the serverless client inputs, regenerate with `env -u TF_ACC make gen`. See
   [`generated-clients.md`](./dev-docs/high-level/generated-clients.md).
 - Add a `.changelog/{PR}.txt` entry for user-facing changes (see [`contributing.md`](./dev-docs/high-level/contributing.md)).

@@ -14,7 +14,7 @@ This skill is **hand-maintained** (not emitted by `make gen-openspec-skills`). K
 
 **Cloud-provider constraints**
 
-- Do **not** run `make testacc` or set `TF_ACC` as part of verification. This skill is also the later CI `verify-openspec` gate; acc stays out-of-band. The local implementation loop may ask at most twice (initial + post-fix) to run a named `TestAcc…` separately (default skip). See `dev-docs/high-level/testing.md`.
+- Do **not** run `make testacc` or set `TF_ACC` as part of verification. This skill is also the later CI `verify-openspec` gate; acc stays out-of-band. The local implementation loop may ask at most twice per loop invocation (initial + one shared post-fix) to run a named `TestAcc…` separately (default skip). See `dev-docs/high-level/testing.md`.
 - Treat unit tests (`env -u TF_ACC make unit`, package `*_test.go` via `env -u TF_ACC go test`) and code paths as sufficient implementation evidence. Never run those without unsetting `TF_ACC`.
 - If a scenario is covered **only** by an acceptance test under `ec/acc/`, record a WARNING that names the `TestAcc…` case and that acc is out-of-band — not a CRITICAL "unimplemented" finding. Do **not** name a function that unconditionally `t.Skip`s (for example `TestAccDeploymentTrafficFilter_UpgradeFrom0_4_1`); that is not coverage.
 - Requirements describe Terraform / API-contract behavior, not a line-by-line Go transcription.
@@ -22,6 +22,8 @@ This skill is **hand-maintained** (not emitted by `make gen-openspec-skills`). K
 **Store selection:** Only if the **user names** a store, run `openspec store list --json`, pick that id, and pass `--store <id>` on CLI commands that take it. Treat that id as sticky for the rest of this run. Do **not** auto-discover a store because one is registered on the machine. Default for this repo: unscoped CLI against the nearest local `openspec/`.
 
 **Input**: Optionally specify a change name. If omitted, check if it can be inferred from conversation context. If vague or ambiguous you MUST prompt for available changes.
+
+When invoked **non-interactively** (CI / the later `verify-openspec` gate), require an explicit change name. If none is provided, fail with a clear error rather than prompting.
 
 **Steps**
 
@@ -33,7 +35,7 @@ This skill is **hand-maintained** (not emitted by `make gen-openspec-skills`). K
    Include the schema used for each change if available.
    Mark changes with incomplete tasks as "(In Progress)".
 
-   **IMPORTANT**: Do NOT guess or auto-select a change. Always let the user choose.
+   **IMPORTANT**: Do NOT guess or auto-select a change. When a user is present, always let them choose. When non-interactive, require the name and exit with an error.
 
 2. **Check status to understand the schema**
    ```bash
