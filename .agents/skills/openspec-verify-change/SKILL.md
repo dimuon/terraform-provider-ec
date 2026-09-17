@@ -14,7 +14,7 @@ This skill is **hand-maintained** (not emitted by `make gen-openspec-skills`). K
 
 **Cloud-provider constraints**
 
-- Do **not** run `make testacc` or set `TF_ACC` as part of verification. This skill is also the later CI `verify-openspec` gate; acc stays out-of-band. The local implementation loop may ask at most twice per loop invocation (initial + one shared post-fix) to run a named `TestAcc…` separately (default skip). See `dev-docs/high-level/testing.md`.
+- Do **not** run `make testacc` or set `TF_ACC` as part of verification. This skill is also the later CI `verify-openspec` gate; acc stays out-of-band. The implementation loop never sets `TF_ACC`; in PR mode it asks whether the human ran named `TestAcc…` cases. See `dev-docs/high-level/testing.md`.
 - Treat unit tests (`env -u TF_ACC make unit`, package `*_test.go` via `env -u TF_ACC go test`) and code paths as sufficient implementation evidence. Never run those without unsetting `TF_ACC`.
 - If a scenario is covered **only** by an acceptance test under `ec/acc/`, record a WARNING that names the `TestAcc…` case and that acc is out-of-band — not a CRITICAL "unimplemented" finding. Do **not** name a function that unconditionally `t.Skip`s (for example `TestAccDeploymentTrafficFilter_UpgradeFrom0_4_1`); that is not coverage.
 - Requirements describe Terraform / API-contract behavior, not a line-by-line Go transcription.

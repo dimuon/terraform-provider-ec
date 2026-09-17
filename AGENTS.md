@@ -24,8 +24,9 @@ and related resources through the Elastic Cloud API.
 - Acceptance tests (`make testacc`, and anything gated by `TF_ACC=1`) create and destroy **real
   deployments** against the live Elastic Cloud API (`EC_API_KEY`) and cost real money. **Never
   auto-run** acceptance tests from an agentic workflow — no live-cloud credentials are exposed to
-  agents by default. The `openspec-implementation-loop` may ask **at most twice per loop invocation**
-  (initial + one shared post-fix) to run named `TestAcc…` cases after an explicit yes (default skip);
+  agents by default. The `openspec-implementation-loop` **never** sets `TF_ACC`. In PR mode it
+  recommends the human run named `TestAcc…` cases locally and confirms before `gh pr create`
+  (skip = wait on Buildkite);
   implementors, `openspec-verify-change`, and CI reuse stay acc-free. The full suite runs on
   Buildkite per PR and is a **required** status check on
   `master` (`buildkite/terraform-provider-ec-acceptance`); a human working on a change should run

@@ -71,8 +71,8 @@ Each resource and data-source package follows the same Schema / Model / CRUD spl
 ### Acceptance tests — `ec/acc/`
 
 Live-cloud acceptance tests plus `ec/acc/testdata/`. These provision real deployments. Humans run
-targeted cases locally; agents never **auto-run** them — the implementation loop may ask at most
-twice per loop invocation (initial + one shared post-fix) after an explicit yes (default skip). See [`testing.md`](./testing.md).
+targeted cases locally; agents never run them. The implementation loop never sets `TF_ACC`;
+in PR mode it recommends named local cases and confirms before `gh pr create`. See [`testing.md`](./testing.md).
 
 ## Two API clients (don't confuse them)
 

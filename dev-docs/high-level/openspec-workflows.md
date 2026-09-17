@@ -103,13 +103,14 @@ The loop **always** runs:
 - `env -u TF_ACC make install validate-examples` when this is a Terraform entity change **or** examples/provider schemas changed
 - `openspec-verify-change` (the orchestrator may run it inline; per-task defers it until every top-level task is complete)
 
-The loop **never auto-runs** `make testacc` / `TF_ACC`. After the **full** 7b make battery **and**
-that cadence's verify/review pass, if one or two existing `TestAcc…` names cover the change, the
-orchestrator may ask **at most twice per loop invocation** (initial + one shared post-fix) to run them
-(`make testacc TEST_NAME='^TestAccMyThing$'` — anchored; `go test -run` is otherwise an unanchored
-regexp. `TEST_NAME=TestAcc` is the full suite). If none exist, skip without asking. Default is skip
-(human / Buildkite). It never
-runs the full suite, never **auto-retries** acc on failure, and never runs acc from `openspec-verify-change`. See [`testing.md`](./testing.md).
+The loop **never** runs `make testacc` / `TF_ACC`. After the **full** 7b make battery **and**
+that cadence's verify/review pass, if one or two existing `TestAcc…` names cover the change, it
+prints the anchored human command
+(`make testacc TEST_NAME='^TestAccMyThing$'` — `go test -run` is otherwise an unanchored
+regexp. `TEST_NAME=TestAcc` is the full suite). If none exist, it prints nothing.
+In **PR mode**, before `gh pr create`, it recommends the human ran those cases and asks them to
+confirm (recommended: they passed) or skip (wait on Buildkite). **Commit-only** only prints the
+command. `openspec-verify-change` never runs acc. See [`testing.md`](./testing.md).
 
 **Commit-only vs PR checks.** GitHub Actions `Go` runs on branch pushes. `OpenSpec CI` runs on
 `master` and on **pull requests**, not on an arbitrary feature branch. In commit-only mode the
@@ -121,8 +122,8 @@ loop does not wait for `OpenSpec CI`; the local `make check-openspec` is the str
   `verify-openspec` label).
 - It never force-pushes unless you ask.
 - It never starts a second change in the same run.
-- It never **auto-runs** acceptance tests, never runs the full acc suite, and never auto-retries
-  acc on failure. Targeted `TestAcc…` is opt-in only (at most two asks per loop invocation: initial + one shared post-fix, default skip).
+- It never **runs** acceptance tests, never runs the full acc suite, and never sets `TF_ACC`.
+  Targeted `TestAcc…` is a human command the loop prints; in PR mode it confirms before `gh pr create`.
 
 If the implementor blocks or the loop stalls, it pauses and asks rather than guessing.
 
