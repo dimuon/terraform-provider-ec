@@ -33,6 +33,7 @@ Use this checklist so the spec is complete and traceable to code. Package layout
 | Plan modifiers | `UseStateForUnknown`, `RequiresReplace`, `BoolDefaultValue`, resource-local modifiers. |
 | Validators | Schema `Validators` and `ValidateConfig`. |
 | Defaults | Plan modifiers such as `planmodifiers.BoolDefaultValue(false)`. |
+| Schema version | `schema.Schema{ Version: … }`. Unset or `0` is normal. A non-zero version without `UpgradeState` is a **known gap**, not “no StateUpgrade category”. |
 
 Output: HCL with `<required|optional|optional+computed|computed>`, type, short notes.
 
@@ -69,7 +70,20 @@ There is **no** resource-level `elasticsearch_connection` override. The provider
 
 `RequiresReplace()` on attributes → when X changes, the resource is replaced. Otherwise updates are in place.
 
-## 7. Mapping (config ↔ API ↔ state)
+## 7. State upgrade (resources)
+
+| What to capture | Where |
+| --- | --- |
+| Schema version | `Version` on the registered `schema.Schema` (the one `Schema()` returns). Go package names `deployment/v1` vs `v2` are not the same thing unless that schema is actually registered. |
+| Upgraders | `UpgradeState()` / `ResourceWithUpgradeState`. Per-version logic and upgrade-failure diagnostics. |
+
+Most types have no `Version` and no upgrader — skip the category.
+
+`ec_deployment` is the exception: live schema is `Version: 2` (`deployment/v2/schema.go`); `deployment/v1` still has `Version: 1`; the resource does **not** implement `UpgradeState`. README / changelog say users should re-import. Acc `TestAcc…_UpgradeFrom0_4_1` cases apply with published `elastic/ec` 0.4.1 then `PlanOnly` with current — all `t.Skip("skip until ec_deployment state upgrade is implemented")`. That is the TF **state** upgrade path. Tests named `post_node_roles` / `pre_node_roles_migration` bump Elastic Stack / `node_roles` on a live deployment; they are not `UpgradeState`.
+
+If you spec a **slice** of `ec_deployment`, do not invent an upgrader. Record the gap in **Known gaps**: schema version 2, no `UpgradeState`, skipped `UpgradeFrom0_4_1` acc, import is the documented workaround.
+
+## 8. Mapping (config ↔ API ↔ state)
 
 | What to capture | Where |
 | --- | --- |
@@ -77,13 +91,13 @@ There is **no** resource-level `elasticsearch_connection` override. The provider
 | Flatten | `flatteners.go` / `modelToState`: empty API strings → null vs empty; nested objects. |
 | Unknown in plan | Plan modifiers that keep prior state or mark nested computed ids unknown when the set changes. |
 
-## 8. Data sources only
+## 9. Data sources only
 
-Read only. Required lookup arguments vs computed results. Same unconfigured-client guard. No Create/Update/Delete, Import, or RequiresReplace.
+Read only. Required lookup arguments vs computed results. Same unconfigured-client guard. No Create/Update/Delete, Import, RequiresReplace, or StateUpgrade.
 
 ## Requirement categories
 
-Use these names in headings when they fit. Do **not** add stack-provider categories this repo does not have (resource-level connection override, Elasticsearch/Kibana server-version gates, `UpgradeState`).
+Use these names in headings when they fit. Do **not** add stack-provider categories this repo does not have (resource-level connection override, Elasticsearch/Kibana server-version gates). Keep **StateUpgrade**: look for it; most types have none, `ec_deployment` has a version and no upgrader.
 
 | Category | Use for |
 | --- | --- |
@@ -98,6 +112,7 @@ Use these names in headings when they fit. Do **not** add stack-provider categor
 | **Validation** | `ValidateConfig` / schema validators, including type-gated fields. |
 | **Mapping** | Expand/flatten, empty vs null. |
 | **Plan/State** | Defaults, UseStateForUnknown, unknown nested ids. |
+| **StateUpgrade** | Schema `Version` and `UpgradeState` (or the known gap when Version is set and there is no upgrader). |
 
 ## File layout
 

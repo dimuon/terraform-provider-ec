@@ -60,6 +60,7 @@ Prefer a structured question tool (`AskQuestion` / `AskUserQuestion`) with concr
 - **Empty vs null**: “When the API returns empty for [field], store null or empty? (Drift.)”
 - **Read-only**: “Which response fields are computed-only?”
 - **Nested vs JSON**: “Expose [object] as nested blocks/attributes or a JSON string?”
+- **State upgrade**: “Does the first schema need `Version` / `UpgradeState`, or is v0 enough until a breaking schema change?” Default to no version bump. `ec_deployment` already has Version 2 **without** an upgrader — do not copy that gap.
 
 ### Deferred
 

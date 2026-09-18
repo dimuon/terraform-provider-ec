@@ -28,6 +28,12 @@ For one attribute, do not require both “preserve null” and “store empty li
 
 Create/Update reference the APIs the code calls. Read and Delete match GET/DELETE (and association teardown if specified).
 
+### StateUpgrade
+
+- A requirement that the resource “supports upgrading prior state schema version N to M” implies `Schema.Version` ≥ M and an `UpgradeState` upgrader for N→M.
+- If the registered schema has a non-zero `Version` and there is **no** `UpgradeState`, a spec that claims upgrades work is inconsistent with the code. The current `ec_deployment` contract is: Version 2, no upgrader, re-import (README). Acc `TestAcc…_UpgradeFrom0_4_1` exist and are skipped — do not treat them as coverage.
+- Do not confuse those tests with `TestAccDeployment_post_node_roles` / pre-node-role migration (stack version / `node_roles`, not TF state).
+
 ## Requirement → implementation mapping
 
 | Category | Typical location | What to check |
@@ -43,10 +49,9 @@ Create/Update reference the APIs the code calls. Read and Delete match GET/DELET
 | **Validation** | `ValidateConfig`, schema validators | Type-gated attributes; skip when unknown. |
 | **Mapping** | `expanders.go`, `flatteners.go` | Empty string → null; omit unknown nested ids. |
 | **Plan/State** | plan modifiers in `schema.go` | Defaults; unknown nested computed ids when the set changes. |
+| **StateUpgrade** | Registered `schema.Schema` `Version`; `UpgradeState()` if implemented | Version vs upgraders; if Version is set and there is no upgrader, status is **Not met** / known gap (not “category does not apply”). |
 
-Data sources: Read, Type/client, Unconfigured client, Mapping, Plan/State only.
-
-This provider has **no** `UpgradeState` / schema `Version` on resources. Do not look for StateUpgrade requirements or invent them.
+Data sources: Read, Type/client, Unconfigured client, Mapping, Plan/State only. No StateUpgrade.
 
 ## Test opportunity patterns
 
@@ -59,6 +64,7 @@ This provider has **no** `UpgradeState` / schema `Version` on resources. Do not 
 | Import | ImportState sets id | Identity/Import |
 | Unconfigured client | CRUD with nil client → diagnostic | Ready guard |
 | Plan modifiers | Default `include_by_default` false | Plan/State |
+| StateUpgrade | Table-driven prior-state JSON → upgraded state / error | Only if `UpgradeState` exists. Do not write one to “cover” `ec_deployment`. |
 
 ### Acceptance (live Elastic Cloud API) — human / Buildkite only
 
@@ -69,5 +75,6 @@ Tests live in `ec/acc/` as `TestAcc…`. **Never** run them from this skill.
 | CRUD round-trip | `TestAccDeploymentTrafficFilter_basic` | Create/read/update/destroy |
 | Type variant | `TestAccDeploymentTrafficFilter_remoteCluster` | Type-gated payload |
 | Import | Acc ImportState step | Import + read |
+| State upgrade from an old provider | `TestAcc…_UpgradeFrom0_4_1` (0.4.1 then `PlanOnly`) | TF state load after schema bump. **Skipped** until `ec_deployment` `UpgradeState` exists — say skipped, do not un-skip from this skill. |
 
 Suggest: requirement heading, type (unit / acceptance), description, who runs (agent vs human/Buildkite). If `ec/acc/` already covers the case, say so rather than inventing a duplicate.

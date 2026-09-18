@@ -36,6 +36,7 @@ This skill is **on demand**: the entity is about to change and has no spec yet, 
    - Mapping: expand/flatten, empty vs null, unknown-in-plan.
    - Lifecycle: `RequiresReplace` vs in-place update.
    - Type-gated validation (`ValidateConfig`) when present.
+   - State upgrade: `schema.Schema` `Version`, `UpgradeState` / `ResourceWithUpgradeState`. If Version is non-zero and there is no upgrader, that is a known gap (do not invent an upgrader). See [reference.md](reference.md).
 
 3. **Write policy**
    - Capability id: kebab-case **without** the `ec_` prefix (e.g. `deployment-traffic-filter`). One directory per Terraform type.

@@ -50,7 +50,7 @@ Apply [reference.md](reference.md) (Consistency checks). Result: **Consistent** 
 
 ### 3. Implementation compliance
 
-Resolve the package. Read `schema.go`, CRUD files, expanders/flatteners, validators. For each requirement, mark **Met** / **Not met** / **Unclear** with evidence (file/function or “not found”). Mapping: [reference.md](reference.md).
+Resolve the package. Read `schema.go`, CRUD files, expanders/flatteners, validators, and `Schema.Version` / `UpgradeState` if present. For each requirement, mark **Met** / **Not met** / **Unclear** with evidence (file/function or “not found”). Mapping: [reference.md](reference.md).
 
 ### 4. Test opportunities
 
