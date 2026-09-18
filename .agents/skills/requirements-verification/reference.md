@@ -47,7 +47,7 @@ Create/Update reference the APIs the code calls. Read and Delete match GET/DELET
 | **Read** | `read.go` | GET; not-found removes state; other errors keep state. |
 | **Delete** | `delete.go` | Associations; not-found as success when required. |
 | **Validation** | `ValidateConfig`, schema validators | Type-gated attributes; skip when unknown. |
-| **Mapping** | `expanders.go`, `flatteners.go` | Empty string → null; omit unknown nested ids. |
+| **Mapping** | Functions that flatten API → state and expand plan → API. Names vary: `expanders.go` / `flatteners.go` / `modelToState` on small resources; `ReadDeployment`, `ReadElasticsearches`, `ElasticsearchPayload` (and siblings) under `deploymentresource/`. Search for the role, not the filename. | Empty string → null; omit unknown nested ids; which planned fields are sent. |
 | **Plan/State** | plan modifiers in `schema.go` | Defaults; unknown nested computed ids when the set changes. |
 | **StateUpgrade** | Registered `schema.Schema` `Version`; `UpgradeState()` if implemented | Version vs upgraders; if Version is set and there is no upgrader, status is **Not met** / known gap (not “category does not apply”). |
 

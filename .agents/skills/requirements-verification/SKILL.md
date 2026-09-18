@@ -50,7 +50,7 @@ Apply [reference.md](reference.md) (Consistency checks). Result: **Consistent** 
 
 ### 3. Implementation compliance
 
-Resolve the package. Read `schema.go`, CRUD files, expanders/flatteners, validators, and `Schema.Version` / `UpgradeState` if present. For each requirement, mark **Met** / **Not met** / **Unclear** with evidence (file/function or “not found”). Mapping: [reference.md](reference.md).
+Resolve the package. Read `schema.go`, CRUD files, validators, and `Schema.Version` / `UpgradeState` if present. Mapping is **not** always `expanders.go` / `flatteners.go`: search for the functions that read API responses into Terraform models (e.g. `ReadDeployment`, `ReadElasticsearches`) and those that build API payloads (e.g. `ElasticsearchPayload`). For each requirement, mark **Met** / **Not met** / **Unclear** with evidence (file/function or “not found”). Mapping: [reference.md](reference.md).
 
 ### 4. Test opportunities
 

@@ -23,7 +23,7 @@ This skill is **on demand**: the entity is about to change and has no spec yet, 
 ## Workflow
 
 1. **Locate implementation**
-   - **Resource**: `ec/ecresource/<name>resource/` — `schema.go` (`Schema`, `Metadata`, `Configure`, `ImportState`, `ValidateConfig`), `create.go` / `read.go` / `update.go` / `delete.go`, expanders/flatteners, validators, plan modifiers.
+   - **Resource**: `ec/ecresource/<name>resource/` — `schema.go` (`Schema`, `Metadata`, `Configure`, `ImportState`, `ValidateConfig`), `create.go` / `read.go` / `update.go` / `delete.go`, validators, plan modifiers, and the API↔Terraform mappers (filenames vary; see [reference.md](reference.md) §8).
    - **Data source**: `ec/ecdatasource/<name>datasource/` — `Schema`, `Read`, `Metadata`, `Configure`.
    - One Go package may register **several** Terraform types (`projectresource` → `ec_elasticsearch_project` / `ec_observability_project` / `ec_security_project`; `privatelinkdatasource` → three endpoint data sources). Spec **one type**, not the package.
    - Use the checklist in [reference.md](reference.md).
@@ -33,7 +33,7 @@ This skill is **on demand**: the entity is about to change and has no spec yet, 
    - Metadata: type name, import.
    - CRUD: which client and API, how `id` is set, create/update-then-read, “not found” on read, delete (including association teardown if any).
    - Client: `internal.ConvertProviderData` → `Stateful` (`cloud-sdk-go`) vs `Serverless` (`ec/internal/gen/serverless/`). Unconfigured-client guard (`Unconfigured API Client`).
-   - Mapping: expand/flatten, empty vs null, unknown-in-plan.
+   - Mapping: API → state and plan → payload (names vary: `modelToState` / expanders, or `ReadDeployment` / `ReadElasticsearches` / `ElasticsearchPayload`), empty vs null, unknown-in-plan.
    - Lifecycle: `RequiresReplace` vs in-place update.
    - Type-gated validation (`ValidateConfig`) when present.
    - State upgrade: `schema.Schema` `Version`, `UpgradeState` / `ResourceWithUpgradeState`. If Version is non-zero and there is no upgrader, that is a known gap (do not invent an upgrader). See [reference.md](reference.md).

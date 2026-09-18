@@ -6,7 +6,7 @@ Use this checklist so the spec is complete and traceable to code. Package layout
 
 | Entity type | Where to look |
 | --- | --- |
-| Resource | `ec/ecresource/<name>resource/` — typically `schema.go`, `create.go`, `read.go`, `update.go`, `delete.go`, expanders/flatteners. Larger packages split models (`projectresource/`, `deploymentresource/`). |
+| Resource | `ec/ecresource/<name>resource/` — typically `schema.go`, `create.go`, `read.go`, `update.go`, `delete.go`, plus the functions that map API ↔ Terraform (see §8). Larger packages split models (`projectresource/`, `deploymentresource/`). |
 | Data source | `ec/ecdatasource/<name>datasource/` — `datasource.go` or `schema.go` + `read.go`. Exceptions exist (`ec/ecdatasource/deploymenttemplates/`); when the glob fails, use the `ec/provider.go` registry. |
 
 **Type name**: `Metadata()` sets `response.TypeName = request.ProviderTypeName + "_..."` (sometimes `fmt.Sprintf`). Use that for the H1 title and HCL `resource` / `data` type.
@@ -87,9 +87,11 @@ If you spec a **slice** of `ec_deployment`, do not invent an upgrader. Record th
 
 | What to capture | Where |
 | --- | --- |
-| Expand | `expanders.go` (or equivalent): which planned fields are sent; omit unknown/null nested ids. |
-| Flatten | `flatteners.go` / `modelToState`: empty API strings → null vs empty; nested objects. |
+| API → state (read) | Whatever function copies a backend response into the Terraform model. Small resources often use `flatteners.go` / `modelToState`. `ec_deployment` uses names like `ReadDeployment`, `ReadElasticsearches`. |
+| Plan → API (write) | Whatever function builds the request payload. Small resources often use `expanders.go`. `ec_deployment` uses names like `ElasticsearchPayload`. |
 | Unknown in plan | Plan modifiers that keep prior state or mark nested computed ids unknown when the set changes. |
+
+Do not require the filenames `expanders.go` / `flatteners.go`. Search for the role.
 
 ## 9. Data sources only
 
