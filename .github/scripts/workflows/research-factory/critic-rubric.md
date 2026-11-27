@@ -21,6 +21,9 @@ never the author's own output:
 - the four API specifications under `/tmp/gh-aw/specs/` (a deterministic pre-agent step downloaded
   them before the sandbox was built — they are infrastructure, and you **must** read them to check
   citations);
+- the `cloud-sdk-go` source under `/tmp/gh-aw/gomodcache/github.com/elastic/cloud-sdk-go@<version>/`
+  (staged by the same kind of pre-agent step, at the version `go.mod` pins — infrastructure, and
+  you **must** read it to check an SDK citation when it is present);
 - any file in this repository checkout;
 - Elastic documentation through the `elastic-docs` CLI.
 
@@ -45,7 +48,7 @@ Each item is `true` only when fully satisfied.
 
 | Id | Passes when |
 |---|---|
-| `grounded` | Every claimed capability cites a verifiable source: a serverless API spec node, an Elastic Cloud Hosted or ECE API reference, other Elastic Cloud documentation, or existing generated-client or provider code. |
+| `grounded` | Every claimed capability cites a verifiable source: a serverless API spec node, an Elastic Cloud Hosted or ECE API reference, other Elastic Cloud documentation, existing generated-client or provider code, or the staged `cloud-sdk-go` source. |
 | `mapped` | Each new capability has a proposed Terraform schema mapping: attribute name, type, required/optional/computed, and nesting. |
 | `compatible` | The change is assessed as additive or breaking; a breaking change includes a migration or state-upgrade note. |
 | `versioned` | Platform availability is decided by the procedure below. The id is `versioned` in the checklist, in your feedback items, and in the verdict JSON — there is no `platform` key anywhere. |
@@ -101,7 +104,7 @@ repository code handles platform differences fail `grounded`, not `versioned`.
   fraction of the size, and you have it locally. A citation does not need its rendered page to be
   verified.
 
-**Provider-side sources** (in this checkout):
+**Provider-side sources** (in this checkout, plus the staged SDK):
 
 - `ec/internal/gen/serverless/serverless-project-api-dereferenced.yml` — the vendored serverless spec
   the client was **built against**. It is pinned to the ref in
@@ -113,11 +116,22 @@ repository code handles platform differences fail `grounded`, not `versioned`.
   the draft says so.
 - `ec/ecresource/**`, `ec/ecdatasource/**`, `ec/internal/**` — provider patterns, acceptance-test
   layout, schema conventions. Read the cited file and confirm it contains the pattern described.
-- **`cloud-sdk-go` is not in this checkout** (no `vendor/`, no Go toolchain). You cannot open it.
-  Operational rule: a `models.*` or other SDK claim passes `grounded` **only** if the draft cites it
-  at a `file:line` under `ec/` that you can open and confirm. Otherwise it is an unverifiable
-  citation, not repository-code evidence. The provider's *usage* is readable, so "does the provider
-  expose X" and "what shape does it send" are answerable from `ec/` alone.
+- **`cloud-sdk-go` is staged outside this checkout**, at
+  `/tmp/gh-aw/gomodcache/github.com/elastic/cloud-sdk-go@<version>/` (find it with `Glob`
+  pattern `cloud-sdk-go@*/go.mod` and path `/tmp/gh-aw/gomodcache/github.com/elastic`; there is
+  exactly one version directory, and it is the version in `go.mod`). A citation of the form
+  `cloud-sdk-go@<version>/<path>:<line>`, or a reference URL
+  `https://github.com/elastic/cloud-sdk-go/blob/<version>/<path>`, maps to `<path>` under that
+  directory: open it and confirm the type, field, JSON tag or function the draft describes. A
+  citation whose `<version>` is not the one in `go.mod` fails `grounded` (for a pseudo-version
+  the URL carries its trailing commit hash instead; that is not a mismatch). The SDK shows what the
+  client **can** send and receive; it does not show platform availability — that is still the
+  specifications' job (`versioned`).
+  **If the directory is absent**, you cannot open the SDK: a `models.*` or other SDK claim then
+  passes `grounded` **only** if the draft cites it at a `file:line` under `ec/` that you can open
+  and confirm; otherwise it is an unverifiable citation. The provider's *usage* is readable
+  either way, so "does the provider expose X" and "what shape does it send" are answerable from
+  `ec/` alone.
 - `ec/internal/gen/serverless/spec-mod.json` is **not** an API specification — it is a
   terraform-plugin-codegen provider spec with zero API paths. A draft citing it as an API source
   fails `grounded`.

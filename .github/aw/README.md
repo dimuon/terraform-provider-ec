@@ -151,11 +151,38 @@ a second workflow needs the same block, factor it into a shared fragment.
 > must therefore allow **both** hosts (as `code-factory-issue.md` does) or pre-install providers. Do
 > not assume the local `elastic/ec` mirror removes all released-provider downloads.
 
+### Dependency sources without Go egress (`research-factory-issue`)
+
+The research agent grounds on the `cloud-sdk-go` types the provider is built against, but its
+allowlist has no `go` set. A runner-side step, `Stage cloud-sdk-go source for the agent`, runs
+`go mod download github.com/elastic/cloud-sdk-go` before the sandbox exists, with
+`GOMODCACHE=/tmp/gh-aw/gomodcache`: the module version comes from `go.mod` and is checked against
+`go.sum`. `/tmp/gh-aw` is mounted into the sandbox, so the agent and the critic read the source
+at `/tmp/gh-aw/gomodcache/github.com/elastic/cloud-sdk-go@<version>/`. The step also writes
+`GOMODCACHE` and `GOPROXY=off` to `GITHUB_ENV`, so a `go` command inside the sandbox resolves the
+staged module and fails immediately, without a connection attempt, for anything else. The download
+gets four attempts (5 s / 30 s / 2 min apart, each under a 60-second deadline); if all of them fail,
+the step removes any partial cache and fails the run before any model call, so a missing SDK is a
+red run rather than a warning in a green one. This adds **zero** egress hosts. The alternative,
+adding `go` (or `proxy.golang.org` and `sum.golang.org`) to `network.allowed`, was rejected: it
+widens what the agent can reach to fetch one module the runner can fetch for it.
+
+**Do not declare `runtimes: go` in a workflow whose allowlist has no `go` set.** Measured with
+gh-aw v0.92.0: `runtimes: { go: {} }` injects `actions/setup-go` and adds `go.dev`, `golang.org`,
+`goproxy.io`, `pkg.go.dev`, `proxy.golang.org`, `storage.googleapis.com` and `sum.golang.org` to
+the compiled `allowDomains` of the agent **and** detection jobs. gh-aw also injects
+`actions/setup-go` (without the hosts) when a custom step's script is emitted as a one-line
+`run: "..."` containing the word `go`, for example when the script has `#` comment lines. The
+staging step therefore keeps its comments in YAML above the step, and
+`research-factory/sdk-source-lock.test.mjs` fails `make workflow-test` if the compiled lock gains
+`actions/setup-go`, a Go proxy host, or a different allowlist size.
+
 ### Excluded on purpose (least-egress, cloud-provider-specific)
 
 | Not allowed | Why it is excluded |
 | --- | --- |
 | Live Elastic Cloud API **operations** on `api.elastic-cloud.com` | Agents **never** perform an operation that creates, mutates or destroys a deployment, or that spends. Acceptance tests create/destroy real deployments against `EC_API_KEY` and run **out-of-band on Buildkite** (`buildkite/terraform-provider-ec-acceptance`), never inside an agentic workflow — no live-cloud credentials are exposed to agents. The host is therefore kept out of every `network.allowed` list, so the agent sandbox cannot reach any path on it. Reading a **public, unauthenticated specification document** from that host is outside this restriction and is permitted: the research factory fetches `api/v1/api-docs-user/swagger.json` in a **runner-side** step, before the sandbox exists, which grounds the agent while adding **zero** egress hosts. (Verified: `api.elastic-cloud.com` is absent from the compiled firewall egress of every workflow.) The change-factory workflow opens spec-only PRs, so `.buildkite/acceptance.sh` skips the paid acceptance suite for PRs that touch only `docs/`, `dev-docs/`, `openspec/`, or `.changelog/` (keeping that required Buildkite context green without spending); the suite still runs the moment a PR also changes provider code. The reproducer-factory workflow opens a draft PR carrying one acceptance test it wrote but never ran; the Buildkite build that starts when it opens runs nothing (`.buildkite/acceptance.sh` refuses a `reproducer-factory/` branch unless the PR bot created the build for a person's comment), and when a maintainer comments `buildkite test this`, `.buildkite/acceptance-test-selection.sh` runs only that test for as long as the PR's diff is that one file. See [`reproducer-factory.md`](../../dev-docs/high-level/reproducer-factory.md). |
+| Go module proxy and checksum database (`proxy.golang.org`, `sum.golang.org`) in `research-factory-issue` | The agent reads dependency source; it does not build. The one module it needs is staged runner-side (see *Dependency sources without Go egress*), so the `go` set stays out of that workflow's `network.allowed`. (`code-factory-issue` builds and tests the provider and does allow `go`.) |
 | Local-stack ports (Elasticsearch `:9200`, Kibana `:5601`, Docker localstack) | **N/A** — unlike the Elastic Stack provider, the cloud provider has **no** local Docker stack; there is nothing to reach. Recorded here so these are not copied in out of habit when porting a stack-provider workflow. |
 
 ## What threat detection sees
@@ -216,5 +243,13 @@ by `CENSUS_MAX_BYTES`.
     files` and `Setup threat detection`. The checkout step uses the default path because this
     workflow has no other checkout in the detection job; give it a `path:` if the workflow ever
     gains a patch-producing safe output.
+  - **SDK staging couplings:** `research-factory-issue.md`'s `Stage cloud-sdk-go source for the
+    agent` step relies on `/tmp/gh-aw` being mounted into the agent sandbox, on `awf --env-all`
+    forwarding variables written to `GITHUB_ENV`, on the staged directory staying outside the
+    `Upload agent artifacts` paths, and on gh-aw not treating the step as a Go runtime request.
+    `sdk-source-lock.test.mjs` asserts the last two and the allowlist; re-check the first two
+    against the regenerated lock's `awf` command line (`--mount /tmp/gh-aw:/tmp/gh-aw:rw`,
+    `--env-all`). Also re-check gh-aw's `Redact secrets in logs` step, which scans text files under
+    `/tmp/gh-aw`, the staged module included.
 - **Inspect egress:** assert on the compiled lock's `allowDomains` array (see *Network allowlist
   policy*). `gh aw domains` does not report it.
